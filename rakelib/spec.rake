@@ -173,9 +173,10 @@ namespace :spec do
     t.pattern = 'spec/java_integration/**/*_spec.rb'
   end
 
-  desc "Runs Compiler Specs"
-  RSpec::Core::RakeTask.new("compiler" => "test:compile") do |t|
-    t.pattern = 'spec/compiler/**/*_spec.rb'
+  desc "Runs Profiler Specs"
+  RSpec::Core::RakeTask.new("profiler" => "test:compile") do |t|
+    t.ruby_opts = "--profile"
+    t.pattern = 'spec/profiler/**/*_spec.rb'
   end
 
   desc "Runs FFI specs"
