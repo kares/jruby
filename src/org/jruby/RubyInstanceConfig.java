@@ -60,10 +60,6 @@ import org.jruby.embed.util.SystemPropertyCatcher;
 import org.jruby.ext.posix.util.Platform;
 import org.jruby.runtime.Constants;
 import org.jruby.runtime.backtrace.TraceType;
-import org.jruby.runtime.profile.IProfileData;
-import org.jruby.runtime.profile.AbstractProfilePrinter;
-import org.jruby.runtime.profile.FlatProfilePrinter;
-import org.jruby.runtime.profile.GraphProfilePrinter;
 import org.jruby.runtime.load.LoadService;
 import org.jruby.runtime.load.LoadService19;
 import org.jruby.util.ClassCache;
@@ -1793,16 +1789,6 @@ public class RubyInstanceConfig {
 
     public ProfilingMode getProfilingMode() {
         return profilingMode;
-    }
-    
-    public AbstractProfilePrinter makeDefaultProfilePrinter(IProfileData profileData) {
-        if (profilingMode == ProfilingMode.FLAT) {
-            return new FlatProfilePrinter(profileData.getResults());
-        }
-        else if (profilingMode == ProfilingMode.GRAPH) {
-            return new GraphProfilePrinter(profileData.getResults());
-        }
-        return null;
     }
 
     public boolean isDisableGems() {
