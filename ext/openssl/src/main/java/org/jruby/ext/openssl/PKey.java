@@ -56,8 +56,6 @@ import org.jruby.runtime.ObjectAllocator;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
 
-import static org.jruby.ext.openssl.OpenSSLReal.getSignature;
-
 /**
  * @author <a href="mailto:ola.bini@ki.se">Ola Bini</a>
  */
@@ -189,7 +187,7 @@ public abstract class PKey extends RubyObject {
         }
         String digAlg = ((Digest) digest).getShortAlgorithm();
         try {
-            Signature signature = getSignature(digAlg + "WITH" + getAlgorithm());
+            Signature signature = SecurityHelper.getSignature(digAlg + "WITH" + getAlgorithm());
             signature.initSign(getPrivateKey());
             byte[] inp = data.convertToString().getBytes();
             signature.update(inp);
@@ -230,7 +228,7 @@ public abstract class PKey extends RubyObject {
         String algorithm = ((Digest)digest).getShortAlgorithm() + "WITH" + getAlgorithm();
         boolean valid;
         try {
-            Signature signature = getSignature(algorithm);
+            Signature signature = SecurityHelper.getSignature(algorithm);
             signature.initVerify(getPublicKey());
             signature.update(dataBytes);
             valid = signature.verify(sigBytes);

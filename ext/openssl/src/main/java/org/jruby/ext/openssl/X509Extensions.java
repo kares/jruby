@@ -63,8 +63,6 @@ import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.util.ByteList;
 
-import static org.jruby.ext.openssl.OpenSSLReal.getMessageDigest;
-
 /**
  * @author <a href="mailto:ola.bini@ki.se">Ola Bini</a>
  */
@@ -488,7 +486,7 @@ public class X509Extensions {
 
     private static byte[] getSHA1Digest(Ruby runtime, byte[] bytes) {
         try {
-            return getMessageDigest("SHA-1").digest(bytes);
+            return SecurityHelper.getMessageDigest("SHA-1").digest(bytes);
         }
         catch (GeneralSecurityException ex) {
             throw newX509ExtError(runtime, ex.getMessage());
