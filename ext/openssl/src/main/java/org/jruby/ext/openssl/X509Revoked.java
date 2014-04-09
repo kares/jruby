@@ -35,12 +35,15 @@ import org.jruby.anno.JRubyMethod;
 import org.jruby.runtime.Block;
 import org.jruby.runtime.ObjectAllocator;
 import org.jruby.runtime.ThreadContext;
+import org.jruby.runtime.Visibility;
 import org.jruby.runtime.builtin.IRubyObject;
 
 /**
  * @author <a href="mailto:ola.bini@ki.se">Ola Bini</a>
  */
 public class X509Revoked extends RubyObject {
+
+    private static final long serialVersionUID = -6238325248555061878L;
 
     private static ObjectAllocator X509REVOKED_ALLOCATOR = new ObjectAllocator() {
         public IRubyObject allocate(Ruby runtime, RubyClass klass) {
@@ -64,11 +67,10 @@ public class X509Revoked extends RubyObject {
         super(runtime,type);
     }
 
-    @JRubyMethod(name="initialize",rest=true)
-    public IRubyObject _initialize(IRubyObject[] args, Block unusedBlock) {
-        serial = getRuntime().getNil();
-        time = getRuntime().getNil();
-        extensions = getRuntime().newArray();
+    @JRubyMethod(name="initialize",rest=true, visibility = Visibility.PRIVATE)
+    public IRubyObject _initialize(final ThreadContext context, final IRubyObject[] args, final Block unusedBlock) {
+        serial = time = context.runtime.getNil();
+        extensions = context.runtime.newArray();
         return this;
     }
 
