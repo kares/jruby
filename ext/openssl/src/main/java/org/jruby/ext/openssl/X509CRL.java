@@ -79,6 +79,7 @@ import org.jruby.runtime.Arity;
 import org.jruby.runtime.Block;
 import org.jruby.runtime.ObjectAllocator;
 import org.jruby.runtime.ThreadContext;
+import org.jruby.runtime.Visibility;
 import org.jruby.runtime.builtin.IRubyObject;
 
 import static org.jruby.ext.openssl.OpenSSLReal.isDebug;
@@ -211,9 +212,10 @@ public class X509CRL extends RubyObject {
     }
 
     @Override
-    @JRubyMethod
-    public IRubyObject initialize_copy(IRubyObject obj) {
-        System.err.println("WARNING: unimplemented method called: CRL#init_copy");
+    @JRubyMethod(visibility = Visibility.PRIVATE)
+    public IRubyObject initialize_copy(final IRubyObject obj) {
+        final ThreadContext context = getRuntime().getCurrentContext();
+        warn(context, "WARNING: unimplemented method called: CRL#init_copy");
         if ( this == obj ) return this;
         checkFrozen(); return this;
     }
