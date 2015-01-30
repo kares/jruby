@@ -753,17 +753,7 @@ public class JavaClass extends JavaObject {
 
         // set the Java class name and package
         if ( javaClass.isAnonymousClass() ) {
-            if ( enclosingClass != null && enclosingClass.isEnum() ) {
-                for ( Object enumConst : enclosingClass.getEnumConstants() ) {
-                    if ( enumConst.getClass() == javaClass ) {
-                        proxy.setBaseName( ((Enum) enumConst).name() );
-                        break; // e.g. Java::JavaUtilConcurrent::TimeUnit::DAYS
-                    }
-                }
-            }
-            else {
-                proxy.setBaseName(""); // javaClass.getSimpleName()
-            }
+            proxy.setBaseName(""); // javaClass.getSimpleName()
         }
         else {
             proxy.setBaseName(javaClass.getSimpleName());
@@ -977,37 +967,36 @@ public class JavaClass extends JavaObject {
         }
     }
 
-    private static String fixScalaNames(String name) {
+    private static String fixScalaNames(final String name) {
         String s = name;
         for (Map.Entry<String, String> entry : SCALA_OPERATORS.entrySet()) {
             s = s.replaceAll(entry.getKey(), entry.getValue());
         }
-
         return s;
     }
 
     private static final Map<String, String> SCALA_OPERATORS;
     static {
-        Map<String, String> tmp = new HashMap();
-        tmp.put("\\$plus", "+");
-        tmp.put("\\$minus", "-");
-        tmp.put("\\$colon", ":");
-        tmp.put("\\$div", "/");
-        tmp.put("\\$eq", "=");
-        tmp.put("\\$less", "<");
-        tmp.put("\\$greater", ">");
-        tmp.put("\\$bslash", "\\\\");
-        tmp.put("\\$hash", "#");
-        tmp.put("\\$times", "*");
-        tmp.put("\\$bang", "!");
-        tmp.put("\\$at", "@");
-        tmp.put("\\$percent", "%");
-        tmp.put("\\$up", "^");
-        tmp.put("\\$amp", "&");
-        tmp.put("\\$tilde", "~");
-        tmp.put("\\$qmark", "?");
-        tmp.put("\\$bar", "|");
-        SCALA_OPERATORS = Collections.unmodifiableMap(tmp);
+        HashMap<String, String> scalaOperators = new HashMap<String, String>();
+        scalaOperators.put("\\$plus", "+");
+        scalaOperators.put("\\$minus", "-");
+        scalaOperators.put("\\$colon", ":");
+        scalaOperators.put("\\$div", "/");
+        scalaOperators.put("\\$eq", "=");
+        scalaOperators.put("\\$less", "<");
+        scalaOperators.put("\\$greater", ">");
+        scalaOperators.put("\\$bslash", "\\\\");
+        scalaOperators.put("\\$hash", "#");
+        scalaOperators.put("\\$times", "*");
+        scalaOperators.put("\\$bang", "!");
+        scalaOperators.put("\\$at", "@");
+        scalaOperators.put("\\$percent", "%");
+        scalaOperators.put("\\$up", "^");
+        scalaOperators.put("\\$amp", "&");
+        scalaOperators.put("\\$tilde", "~");
+        scalaOperators.put("\\$qmark", "?");
+        scalaOperators.put("\\$bar", "|");
+        SCALA_OPERATORS = Collections.unmodifiableMap(scalaOperators);
     }
 
     private void setupClassMethods(Class<?> javaClass, InitializerState state) {
