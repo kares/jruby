@@ -753,7 +753,18 @@ public class JavaClass extends JavaObject {
 
         // set the Java class name and package
         if ( javaClass.isAnonymousClass() ) {
-            proxy.setBaseName(""); // javaClass.getSimpleName()
+            final String baseName;
+            if ( enclosingClass != null ) {
+                // instead of an empty name anonymous classes will have a "conforming"
+                // although not valid (by Ruby semantics) RubyClass name e.g. :
+                // 'Java::JavaUtilConcurrent::TimeUnit::$7'
+                // NOTE: if this turns out suitable shall do the same for method etc.
+                baseName = javaClass.getName().substring( enclosingClass.getName().length() );
+            }
+            else {
+                baseName = ""; // javaClass.getSimpleName()
+            }
+            proxy.setBaseName( baseName ); // javaClass.getSimpleName()
         }
         else {
             proxy.setBaseName(javaClass.getSimpleName());
