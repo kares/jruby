@@ -596,9 +596,9 @@ public class Java implements Library {
         @JRubyMethod(meta = true)
         public static IRubyObject java_send(ThreadContext context, IRubyObject recv, IRubyObject rubyName) {
             String name = rubyName.asJavaString();
-            Ruby runtime = context.runtime;
+            final Ruby runtime = context.runtime;
 
-            JavaMethod method = new JavaMethod(runtime, getMethodFromClass(runtime, recv, name));
+            JavaMethod method = new JavaMethod(runtime, getMethodFromClass(context, recv, name));
             return method.invokeStaticDirect();
         }
 
@@ -606,14 +606,14 @@ public class Java implements Library {
         public static IRubyObject java_send(ThreadContext context, IRubyObject recv, IRubyObject rubyName, IRubyObject argTypes) {
             String name = rubyName.asJavaString();
             RubyArray argTypesAry = argTypes.convertToArray();
-            Ruby runtime = context.runtime;
+            final Ruby runtime = context.runtime;
 
             if (argTypesAry.size() != 0) {
                 Class[] argTypesClasses = (Class[]) argTypesAry.toArray(new Class[argTypesAry.size()]);
                 throw JavaMethod.newArgSizeMismatchError(runtime, argTypesClasses);
             }
 
-            JavaMethod method = new JavaMethod(runtime, getMethodFromClass(runtime, recv, name));
+            JavaMethod method = new JavaMethod(runtime, getMethodFromClass(context, recv, name));
             return method.invokeStaticDirect();
         }
 
@@ -621,7 +621,7 @@ public class Java implements Library {
         public static IRubyObject java_send(ThreadContext context, IRubyObject recv, IRubyObject rubyName, IRubyObject argTypes, IRubyObject arg0) {
             String name = rubyName.asJavaString();
             RubyArray argTypesAry = argTypes.convertToArray();
-            Ruby runtime = context.runtime;
+            final Ruby runtime = context.runtime;
 
             if (argTypesAry.size() != 1) {
                 throw JavaMethod.newArgSizeMismatchError(runtime, (Class) argTypesAry.eltInternal(0).toJava(Class.class));
@@ -629,13 +629,13 @@ public class Java implements Library {
 
             Class argTypeClass = (Class) argTypesAry.eltInternal(0).toJava(Class.class);
 
-            JavaMethod method = new JavaMethod(runtime, getMethodFromClass(runtime, recv, name, argTypeClass));
+            JavaMethod method = new JavaMethod(runtime, getMethodFromClass(context, recv, name, argTypeClass));
             return method.invokeStaticDirect(arg0.toJava(argTypeClass));
         }
 
         @JRubyMethod(required = 4, rest = true, meta = true)
         public static IRubyObject java_send(ThreadContext context, IRubyObject recv, IRubyObject[] args) {
-            Ruby runtime = context.runtime;
+            final Ruby runtime = context.runtime;
 
             String name = args[0].asJavaString();
             RubyArray argTypesAry = args[1].convertToArray();
@@ -652,7 +652,7 @@ public class Java implements Library {
                 argsAry[i] = args[i + 2].toJava(argTypesClasses[i]);
             }
 
-            JavaMethod method = new JavaMethod(runtime, getMethodFromClass(runtime, recv, name, argTypesClasses));
+            JavaMethod method = new JavaMethod(runtime, getMethodFromClass(context, recv, name, argTypesClasses));
             return method.invokeStaticDirect(argsAry);
         }
 
@@ -666,7 +666,7 @@ public class Java implements Library {
             String name = rubyName.asJavaString();
             String newNameStr = newName.asJavaString();
             RubyArray argTypesAry = argTypes.convertToArray();
-            Class[] argTypesClasses = (Class[])argTypesAry.toArray(new Class[argTypesAry.size()]);
+            Class[] argTypesClasses = (Class[]) argTypesAry.toArray(new Class[argTypesAry.size()]);
             final Ruby runtime = context.runtime;
             RubyClass rubyClass;
 
@@ -692,37 +692,44 @@ public class Java implements Library {
     }
 
     private static IRubyObject getRubyMethod(ThreadContext context, IRubyObject proxyClass, String name, Class... argTypesClasses) {
-        Ruby runtime = context.runtime;
-        RubyClass rubyClass;
-
-        if (proxyClass instanceof RubyClass) {
-            rubyClass = (RubyClass)proxyClass;
-        } else {
+        final RubyClass rubyClass;
+        if ( proxyClass instanceof RubyClass ) {
+            rubyClass = (RubyClass) proxyClass;
+        }
+        else {
+            final Ruby runtime = context.runtime;
             throw runtime.newTypeError(proxyClass, runtime.getModule());
         }
 
-        Method jmethod = getMethodFromClass(runtime, proxyClass, name, argTypesClasses);
+        Method method = getMethodFromClass(context, proxyClass, name, argTypesClasses);
         String prettyName = name + CodegenUtils.prettyParams(argTypesClasses);
 
-        if (Modifier.isStatic(jmethod.getModifiers())) {
-            MethodInvoker invoker = new StaticMethodInvoker(rubyClass, jmethod);
+        if ( Modifier.isStatic( method.getModifiers() ) ) {
+            MethodInvoker invoker = new StaticMethodInvoker(rubyClass, method);
             return RubyMethod.newMethod(rubyClass, prettyName, rubyClass, name, invoker, proxyClass);
-        } else {
-            MethodInvoker invoker = new InstanceMethodInvoker(rubyClass, jmethod);
+        }
+        else {
+            MethodInvoker invoker = new InstanceMethodInvoker(rubyClass, method);
             return RubyUnboundMethod.newUnboundMethod(rubyClass, prettyName, rubyClass, name, invoker);
         }
     }
 
-    public static Method getMethodFromClass(Ruby runtime, IRubyObject proxyClass, String name, Class<?>... argTypes) {
-        Class<?> jclass = (Class)((JavaClass) proxyClass.callMethod(runtime.getCurrentContext(), "java_class")).getValue();
+    private static Method getMethodFromClass(final ThreadContext context,
+        final IRubyObject proxyClass, final String name, final Class<?>... argTypes) {
+        JavaClass javaClass = (JavaClass) proxyClass.callMethod(context, "java_class");
+        final Class<?> clazz = (Class) javaClass.getValue();
         try {
-            return jclass.getMethod(name, argTypes);
+            return clazz.getMethod(name, argTypes);
         }
-        catch (NoSuchMethodException nsme) {
+        catch (NoSuchMethodException ex) {
             String prettyName = name + CodegenUtils.prettyParams(argTypes);
-            String errorName = jclass.getName() + "." + prettyName;
-            throw runtime.newNameError("Java method not found: " + errorName, name);
+            String errorName = clazz.getName() + '.' + prettyName;
+            throw context.runtime.newNameError("Java method not found: " + errorName, name);
         }
+    }
+
+    public static Method getMethodFromClass(Ruby runtime, IRubyObject proxyClass, String name, Class<?>... argTypes) {
+        return getMethodFromClass(runtime.getCurrentContext(), proxyClass, name, argTypes);
     }
 
     private static MethodInvoker getMethodInvokerForMethod(RubyClass metaClass, Method method) {
@@ -733,29 +740,27 @@ public class Java implements Library {
         }
     }
 
-    public static IRubyObject concrete_proxy_inherited(IRubyObject recv, IRubyObject subclass) {
-        Ruby runtime = recv.getRuntime();
-        ThreadContext tc = runtime.getCurrentContext();
+    public static IRubyObject concrete_proxy_inherited(final IRubyObject clazz, final IRubyObject subclazz) {
+        final Ruby runtime = clazz.getRuntime();
+        final ThreadContext context = runtime.getCurrentContext();
         JavaSupport javaSupport = runtime.getJavaSupport();
         RubyClass javaProxyClass = javaSupport.getJavaProxyClass().getMetaClass();
-        Helpers.invokeAs(tc, javaProxyClass, recv, "inherited", subclass,
-                Block.NULL_BLOCK);
-        return setupJavaSubclass(tc, subclass, recv.callMethod(tc, "java_class"));
+        Helpers.invokeAs(context, javaProxyClass, clazz, "inherited", subclazz, Block.NULL_BLOCK);
+        if ( ! ( subclazz instanceof RubyClass ) ) {
+            throw runtime.newTypeError(subclazz, runtime.getClassClass());
+        }
+        return setupJavaSubclass(context, (RubyClass) subclazz, clazz.callMethod(context, "java_class"));
     }
 
-    private static IRubyObject setupJavaSubclass(ThreadContext context, IRubyObject subclass, IRubyObject java_class) {
-        final Ruby runtime = context.runtime;
+    private static IRubyObject setupJavaSubclass(final ThreadContext context,
+        final RubyClass subclass, final IRubyObject java_class) {
 
-        if (!(subclass instanceof RubyClass)) {
-            throw runtime.newTypeError(subclass, runtime.getClassClass());
-        }
-        RubyClass rubySubclass = (RubyClass)subclass;
-        rubySubclass.getInstanceVariables().setInstanceVariable("@java_proxy_class", context.nil);
+        subclass.getInstanceVariables().setInstanceVariable("@java_proxy_class", context.nil);
 
         // Subclasses of Java classes can safely use ivars, so we set this to silence warnings
-        rubySubclass.setCacheProxy(true);
+        subclass.setCacheProxy(true);
 
-        RubyClass subclassSingleton = rubySubclass.getSingletonClass();
+        final RubyClass subclassSingleton = subclass.getSingletonClass();
         subclassSingleton.addReadWriteAttribute(context, "java_proxy_class");
         subclassSingleton.addMethod("java_interfaces", new JavaMethodZero(subclassSingleton, PUBLIC) {
             @Override
@@ -766,10 +771,10 @@ public class Java implements Library {
             }
         });
 
-        rubySubclass.addMethod("__jcreate!", new JavaMethodN(subclassSingleton, PUBLIC) {
+        subclass.addMethod("__jcreate!", new JavaMethodN(subclassSingleton, PUBLIC) {
             private final Map<Integer, ParameterTypes> methodCache = new HashMap<Integer, ParameterTypes>();
             @Override
-            public IRubyObject call(ThreadContext context, IRubyObject self, RubyModule clazz, String name, IRubyObject[] args) {
+            public IRubyObject call(final ThreadContext context, IRubyObject self, RubyModule clazz, String name, IRubyObject[] args) {
                 IRubyObject proxyClass = self.getMetaClass().getInstanceVariables().getInstanceVariable("@java_proxy_class");
                 if (proxyClass == null || proxyClass.isNil()) {
                     proxyClass = JavaProxyClass.get_with_class(self, self.getMetaClass());
@@ -787,15 +792,15 @@ public class Java implements Library {
                 }
 
                 if (forArity.size() == 0) {
-                    throw runtime.newArgumentError("wrong number of arguments for constructor");
+                    throw context.runtime.newArgumentError("wrong number of arguments for constructor");
                 }
 
                 JavaProxyConstructor matching = (JavaProxyConstructor)CallableSelector.matchingCallableArityN(
-                        runtime, methodCache,
+                        context.runtime, methodCache,
                         forArity.toArray(new JavaProxyConstructor[forArity.size()]), args, args.length);
 
                 if (matching == null) {
-                    throw runtime.newArgumentError("wrong number of arguments for constructor");
+                    throw context.runtime.newArgumentError("wrong number of arguments for constructor");
                 }
 
                 Object[] newArgs = new Object[args.length];
