@@ -1133,6 +1133,27 @@ public class Java implements Library {
 
     }
 
+    @JRubyMethod(meta = true)
+    public static IRubyObject const_missing(final ThreadContext context,
+        final IRubyObject self, final IRubyObject name) {
+        final Ruby runtime = context.runtime;
+        final String constName = name.asJavaString();
+        // it's fine to not add the "cached" method here - when users sticking with
+        // to constant access won't pay the "penalty" for adding a dynamic method ...
+        final RubyModule packageOrClass = getTopLevelProxyOrPackage(runtime, constName, false);
+        if ( packageOrClass != null ) {
+            final RubyModule javaModule = (RubyModule) self;
+            synchronized (javaModule) {
+                final IRubyObject alreadySet = javaModule.fetchConstant(constName);
+                if ( alreadySet != null ) return (RubyModule) alreadySet;
+                javaModule.setConstant(constName, packageOrClass);
+            }
+            return packageOrClass;
+        }
+
+        return context.nil; // TODO compatibility - should be throwing instead, right !?
+    }
+
     public static IRubyObject get_top_level_proxy_or_package(final ThreadContext context,
         final IRubyObject self, final IRubyObject name) {
         final Ruby runtime = context.runtime;
