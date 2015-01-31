@@ -470,7 +470,7 @@ public class Java implements Library {
                     proxyClass = createProxyClass(runtime, javaSupport.getArrayProxyClass(), javaClass, true);
 
                     // FIXME: Organizationally this might be nicer in a specialized class
-                    if (clazz.getComponentType() == byte.class) {
+                    if ( clazz.getComponentType() == byte.class ) {
                         final Encoding ascii8bit = runtime.getEncodingService().getAscii8bitEncoding();
 
                         // All bytes can be considered raw strings and forced to particular codings if not 8bitascii
@@ -507,17 +507,17 @@ public class Java implements Library {
                         // java.util.Map type object has its own proxy, but following
                         // is needed. Unless kind_of?(is_a?) test will fail.
                         //if (interfaces[i] != java.util.Map.class) {
-                            proxyClass.includeModule(getInterfaceModule(runtime, ifaceClass));
+                        proxyClass.includeModule(getInterfaceModule(runtime, ifaceClass));
                         //}
                     }
-                    if ( Modifier.isPublic(clazz.getModifiers()) ) {
+                    if ( Modifier.isPublic( clazz.getModifiers() ) ) {
                         addToJavaPackageModule(proxyClass, javaClass);
                     }
                 }
 
                 // JRUBY-1000, fail early when attempting to subclass a final Java class;
                 // solved here by adding an exception-throwing "inherited"
-                if ( Modifier.isFinal(clazz.getModifiers()) ) {
+                if ( Modifier.isFinal( clazz.getModifiers() ) ) {
                     final String clazzName = clazz.getCanonicalName();
                     proxyClass.getMetaClass().addMethod("inherited", new org.jruby.internal.runtime.methods.JavaMethod(proxyClass, PUBLIC) {
                         @Override
@@ -678,13 +678,14 @@ public class Java implements Library {
                 throw runtime.newTypeError(proxyClass, runtime.getModule());
             }
 
-            Method method = getMethodFromClass(runtime, proxyClass, name, argTypesClasses);
-            MethodInvoker invoker = getMethodInvokerForMethod(rubyClass, method);
+            Method method = getMethodFromClass(context, proxyClass, name, argTypesClasses);
+            final MethodInvoker invoker = getMethodInvokerForMethod(rubyClass, method);
 
-            if (Modifier.isStatic(method.getModifiers())) {
+            if ( Modifier.isStatic( method.getModifiers() ) ) {
                 // add alias to meta
                 rubyClass.getSingletonClass().addMethod(newNameStr, invoker);
-            } else {
+            }
+            else {
                 rubyClass.addMethod(newNameStr, invoker);
             }
 
@@ -880,7 +881,7 @@ public class Java implements Library {
     }
 
     private static RubyModule createPackageModule(final Ruby runtime,
-        final RubyModule parent, final String name, final String packageString) {
+        final RubyModule parentModule, final String name, final String packageString) {
 
         final RubyModule packageModule = (RubyModule) runtime.getJavaSupport().getPackageModuleTemplate().dup();
 
@@ -891,9 +892,15 @@ public class Java implements Library {
         // package module syntax.
         packageModule.addClassProvider(JAVA_PACKAGE_CLASS_PROVIDER);
 
-        parent.const_set(runtime.newSymbol(name), packageModule);
-        MetaClass metaClass = (MetaClass) packageModule.getMetaClass();
-        metaClass.setAttached(packageModule);
+        synchronized (parentModule) { // guard initializing in multiple threads
+            final IRubyObject packageAlreadySet = parentModule.fetchConstant(name);
+            if ( packageAlreadySet != null ) {
+                return (RubyModule) packageAlreadySet;
+            }
+            parentModule.setConstant(name, packageModule);
+            MetaClass metaClass = (MetaClass) packageModule.getMetaClass();
+            metaClass.setAttached(packageModule);
+        }
         return packageModule;
     }
 
@@ -905,12 +912,10 @@ public class Java implements Library {
         if ( packageModule instanceof RubyModule ) return (RubyModule) packageModule;
 
         final String packageName;
-        if ( "Default".equals(name) ) {
-            packageName = "";
-        }
+        if ( "Default".equals(name) ) packageName = "";
         else {
-            Matcher m = CAMEL_CASE_PACKAGE_SPLITTER.matcher(name);
-            packageName = m.replaceAll("$1.$2").toLowerCase();
+            Matcher match = CAMEL_CASE_PACKAGE_SPLITTER.matcher(name);
+            packageName = match.replaceAll("$1.$2").toLowerCase();
         }
         return createPackageModule(runtime, javaModule, name, packageName);
     }
@@ -919,8 +924,9 @@ public class Java implements Library {
         return getPackageModule(self.getRuntime(), name.asJavaString());
     }
 
-    public static IRubyObject get_package_module_dot_format(IRubyObject recv, IRubyObject dottedName) {
-        Ruby runtime = recv.getRuntime();
+    public static IRubyObject get_package_module_dot_format(final IRubyObject self,
+        final IRubyObject dottedName) {
+        final Ruby runtime = self.getRuntime();
         RubyModule module = getJavaPackageModule(runtime, dottedName.asJavaString());
         return module == null ? runtime.getNil() : module;
     }
