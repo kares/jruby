@@ -116,15 +116,18 @@ public class Java implements Library {
     public void load(final Ruby runtime, boolean wrap) throws IOException {
         createJavaModule(runtime);
 
-        RubyModule jpmt = runtime.defineModule("JavaPackageModuleTemplate");
-        jpmt.getSingletonClass().setSuperClass(new BlankSlateWrapper(runtime, jpmt.getMetaClass().getSuperClass(), runtime.getKernel()));
+        RubyModule JavaPackageModuleTemplate = runtime.defineModule("JavaPackageModuleTemplate");
+        final RubyClass blankSuperClass = new BlankSlateWrapper(runtime,
+            JavaPackageModuleTemplate.getMetaClass().getSuperClass(), runtime.getKernel()
+        );
+        JavaPackageModuleTemplate.getSingletonClass().setSuperClass(blankSuperClass);
 
         runtime.getLoadService().require("jruby/java");
 
         // rewite ArrayJavaProxy superclass to point at Object, so it inherits Object behaviors
-        RubyClass ajp = runtime.getClass("ArrayJavaProxy");
-        ajp.setSuperClass(runtime.getJavaSupport().getObjectJavaClass().getProxyClass());
-        ajp.includeModule(runtime.getEnumerable());
+        final RubyClass ArrayJavaProxy = runtime.getClass("ArrayJavaProxy");
+        ArrayJavaProxy.setSuperClass( runtime.getJavaSupport().getObjectJavaClass().getProxyClass() );
+        ArrayJavaProxy.includeModule( runtime.getEnumerable() );
 
         RubyClassPathVariable.createClassPathVariable(runtime);
 
@@ -132,22 +135,22 @@ public class Java implements Library {
 
         // modify ENV_JAVA to be a read/write version
         final Map systemProperties = new SystemPropertiesMap();
-        RubyClass proxyClass = (RubyClass) getProxyClass(runtime, SystemPropertiesMap.class);
-        runtime.getObject().setConstantQuiet("ENV_JAVA", new MapJavaProxy(runtime, proxyClass, systemProperties));
+        RubyClass envJavaClass = (RubyClass) getProxyClass(runtime, SystemPropertiesMap.class);
+        runtime.getObject().setConstantQuiet("ENV_JAVA", new MapJavaProxy(runtime, envJavaClass, systemProperties));
     }
 
     public static RubyModule createJavaModule(final Ruby runtime) {
-        ThreadContext context = runtime.getCurrentContext();
-        RubyModule javaModule = runtime.defineModule("Java");
+        final ThreadContext context = runtime.getCurrentContext();
+        final RubyModule Java = runtime.defineModule("Java");
 
-        javaModule.defineAnnotatedMethods(Java.class);
+        Java.defineAnnotatedMethods(Java.class);
 
-        JavaObject.createJavaObjectClass(runtime, javaModule);
-        JavaArray.createJavaArrayClass(runtime, javaModule);
-        JavaClass.createJavaClassClass(runtime, javaModule);
-        JavaMethod.createJavaMethodClass(runtime, javaModule);
-        JavaConstructor.createJavaConstructorClass(runtime, javaModule);
-        JavaField.createJavaFieldClass(runtime, javaModule);
+        JavaObject.createJavaObjectClass(runtime, Java);
+        JavaArray.createJavaArrayClass(runtime, Java);
+        JavaClass.createJavaClassClass(runtime, Java);
+        JavaMethod.createJavaMethodClass(runtime, Java);
+        JavaConstructor.createJavaConstructorClass(runtime, Java);
+        JavaField.createJavaFieldClass(runtime, Java);
 
         // set of utility methods for Java-based proxy objects
         JavaProxyMethods.createJavaProxyMethods(context);
@@ -168,9 +171,7 @@ public class Java implements Library {
         // The template for interface modules
         JavaInterfaceTemplate.createJavaInterfaceTemplateModule(context);
 
-        RubyModule javaUtils = runtime.defineModule("JavaUtilities");
-
-        javaUtils.defineAnnotatedMethods(JavaUtilities.class);
+        runtime.defineModule("JavaUtilities").defineAnnotatedMethods(JavaUtilities.class);
 
         JavaArrayUtilities.createJavaArrayUtilitiesModule(runtime);
 
@@ -180,17 +181,16 @@ public class Java implements Library {
         runtime.getString().defineAnnotatedMethods(StringJavaAddons.class);
         runtime.getIO().defineAnnotatedMethods(IOJavaAddons.class);
 
-        if ( runtime.getObject().isConstantDefined("StringIO") ) {
-            ((RubyClass) runtime.getObject().getConstant("StringIO")).defineAnnotatedMethods(IOJavaAddons.AnyIO.class);
-        }
+        final RubyClass StringIO = runtime.getClass("StringIO");
+        if ( StringIO != null ) StringIO.defineAnnotatedMethods(IOJavaAddons.AnyIO.class);
 
         // add all name-to-class mappings
         addNameClassMappings(runtime, runtime.getJavaSupport().getNameClassMap());
 
         // add some base Java classes everyone will need
-        runtime.getJavaSupport().setObjectJavaClass(JavaClass.get(runtime, Object.class));
+        runtime.getJavaSupport().setObjectJavaClass( JavaClass.get(runtime, Object.class) );
 
-        return javaModule;
+        return Java;
     }
 
     public static class OldStyleExtensionInherited {
@@ -304,10 +304,9 @@ public class Java implements Library {
             if ((packageName = pkg.getInstanceVariables().getInstanceVariable("@package_name")) == null) {
                 return null;
             }
-            Ruby runtime = pkg.getRuntime();
-            return (RubyClass) get_proxy_class(
-                    runtime.getJavaSupport().getJavaUtilitiesModule(),
-                    JavaClass.forNameVerbose(runtime, packageName.asJavaString() + name));
+            final Ruby runtime = pkg.getRuntime();
+            JavaClass javaClass = JavaClass.forNameVerbose(runtime, packageName.asJavaString() + name);
+            return (RubyClass) get_proxy_class(runtime.getJavaSupport().getJavaUtilitiesModule(), javaClass);
         }
 
         public RubyModule defineModuleUnder(RubyModule pkg, String name) {
@@ -316,10 +315,9 @@ public class Java implements Library {
             if ((packageName = pkg.getInstanceVariables().getInstanceVariable("@package_name")) == null) {
                 return null;
             }
-            Ruby runtime = pkg.getRuntime();
-            return (RubyModule) get_interface_module(
-                    runtime,
-                    JavaClass.forNameVerbose(runtime, packageName.asJavaString() + name));
+            final Ruby runtime = pkg.getRuntime();
+            JavaClass javaClass = JavaClass.forNameVerbose(runtime, packageName.asJavaString() + name);
+            return get_interface_module(runtime, javaClass);
         }
     };
 
