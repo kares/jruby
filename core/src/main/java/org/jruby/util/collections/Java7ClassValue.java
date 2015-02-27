@@ -9,14 +9,35 @@ public class Java7ClassValue<T> extends ClassValue<T> {
         super(calculator);
     }
 
-    public T get(Class cls) {
-        return proxy.get(cls);
+    @Override
+    public T get(final Class klass) {
+        return proxy.get(klass);
     }
 
-    private final java.lang.ClassValue<T> proxy = new java.lang.ClassValue<T>() {
+    @Override
+    public boolean has(final Class klass) {
+        final ThreadLocal<Object> hasOnly = proxy.hasOnly;
+        try {
+            hasOnly.set(Boolean.TRUE);
+            return proxy.get(klass) != null;
+        }
+        finally {
+            hasOnly.remove();
+        }
+    }
+
+    private final ProxyClassValue proxy = new ProxyClassValue();
+
+    private class ProxyClassValue extends java.lang.ClassValue<T> {
+
+        final ThreadLocal<Object> hasOnly = new ThreadLocal<Object>();
+
         @Override
         protected T computeValue(Class<?> type) {
+            if ( hasOnly.get() != null ) return null;
             return calculator.computeValue(type);
         }
-    };
+
+    }
+
 }

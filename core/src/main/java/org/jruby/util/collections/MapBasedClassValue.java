@@ -6,24 +6,27 @@ import java.util.concurrent.ConcurrentHashMap;
  * A simple Map-based cache of proxies.
  */
 public class MapBasedClassValue<T> extends ClassValue<T> {
-    
+
     public MapBasedClassValue(ClassValueCalculator<T> calculator) {
         super(calculator);
     }
 
     @Override
-    public T get(Class cls) {
-        T obj = cache.get(cls);
+    public T get(final Class klass) {
+        T value = cache.get(klass);
 
-        if (obj == null) {
-            T newObj = calculator.computeValue(cls);
-            obj = cache.putIfAbsent(cls, newObj);
-            if (obj == null) {
-                obj = newObj;
-            }
+        if (value == null) {
+            T newValue = calculator.computeValue(klass);
+            value = cache.putIfAbsent(klass, newValue);
+            if ( value == null ) value = newValue; // did put newValue in
         }
 
-        return obj;
+        return value;
+    }
+
+    @Override
+    public boolean has(final Class klass) {
+        return cache.containsKey(klass);
     }
 
     // There's not a compelling reason to keep JavaClass instances in a weak map
