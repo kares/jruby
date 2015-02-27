@@ -140,12 +140,14 @@ public class JavaClass extends JavaObject {
 
     public void setProxyClass(final RubyClass proxyClass) {
         //assert this.proxyLock != null;
+        proxyClass.getName(); // trigger calculateName()
         this.proxyClass = proxyClass;
         //this.unfinishedProxyClass = null;
     }
 
     public void setProxyModule(final RubyModule proxyModule) {
         //assert this.proxyLock != null;
+        proxyModule.getName(); // trigger calculateName()
         this.proxyModule = proxyModule;
         //this.unfinishedProxyModule = null;
     }
