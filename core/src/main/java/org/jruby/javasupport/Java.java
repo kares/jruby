@@ -458,9 +458,12 @@ public class Java implements Library {
     }
 
     public static RubyModule getProxyClass(final Ruby runtime, final Class<?> clazz) {
-        synchronized (clazz) {
-            return runtime.getJavaSupport().getProxyClassFromCache(clazz);
+        final JavaSupport javaSupport = runtime.getJavaSupport();
+        if ( javaSupport.hasJavaClassFromCache(clazz) ) {
+            return javaSupport.getProxyClassFromCache(clazz);
         }
+        // only happens when multiple threads ask for the same un-initialized proxy class
+        synchronized (clazz) { return javaSupport.getProxyClassFromCache(clazz); }
     }
 
     static RubyModule createProxyClassForClass(final Ruby runtime, final Class<?> clazz) {

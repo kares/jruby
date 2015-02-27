@@ -139,22 +139,21 @@ public class JavaSupport {
     private final Map<Object, Object[]> javaObjectVariables = new WeakIdentityHashMap();
 
     // A cache of all JavaProxyClass objects created for this runtime
-    private Map<Set<?>, JavaProxyClass> javaProxyClassCache = Collections.synchronizedMap(new HashMap<Set<?>, JavaProxyClass>());
+    private final Map<Set<?>, JavaProxyClass> javaProxyClassCache = Collections.synchronizedMap(new HashMap<Set<?>, JavaProxyClass>());
 
-    public JavaSupport(final Ruby ruby) {
-        this.runtime = ruby;
-
+    public JavaSupport(final Ruby runtime) {
+        this.runtime = runtime;
         try {
             this.javaClassCache = CLASS_VALUE_CONSTRUCTOR.newInstance(new ClassValueCalculator<JavaClass>() {
                 @Override
-                public JavaClass computeValue(Class<?> cls) {
-                    return new JavaClass(runtime, cls);
+                public JavaClass computeValue(Class<?> clazz) {
+                    return new JavaClass(runtime, clazz);
                 }
             });
             this.proxyClassCache = CLASS_VALUE_CONSTRUCTOR.newInstance(new ClassValueCalculator<RubyModule>() {
                 @Override
-                public RubyModule computeValue(Class<?> cls) {
-                    return Java.createProxyClassForClass(runtime, cls);
+                public RubyModule computeValue(Class<?> clazz) {
+                    return Java.createProxyClassForClass(runtime, clazz);
                 }
             });
         }
@@ -205,12 +204,20 @@ public class JavaSupport {
         }
     }
 
-    public JavaClass getJavaClassFromCache(Class clazz) {
+    public JavaClass getJavaClassFromCache(Class<?> clazz) {
         return javaClassCache.get(clazz);
     }
 
-    public RubyModule getProxyClassFromCache(Class clazz) {
+    final boolean hasJavaClassFromCache(Class<?> clazz) {
+        return javaClassCache.has(clazz);
+    }
+
+    public RubyModule getProxyClassFromCache(Class<?> clazz) {
         return proxyClassCache.get(clazz);
+    }
+
+    final boolean hasProxyClassFromCache(Class<?> clazz) {
+        return proxyClassCache.has(clazz);
     }
 
     public void handleNativeException(Throwable exception, Member target) {
