@@ -4,7 +4,7 @@ before_script:
   - "export PATH=`pwd`/bin:$PATH"
   - echo $HOME
 
-jdk: openjdk6
+jdk: openjdk7
 
 env:
   # disable cext
