@@ -4,6 +4,7 @@ before_script:
   - "export PATH=`pwd`/bin:$PATH"
   - echo $HOME
 
+sudo: false
 jdk: openjdk6
 
 env:
