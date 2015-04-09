@@ -27,7 +27,7 @@ require 'rexml/xpath'
 # the versions are declared in ../pom.xml
 default_gems =
   [
-   ImportedGem.new( 'jruby-openssl', '0.9.6', true ),
+   ImportedGem.new( 'jruby-openssl', '0.9.7.dev-SNAPSHOT', true ),
    ImportedGem.new( 'rake', 'rake.version', true ),
    ImportedGem.new( 'rdoc', 'rdoc.version', true ),
    ImportedGem.new( 'json', 'json.version', true, false ),
@@ -35,7 +35,7 @@ default_gems =
   ]
 
 project 'JRuby Lib Setup' do
- 
+
   # TODO move those to method to ruby-maven
   class ::Java::JavaIo::File
     def to_pathname
@@ -63,7 +63,7 @@ project 'JRuby Lib Setup' do
   properties( 'tesla.dump.pom' => 'pom.xml',
               'tesla.dump.readonly' => true,
               'tesla.version' => '0.1.1',
-              'jruby.plugins.version' => '1.0.5',
+              'jruby.plugins.version' => '1.0.7',
               'jruby.home' => '${basedir}/..' )
 
   # just depends on jruby-core so we are sure the jruby.jar is in place
@@ -196,5 +196,5 @@ project 'JRuby Lib Setup' do
     ( Dir[ File.join( jruby_gems, '**/*' ) ] + Dir[ File.join( jruby_gems, '**/.*' ) ] ).each do |f|
       File.chmod( 0644, f ) rescue nil if File.file?( f )
     end
-  end  
+  end
 end
