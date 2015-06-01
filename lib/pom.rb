@@ -21,8 +21,6 @@ class ImportedGem
     end
   end
 end
-require 'rexml/document'
-require 'rexml/xpath'
 
 # the versions are declared in ../pom.xml
 default_gems =
@@ -35,7 +33,7 @@ default_gems =
   ]
 
 project 'JRuby Lib Setup' do
- 
+
   # TODO move those to method to ruby-maven
   class ::Java::JavaIo::File
     def to_pathname
@@ -121,17 +119,12 @@ project 'JRuby Lib Setup' do
       File.delete( f ) if File.exists?( f )
     end
 
-    # now we can require the rubygems staff
-    require 'rubygems/installer'
-    require 'rubygems/package'
-
     puts 'install gems unless already installed'
-    ctx.project.artifacts.select do |a|
-      a.group_id == 'rubygems'
-    end.each do |a|
+    ctx.project.artifacts.select { |a| a.group_id == 'rubygems' }.each do |a|
       ghome = a.scope == 'compile' ? gem_home : jruby_gems
       if Dir[ File.join( ghome, 'cache', File.basename( a.file.to_pathname ).sub( /.gem/, '*.gem' ) ) ].empty?
         puts a.file.to_pathname
+        require 'rubygems/installer'
         # do not set bin_dir since its create absolute symbolic links
         installer = Gem::Installer.new( a.file.to_pathname,
                                         :ignore_dependencies => true,
@@ -196,5 +189,5 @@ project 'JRuby Lib Setup' do
     ( Dir[ File.join( jruby_gems, '**/*' ) ] + Dir[ File.join( jruby_gems, '**/.*' ) ] ).each do |f|
       File.chmod( 0644, f ) rescue nil if File.file?( f )
     end
-  end  
+  end
 end
