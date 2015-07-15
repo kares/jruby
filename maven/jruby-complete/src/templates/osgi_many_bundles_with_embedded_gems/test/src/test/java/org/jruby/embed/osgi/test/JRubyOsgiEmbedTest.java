@@ -83,7 +83,7 @@ public class JRubyOsgiEmbedTest {
 	OSGiIsolatedScriptingContainer jruby = new OSGiIsolatedScriptingContainer();
 	jruby.addBundleToLoadPath( "org.jruby.osgi.scripts-bundle" );
 	jruby.addBundleToGemPath( FrameworkUtil.getBundle( Gems.class ) );
-	
+
         // run a script from LOAD_PATH
         String hello = (String) jruby.runScriptlet( "require 'hello'; Hello.say" );
         assertEquals( hello, "world" );
@@ -110,15 +110,15 @@ public class JRubyOsgiEmbedTest {
         loaded = (Boolean) jruby.runScriptlet( "require 'openssl'" );
         assertEquals(true, loaded);
 
-	jruby.runScriptlet( "require 'jar-dependencies'" );
-        list = (String) jruby.runScriptlet( "Gem.loaded_specs.keys.inspect" );
-        assertEquals(list, "[\"rake\", \"jruby-openssl\", \"jar-dependencies\"]");
+        jruby.runScriptlet( "require 'jar-dependencies'" );
+        list = (String) jruby.runScriptlet( "Gem.loaded_specs.keys.sort.inspect" );
+        assertEquals(list, "[\"jar-dependencies\", \"jruby-openssl\", \"rake\"]");
 
         // ensure we can load can load embedded gems
         loaded = (Boolean) jruby.runScriptlet( "require 'virtus'" );
         assertEquals(true, loaded);
 
-	list = (String) jruby.runScriptlet( "Gem.loaded_specs.keys.inspect" );
-        assertEquals(list, "[\"rake\", \"jruby-openssl\", \"jar-dependencies\", \"thread_safe\", \"descendants_tracker\", \"equalizer\", \"coercible\", \"ice_nine\", \"axiom-types\", \"virtus\"]");
+        list = (String) jruby.runScriptlet( "Gem.loaded_specs.keys.sort.inspect" );
+        assertEquals(list, "[\"axiom-types\", \"coercible\", \"descendants_tracker\", \"equalizer\", \"ice_nine\", \"jar-dependencies\", \"jruby-openssl\", \"rake\", \"thread_safe\", \"virtus\"]");
     }
 }
