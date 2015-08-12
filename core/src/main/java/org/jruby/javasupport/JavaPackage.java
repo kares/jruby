@@ -62,6 +62,10 @@ public class JavaPackage extends RubyModule {
 
     static RubyModule newPackage(Ruby runtime, CharSequence name, RubyModule parent) {
         final JavaPackage pkgModule = new JavaPackage(runtime, name);
+        // NOTE: is this really necessary ?!?
+        //MetaClass metaClass = (MetaClass) pkgModule.makeMetaClass(pkgModule.getMetaClass());
+        //pkgModule.setMetaClass(metaClass);
+        //metaClass.setAttached(pkgModule);
         // intentionally do NOT set pkgModule.setParent(parent);
 
         // this is where we'll get connected when classes are opened using
