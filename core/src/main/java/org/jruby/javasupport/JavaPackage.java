@@ -150,7 +150,7 @@ public class JavaPackage extends RubyModule {
         return Java.getProxyClass(runtime, javaClass);
     }
 
-    @JRubyMethod(name = "method_missing", required = 1, visibility = Visibility.PRIVATE)
+    @JRubyMethod(name = "method_missing", visibility = Visibility.PRIVATE)
     public IRubyObject method_missing(ThreadContext context, final IRubyObject name) {
         final String mName = name.toString();
         final RubyModule result = relativeJavaClassOrPackage(context, mName, true);
@@ -158,6 +158,20 @@ public class JavaPackage extends RubyModule {
 
         if ( result == null ) return context.nil; // TODO this is wrong
         return result;
+    }
+
+    @JRubyMethod(name = "method_missing", rest = true, visibility = Visibility.PRIVATE)
+    public IRubyObject method_missing(ThreadContext context, final IRubyObject[] args) {
+        if (args.length > 1) {
+            final Ruby runtime = context.runtime;
+            final int argsLen = args.length - 1;
+            RubyKernel.raise(context, this, new IRubyObject[] {
+                runtime.getArgumentError(),
+                runtime.newString("Java package '"+ packageName +"' does not have a method `"+
+                        args[0] +"' with "+ argsLen + (argsLen == 1 ? " argument" : " arguments"))
+            }, Block.NULL_BLOCK);
+        }
+        return method_missing(context, args[0]);
     }
 
     @Override
