@@ -217,7 +217,7 @@ public class JavaPackage extends RubyModule {
      * discovery.
      *
      * Because this is in the hierarchy, it does mean any methods that are not Java
-     * packages or otherwise defined on the JavaPackageModuleTemplate module will
+     * packages or otherwise defined on the <code>Java::JavaPackage</code> will
      * be inaccessible.
      */
     static final class BlankSlateWrapper extends IncludedModuleWrapper {
@@ -230,23 +230,26 @@ public class JavaPackage extends RubyModule {
         protected DynamicMethod searchMethodCommon(final String name) {
             // this module is special and only searches itself;
 
+            // TODO implement a switch to allow for 'more-aligned' behavior
+
             // do not go to superclasses except for special methods :
             switch (name) {
-                // TODO implement a switch to allow for 'more-aligned' behavior
-                case "__constants__" :
-                    return superClass.searchMethodInner("constants");
-                case "__methods__" :
-                    return superClass.searchMethodInner("methods");
-
-                case "class" :
-                case "object_id" :
-                case "initialize_copy" :
-                case "singleton_method_added" :
-                case "const_missing" :
-                case "method_missing" :
-                case "inspect" :
-                case "to_s" :
+                case "class" : case "singleton_class" :
+                case "name" : case "object_id" :
+                // these are handled already at the JavaPackage.class :
+                //case "const_get" : case "const_missing" : case "method_missing" :
+                case "const_set" :
+                case "inspect" : case "to_s" :
+                case "__method__" : case "__send__" : case "__id__" :
+                case "require" :
+                case "throw" : case "catch" : case "fail" : case "raise" :
+                case "exit" : case "at_exit" :
                     return superClass.searchMethodInner(name);
+
+                case "__constants__" : // @Deprecated compatibility with 1.7
+                    return superClass.searchMethodInner("constants");
+                case "__methods__" : // @Deprecated compatibility with 1.7
+                    return superClass.searchMethodInner("methods");
             }
 
             final int last = name.length() - 1;
@@ -267,6 +270,13 @@ public class JavaPackage extends RubyModule {
                     case '=' :
                         return superClass.searchMethodInner(name);
                 }
+            }
+
+            if ( last >= 5 && (
+                    name.indexOf("method") >= 0 || // method, public_instance_methods, ...
+                    name.indexOf("variable") >= 0 || // method, public_instance_methods, ...
+                    name.indexOf("constant") >= 0 ) ) { // public_constant, constants, ...
+                return superClass.searchMethodInner(name);
             }
 
             return NullMethod.INSTANCE;
