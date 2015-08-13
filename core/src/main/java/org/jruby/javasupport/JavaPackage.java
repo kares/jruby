@@ -36,6 +36,7 @@ import org.jruby.anno.JRubyMethod;
 import org.jruby.java.util.BlankSlateWrapper;
 import org.jruby.runtime.ObjectAllocator;
 import org.jruby.runtime.ThreadContext;
+import org.jruby.runtime.Visibility;
 import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.util.ClassProvider;
 
@@ -49,9 +50,10 @@ import org.jruby.util.ClassProvider;
 @JRubyClass(name="Java::JavaPackage", parent="Module")
 public class JavaPackage extends RubyModule {
 
-    static RubyClass createJavaPackageClass(final Ruby runtime, final RubyModule Java) {
+    static RubyModule createJavaPackageClass(final Ruby runtime, final RubyModule Java) {
         RubyClass JavaPackage = Java.defineClassUnder("JavaPackage", runtime.getModule(), ObjectAllocator.NOT_ALLOCATABLE_ALLOCATOR);
         JavaPackage.setReifiedClass(JavaPackage.class);
+        JavaPackage.makeMetaClass(runtime.getModule().getMetaClass());
 
         JavaPackage.getSingletonClass().setSuperClass(new BlankSlateWrapper(runtime, JavaPackage.getMetaClass().getSuperClass(), runtime.getKernel()));
 
@@ -89,25 +91,27 @@ public class JavaPackage extends RubyModule {
         return getRuntime().newString(packageName);
     }
 
-    @JRubyMethod(name = "const_missing", required = 1)
+    @JRubyMethod(name = "const_missing", required = 1, visibility = Visibility.PRIVATE)
     public IRubyObject const_missing(final ThreadContext context, final IRubyObject name) {
-        return this.relativeJavaClassOrPackage(context, name, false);
+        return this.relativeJavaClassOrPackage(context, name.toString(), false);
     }
 
     @JRubyMethod(name = "const_get", required = 1)
     public final IRubyObject const_get(final ThreadContext context, final IRubyObject name) {
         // skip constant validation and do not inherit or include object
-        IRubyObject constant = getConstantNoConstMissing(name.toString(), false, false);
+        final String cName = name.toString();
+        IRubyObject constant = getConstantNoConstMissing(cName, false, false);
         if ( constant != null ) return constant;
-        return this.relativeJavaClassOrPackage(context, name, false); // e.g. javax.const_get(:script)
+        return this.relativeJavaClassOrPackage(context, cName, false); // e.g. javax.const_get(:script)
     }
 
     @JRubyMethod(name = "const_get", required = 2)
     public final IRubyObject const_get(final ThreadContext context,
         final IRubyObject name, final IRubyObject inherit) {
-        IRubyObject constant = getConstantNoConstMissing(name.toString(), inherit.isTrue(), false);
+        final String cName = name.toString();
+        IRubyObject constant = getConstantNoConstMissing(cName, inherit.isTrue(), false);
         if ( constant != null ) return constant;
-        return this.relativeJavaClassOrPackage(context, name, false);
+        return this.relativeJavaClassOrPackage(context, cName, false);
     }
 
     @Override // so that e.g. java::util gets stored as expected
@@ -129,19 +133,20 @@ public class JavaPackage extends RubyModule {
     }
 
     private RubyModule relativeJavaClassOrPackage(final ThreadContext context,
-        final IRubyObject name, final boolean cacheMethod) {
-        return Java.getProxyOrPackageUnderPackage(context, this, name.toString(), cacheMethod);
+        final String name, final boolean cacheMethod) {
+        return Java.getProxyOrPackageUnderPackage(context, this, name, cacheMethod);
     }
 
-    RubyModule relativeJavaProxyClass(final Ruby runtime, final IRubyObject name) {
-        final String fullName = packageRelativeName( name.toString() ).toString();
+    RubyModule relativeJavaProxyClass(final Ruby runtime, final String name) {
+        final String fullName = packageRelativeName( name ).toString();
         final JavaClass javaClass = JavaClass.forNameVerbose(runtime, fullName);
         return Java.getProxyClass(runtime, javaClass);
     }
 
-    @JRubyMethod(name = "method_missing", required = 1)
+    @JRubyMethod(name = "method_missing", required = 1, visibility = Visibility.PRIVATE)
     public IRubyObject method_missing(ThreadContext context, final IRubyObject name) {
-        final RubyModule result = Java.getProxyOrPackageUnderPackage(context, this, name.toString(), true);
+        final String mName = name.toString();
+        final RubyModule result = relativeJavaClassOrPackage(context, mName, true);
         // NOTE: getProxyOrPackageUnderPackage binds the (cached) method for us
 
         if ( result == null ) return context.nil; // TODO this is wrong
