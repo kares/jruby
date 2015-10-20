@@ -19,7 +19,7 @@
  * Copyright (C) 2004 Joey Gibson <joey@joeygibson.com>
  * Copyright (C) 2004 Stefan Matthias Aust <sma@3plus4.de>
  * Copyright (C) 2005 Charles O Nutter <headius@headius.com>
- * 
+ *
  * Alternatively, the contents of this file may be used under the terms of
  * either of the GNU General Public License Version 2 or later (the "GPL"),
  * or the GNU Lesser General Public License Version 2.1 or later (the "LGPL"),
@@ -54,7 +54,7 @@ import org.jruby.runtime.builtin.IRubyObject;
 public class RaiseException extends JumpException {
     public static final boolean DEBUG = false;
     private static final long serialVersionUID = -7612079169559973951L;
-    
+
     private RubyException exception;
     private String providedMessage;
     private boolean nativeException;
@@ -75,10 +75,10 @@ public class RaiseException extends JumpException {
     /**
      * Construct a new RaiseException to wrap the given Ruby exception for Java-land
      * throwing purposes.
-     * 
+     *
      * This constructor will not generate a backtrace and will instead use the
      * one specified by the
-     * 
+     *
      * @param exception The Ruby exception to wrap
      * @param backtrace
      */
@@ -168,7 +168,7 @@ public class RaiseException extends JumpException {
         StringBuilder sb = new StringBuilder();
         StringWriter stackTrace = new StringWriter();
         exception.printStackTrace(new PrintWriter(stackTrace));
-    
+
         sb.append("Native Exception: '").append(exception.getClass()).append("'; ");
         sb.append("Message: ").append(exception.getMessage()).append("; ");
         sb.append("StackTrace: ").append(stackTrace.getBuffer().toString());
@@ -201,7 +201,7 @@ public class RaiseException extends JumpException {
         doSetLastError(context);
         doCallEventHook(context);
 
-        if (RubyInstanceConfig.LOG_EXCEPTIONS) TraceType.dumpException(exception);
+        if (RubyInstanceConfig.LOG_EXCEPTIONS) TraceType.logException(exception);
 
         if (requiresBacktrace(context)) {
             exception.prepareIntegratedBacktrace(context, javaTrace);
@@ -221,7 +221,7 @@ public class RaiseException extends JumpException {
         doSetLastError(context);
         doCallEventHook(context);
 
-        if (RubyInstanceConfig.LOG_EXCEPTIONS) TraceType.dumpException(exception);
+        if (RubyInstanceConfig.LOG_EXCEPTIONS) TraceType.logException(exception);
 
         // We can only omit backtraces of descendents of Standard error for 'foo rescue nil'
         if (requiresBacktrace(context)) {
@@ -251,7 +251,7 @@ public class RaiseException extends JumpException {
     private void doSetLastError(ThreadContext context) {
         context.runtime.getGlobalVariables().set("$!", exception);
     }
-    
+
     /**
      * Sets the exception
      * @param newException The exception to set
