@@ -151,14 +151,6 @@ public abstract class RubyToJavaInvoker extends JavaMethod {
         return (AccessibleObject[]) getMembers();
     }
 
-    public T getSignature(int signatureCode) {
-        return cache.get(signatureCode);
-    }
-
-    public void putSignature(int signatureCode, T callable) {
-        cache.put(signatureCode, callable);
-    }
-
     protected abstract JavaCallable createCallable(Ruby runtime, Member member);
 
     protected abstract JavaCallable[] createCallableArray(JavaCallable callable);
