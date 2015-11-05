@@ -652,13 +652,15 @@ public final class Ruby implements Constantizable {
             try {
                 script = tryCompile(scriptNode);
                 if (Options.JIT_LOGGING.load()) {
-                    LOG.info("Successfully compiled: " + scriptNode.getFile());
+                    LOG.info("Successfully compiled: {}", scriptNode.getFile());
                 }
             } catch (Throwable e) {
                 if (Options.JIT_LOGGING.load()) {
-                    LOG.error("Failed to compile: " + scriptNode.getFile());
                     if (Options.JIT_LOGGING_VERBOSE.load()) {
-                        LOG.error(e);
+                        LOG.error("Failed to compile: " + scriptNode.getFile(), e);
+                    }
+                    else {
+                        LOG.error("Failed to compile: " + scriptNode.getFile());
                     }
                 }
             }
@@ -801,9 +803,12 @@ public final class Ruby implements Constantizable {
             return Compiler.getInstance().execute(this, root, classLoader);
         } catch (NotCompilableException e) {
             if (Options.JIT_LOGGING.load()) {
-                LOG.error("failed to compile target script " + root.getFile() + ": " + e.getLocalizedMessage());
-
-                if (Options.JIT_LOGGING_VERBOSE.load()) LOG.error(e);
+                if (Options.JIT_LOGGING_VERBOSE.load()) {
+                    LOG.error("failed to compile target script " + root.getFile() + ": ", e);
+                }
+                else {
+                    LOG.error("failed to compile target script " + root.getFile() + ": " + e.getLocalizedMessage());
+                }
             }
             return null;
         }
