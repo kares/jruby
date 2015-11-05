@@ -69,7 +69,7 @@ import java.util.Set;
 
 public final class ThreadContext {
 
-    private static final Logger LOG = LoggerFactory.getLogger("ThreadContext");
+    private static final Logger LOG = LoggerFactory.getLogger(ThreadContext.class);
 
     public static ThreadContext newContext(Ruby runtime) {
         ThreadContext context = new ThreadContext(runtime);
