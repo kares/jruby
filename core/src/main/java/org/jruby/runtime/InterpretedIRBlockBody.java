@@ -16,7 +16,7 @@ import org.jruby.util.log.Logger;
 import org.jruby.util.log.LoggerFactory;
 
 public class InterpretedIRBlockBody extends IRBlockBody implements Compilable<InterpreterContext> {
-    private static final Logger LOG = LoggerFactory.getLogger("InterpretedIRBlockBody");
+    private static final Logger LOG = LoggerFactory.getLogger(InterpretedIRBlockBody.class);
     protected boolean pushScope;
     protected boolean reuseParentScope;
     private boolean displayedCFG = false; // FIXME: Remove when we find nicer way of logging CFG

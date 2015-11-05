@@ -97,13 +97,13 @@ import org.jruby.util.ByteList;
  * thread of the Ruby script.  In the descriptions that follow, the parameter
  * <code>aSymbol</code> refers to a symbol, which is either a quoted string or a
  * <code>Symbol</code> (such as <code>:name</code>).
- * 
+ *
  * Note: For CVS history, see ThreadClass.java.
  */
 @JRubyClass(name="Thread")
 public class RubyThread extends RubyObject implements ExecutionContext {
 
-    private static final Logger LOG = LoggerFactory.getLogger("RubyThread");
+    private static final Logger LOG = LoggerFactory.getLogger(RubyThread.class);
 
     /** The thread-like think that is actually executing */
     private volatile ThreadLike threadImpl;

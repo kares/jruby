@@ -26,7 +26,7 @@ import org.jruby.util.log.LoggerFactory;
  * Method for -X-C (interpreted only execution).  See MixedModeIRMethod for inter/JIT method impl.
  */
 public class InterpretedIRMethod extends DynamicMethod implements IRMethodArgs, PositionAware, Compilable<InterpreterContext> {
-    private static final Logger LOG = LoggerFactory.getLogger("InterpretedIRMethod");
+    private static final Logger LOG = LoggerFactory.getLogger(InterpretedIRMethod.class);
 
     private Signature signature;
     private boolean displayedCFG = false; // FIXME: Remove when we find nicer way of logging CFG

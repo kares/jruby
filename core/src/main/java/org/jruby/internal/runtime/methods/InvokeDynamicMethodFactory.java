@@ -62,19 +62,19 @@ import static org.jruby.runtime.Helpers.arrayOf;
  * better performance and more specialization per-handle than can be supported
  * via reflection. It also allows optimizing away many conditionals that can
  * be determined once ahead of time.
- * 
+ *
  * When running in secured environments, this factory may not function. When
  * this can be detected, MethodFactory will fall back on the reflection-based
  * factory instead.
- * 
+ *
  * @see org.jruby.runtime.MethodFactory
  */
 public class InvokeDynamicMethodFactory extends InvocationMethodFactory {
 
-    private static final Logger LOG = LoggerFactory.getLogger("InvokeDynamicMethodFactory");
-    
+    private static final Logger LOG = LoggerFactory.getLogger(InvokeDynamicMethodFactory.class);
+
     private static final MethodHandles.Lookup LOOKUP = MethodHandles.lookup();
-    
+
     /**
      */
     public InvokeDynamicMethodFactory(ClassLoader classLoader) {

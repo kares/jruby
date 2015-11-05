@@ -55,7 +55,7 @@ import static org.jruby.util.CodegenUtils.*;
  */
 public class JVMVisitor extends IRVisitor {
 
-    private static final Logger LOG = LoggerFactory.getLogger("JVMVisitor");
+    private static final Logger LOG = LoggerFactory.getLogger(JVMVisitor.class);
     public static final String DYNAMIC_SCOPE = "$dynamicScope";
     private static final boolean DEBUG = false;
 
@@ -804,7 +804,7 @@ public class JVMVisitor extends IRVisitor {
         if (callInstr.getCallSite() instanceof RefinedCachingCallSite) {
             throw new NotCompilableException("refinements are unsupported in JIT");
         }
-        
+
         IRBytecodeAdapter m = jvmMethod();
         String name = callInstr.getName();
         Operand[] args = callInstr.getCallArgs();
