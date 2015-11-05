@@ -22,7 +22,7 @@ import org.jruby.util.log.Logger;
 import org.jruby.util.log.LoggerFactory;
 
 public class MixedModeIRMethod extends DynamicMethod implements IRMethodArgs, PositionAware, Compilable<DynamicMethod> {
-    private static final Logger LOG = LoggerFactory.getLogger(InterpretedIRMethod.class);
+    private static final Logger LOG = LoggerFactory.getLogger(MixedModeIRMethod.class);
 
     private Signature signature;
     private boolean displayedCFG = false; // FIXME: Remove when we find nicer way of logging CFG
