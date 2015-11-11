@@ -95,6 +95,7 @@ public class TraceType {
         System.err.println("Backtrace generated:\n" + printBacktraceJRuby(exception, runtime.getPosix().isatty(FileDescriptor.err)));
     }
 
+    @Deprecated // no-longer used
     public static void logCaller(RubyArray trace) {
         StringBuilder buffer = new StringBuilder(64 + trace.size() * 48);
 

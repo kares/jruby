@@ -669,6 +669,8 @@ public final class ThreadContext {
 
         RubyStackTraceElement[] trace = getTraceSubset(level, length, stacktrace);
 
+        if (RubyInstanceConfig.LOG_CALLERS) TraceType.logCaller(trace);
+
         if (trace == null) return nil;
 
         final RubyClass stringClass = runtime.getString();
@@ -678,11 +680,7 @@ public final class ThreadContext {
             traceArray[i] = new RubyString(runtime, stringClass, trace[i].mriStyleString());
         }
 
-        RubyArray backTrace = RubyArray.newArrayNoCopy(runtime, traceArray);
-
-        if (RubyInstanceConfig.LOG_CALLERS) TraceType.logCaller(backTrace);
-
-        return backTrace;
+        return RubyArray.newArrayNoCopy(runtime, traceArray);
     }
 
     /**
@@ -697,6 +695,8 @@ public final class ThreadContext {
         runtime.incrementCallerCount();
 
         RubyStackTraceElement[] trace = getTraceSubset(level, length, stacktrace);
+
+        if (RubyInstanceConfig.LOG_CALLERS) TraceType.logCaller(trace);
 
         if (trace == null) return nil;
 
@@ -714,11 +714,7 @@ public final class ThreadContext {
 
         if (traceLength < 0) return null;
 
-        trace = Arrays.copyOfRange(trace, level, level + traceLength);
-
-        if (RubyInstanceConfig.LOG_CALLERS) TraceType.logCaller(trace);
-
-        return trace;
+        return Arrays.copyOfRange(trace, level, level + traceLength);
     }
 
     private static int safeLength(int level, Integer length, RubyStackTraceElement[] trace) {
