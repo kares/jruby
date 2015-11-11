@@ -4001,7 +4001,7 @@ public final class Ruby implements Constantizable {
     }
 
     public RaiseException newSystemStackError(String message, StackOverflowError soe) {
-        if ( getDebug().isTrue() ) LOG.debug(soe);
+        if ( isDebug() ) LOG.debug(soe);
         return newRaiseException(getSystemStackError(), message);
     }
 
