@@ -1,13 +1,8 @@
 package org.jruby.its;
 
-import java.security.KeyPair;
-import java.security.KeyPairGenerator;
 import java.security.Security;
 
-import junit.framework.TestCase;
-
 import org.bouncycastle.jce.provider.BouncyCastleProvider;
-import org.jruby.embed.EmbedEvalUnit;
 import org.jruby.embed.ScriptingContainer;
 import org.junit.Before;
 import org.junit.Test;
@@ -31,9 +26,11 @@ public class BouncyCastleTestCase {
         ScriptingContainer container = new ScriptingContainer();
         container.setClassloaderDelegate(false);
         Object result = container.parse( "require 'openssl'; Java::OrgBouncycastleJceProvider::BouncyCastleProvider.new.info").run();
-        assertEquals( "BouncyCastle Security Provider v1.50", result.toString() );
+        Object version = container.parse( "require 'jopenssl/version.rb'; Jopenssl::BOUNCY_CASTLE_VERSION").run();
+        assertEquals( "BouncyCastle Security Provider v" + version, result.toString() );
 
         result = container.parse("JRuby.runtime.jruby_class_loader").run();
         assertEquals("org.jruby.util.SelfFirstJRubyClassLoader", result.toString().replaceFirst("@.*$", ""));
     }
+
 }
