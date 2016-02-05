@@ -24,7 +24,7 @@
     <dependency>
       <groupId>org.jruby.rack</groupId>
       <artifactId>jruby-rack</artifactId>
-      <version>1.1.18</version>
+      <version>1.1.20</version>
       <exclusions>
         <exclusion>
           <artifactId>jruby-complete</artifactId>
