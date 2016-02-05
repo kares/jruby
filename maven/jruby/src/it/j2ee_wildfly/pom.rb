@@ -4,6 +4,7 @@ packaging 'war'
 # get jruby dependencies
 properties( 'jruby.version' => '@project.version@',
             'jruby.plugins.version' => '1.0.10',
+            'wildfly.version' => '9.0.2.Final',
             'project.build.sourceEncoding' => 'utf-8' )
 
 pom( 'org.jruby:jruby', '${jruby.version}' )
