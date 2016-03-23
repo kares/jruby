@@ -850,8 +850,11 @@ class TestHigherJavasupport < Test::Unit::TestCase
   end
 
   def test_that_subpackages_havent_leaked_into_other_packages
-    assert_equal(false, Java::java.respond_to?(:zip))
-    assert_equal(false, Java::com.respond_to?(:util))
+    assert ! Java::java.respond_to?(:zip)
+    assert ! Java::com.respond_to?(:util)
+
+    assert Java::java.respond_to_missing?(:zip)
+    assert Java::comx.respond_to_missing?(:foo)
   end
 
   def test_that_sub_packages_called_java_javax_com_org_arent_short_circuited
@@ -900,6 +903,18 @@ class TestHigherJavasupport < Test::Unit::TestCase
   def test_package_object_id
     assert org.jruby.object_id.is_a?(Fixnum)
     assert Java::java::lang.object_id.is_a?(Fixnum)
+  end
+
+  def test_package_does_not_respond_to_hidden_methods
+    assert Kernel.respond_to?(:test)
+    assert ! org.respond_to?(:test)
+    assert ! java.lang.respond_to?(:test, true)
+  end
+
+  def test_package_does_respond_to_missing
+    assert org.respond_to_missing?(:test)
+    assert java.lang.respond_to_missing?(:test)
+    assert java.lang.respond_to_missing?(:test, true)
   end
 
   @@include_proc = Proc.new do
@@ -1240,9 +1255,10 @@ CLASSDEF
   # JRUBY-1076
   def test_package_module_aliased_methods
     assert java.lang.respond_to?(:__constants__)
-    assert java.lang.respond_to?(:__methods__)
+    assert java.lang.respond_to?(:__methods__, true)
 
-    java.lang.String # ensure java.lang.String has been loaded
+    java.lang.String # ensure java.lang.
+    # String has been loaded
     assert java.lang.__constants__.include?(:String)
   end
 
