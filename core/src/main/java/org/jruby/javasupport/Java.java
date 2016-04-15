@@ -1150,7 +1150,7 @@ public class Java implements Library {
         return newInterfaceImpl(wrapper, interfaces);
     }
 
-    public static IRubyObject newInterfaceImpl(final IRubyObject wrapper, Class[] interfaces) {
+    public static JavaObject newInterfaceImpl(final IRubyObject wrapper, Class[] interfaces) {
         final Ruby runtime = wrapper.getRuntime();
 
         final int length = interfaces.length;
