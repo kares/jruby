@@ -8,41 +8,45 @@ module Java::java::util::Collection
   include ::Enumerable
 
   def each
-    i = iterator
-    while i.hasNext
-      yield i.next
-    end
+    # stub implemented in org.jruby.javasupport.ext.JavaUtil.java
+    # i = iterator
+    # while i.hasNext
+    #   yield i.next
+    # end
   end
 
-  def <<(a); add(a); self end
+  def <<(a)
+    # stub implemented in org.jruby.javasupport.ext.JavaUtil.java
+    # add(a)
+    # self
+  end
 
   def +(oth)
-    nw = self.dup
-    nw.addAll(oth)
-    nw
+    # stub implemented in org.jruby.javasupport.ext.JavaUtil.java
+    # nw = self.dup
+    # nw.addAll(oth)
+    # nw
   end
 
   def -(oth)
-    nw = self.dup
-    nw.removeAll(oth)
-    nw
+    # stub implemented in org.jruby.javasupport.ext.JavaUtil.java
+    # nw = self.dup
+    # nw.removeAll(oth)
+    # nw
   end
 
-  def length
-    size
-  end
+  alias length size
 
+  # @private Not sure if this makes sense to have.
   def join(*args)
-    to_a.join(*args)
+    # stub implemented in org.jruby.javasupport.ext.JavaUtil.java
   end
 
   def to_a
-    # JRUBY-3910: conversion is faster by going directly to java array
-    # first
-    toArray.to_a
+    # stub implemented in org.jruby.javasupport.ext.JavaUtil.java
   end
 
-end
+end if false
 
 # A *java.util.Enumeration* instance might be iterated Ruby style.
 # @see http://docs.oracle.com/javase/8/docs/api/java/util/Enumeration.html
@@ -50,11 +54,12 @@ module Java::java::util::Enumeration
   include ::Enumerable
 
   def each
-    while has_more_elements
-      yield next_element
-    end
+    # stub implemented in org.jruby.javasupport.ext.JavaUtil.java
+    # while hasMoreElements
+    #   yield nextElement
+    # end
   end
-end
+end if false
 
 # A *java.util.Iterator* acts like an `Enumerable`.
 # @see http://docs.oracle.com/javase/8/docs/api/java/util/Iterator.html
@@ -62,11 +67,12 @@ module Java::java::util::Iterator
   include ::Enumerable
 
   def each
-    while has_next
-      yield self.next
-    end
+    # stub implemented in org.jruby.javasupport.ext.JavaUtil.java
+    # while hasNext
+    #   yield next
+    # end
   end
-end
+end if false
 
 # Ruby extensions for *java.util.List* instances.
 # @see Java::java::util::Collection
@@ -94,89 +100,234 @@ module Java::java::util::List
   end
   private_constant :RubyComparators
 
-  def [](ix1, ix2 = nil)
-    if (ix2)
-      sub_list(ix1, ix1 + ix2)
-    elsif (ix1.is_a?(Range))
-      sub_list(ix1.first, ix1.exclude_end? ? ix1.last : ix1.last + 1)
-    elsif ix1 < size
-      get(ix1)
-    else
-      nil
-    end
+  def [](i1, i2 = nil)
+    # stub implemented in org.jruby.javasupport.ext.JavaUtil.java
   end
 
-  def []=(ix,val)
-    if (ix.is_a?(Range))
-      ix.each { |i| remove(i) }
-      add_all(ix.first, val)
-    elsif size < ix
-      ((ix-size)+1).times { self << nil }
-    end
-    set(ix,val)
-    val
+  def []=(i, val)
+    # stub implemented in org.jruby.javasupport.ext.JavaUtil.java
   end
 
   def index(obj = (no_args = true))
-    if !no_args
-      ix = 0
-      iter = iterator
-      while (iter.has_next)
-        return ix if obj == iter.next
-        ix +=1
-      end
-      return nil
-    elsif block_given?
-      ix = 0
-      iter = iterator
-      while (iter.has_next)
-        return ix if yield iter.next
-        ix +=1
-      end
-      return nil
-    else
-      Enumerator.new(self, :index)
-    end
+    # stub implemented in org.jruby.javasupport.ext.JavaUtil.java
   end
 
   def rindex(obj = (no_args = true))
-    if !no_args
-      i = size
-      while (i -= 1) >= 0
-        return i if obj == get(i)
-
-        # blocks can modify the list, don't go past bounds
-        i = size if i > size
-      end
-      return nil
-    elsif block_given?
-      i = size
-      while (i -= 1) >= 0
-        return i if yield get(i)
-
-        # blocks can modify the list, don't go past bounds
-        i = size if i > size
-      end
-      return nil
-    else
-      Enumerator.new(self, :rindex)
-    end
+    # stub implemented in org.jruby.javasupport.ext.JavaUtil.java
   end
 
   def sort(&block)
-    comparator = block ? RubyComparators::BlockComparator.new(block) : RubyComparators::SpaceshipComparator.new
-    list = java::util::ArrayList.new
-    list.addAll(self)
-    java::util::Collections.sort(list, comparator)
-    list
+    # comparator = block ? RubyComparators::BlockComparator.new(block) : RubyComparators::SpaceshipComparator.new
+    # list = self.dup
+    # java::util::Collections.sort(list, comparator)
+    # list
   end
 
   def sort!(&block)
-    comparator = block ? RubyComparators::BlockComparator.new(block) : RubyComparators::SpaceshipComparator.new
-    java::util::Collections.sort(self, comparator)
-    self
+    # comparator = block ? RubyComparators::BlockComparator.new(block) : RubyComparators::SpaceshipComparator.new
+    # java::util::Collections.sort(self, comparator)
+    # self
   end
 
   alias_method :to_ary, :to_a
 
-end
+end if false
+
+# Ruby extensions for *java.util.Map* instances.
+# Generally maps behave like Ruby's `Hash` objects.
+# @see http://docs.oracle.com/javase/8/docs/api/java/util/Map.html
+module Java::java::util::Map
+
+  def default(arg = nil)
+    # stub
+  end
+
+  def default=(value)
+    # stub
+  end
+
+  def default_proc()
+    # stub
+  end
+
+  def default_proc=(proc)
+    # stub
+  end
+
+  alias size length
+
+  def empty?
+    # stub
+  end
+
+  # @return [Array]
+  def to_a
+    # stub
+  end
+
+  # @return [Proc]
+  def to_proc
+    # stub
+  end
+
+  # @return [Hash]
+  def to_h
+    # stub
+  end
+  alias to_hash to_h
+
+  def [](key)
+    # stub
+  end
+
+  def []=(key, value)
+    # stub
+  end
+  alias store []
+
+  def fetch(key, default = nil, &block)
+    # stub
+  end
+
+  def key?(key)
+    # stub
+  end
+  alias has_key? key?
+  alias include? key?
+  alias member? key?
+
+  def value?(value)
+    # stub
+  end
+  alias has_value? value?
+
+  def each(&block)
+    # stub
+  end
+  alias each_pair each
+
+  def each_key(&block)
+    # stub
+  end
+
+  def each_value(&block)
+    # stub
+  end
+
+  def ==(other)
+    # stub
+  end
+
+  def <(other)
+    # stub
+  end
+
+  def <=(other)
+    # stub
+  end
+
+  def >(other)
+    # stub
+  end
+
+  def >=(other)
+    # stub
+  end
+
+  def select(&block)
+    # stub
+  end
+
+  def select!(&block)
+    # stub
+  end
+
+  def keep_if(&block)
+    # stub
+  end
+
+  def sort(&block)
+    # stub
+  end
+
+  def delete(key, &block)
+    # stub
+  end
+
+  def delete_if(&block)
+    # stub
+  end
+
+  def reject(&block)
+    # stub
+  end
+
+  def reject!(&block)
+    # stub
+  end
+
+  def invert
+    # stub
+  end
+
+  def key(value)
+    # stub
+  end
+
+  def keys
+    # stub
+  end
+
+  def ruby_values
+    # stub
+  end
+  alias values ruby_values
+
+  def values_at(*args)
+    # stub
+  end
+
+  def fetch_values(*args)
+    # stub
+  end
+
+  def ruby_clear
+    # stub
+  end
+  alias clear ruby_clear
+
+  def ruby_merge(other, &block)
+    # stub
+  end
+  alias merge ruby_merge
+
+  def merge!(other, &block)
+    # stub
+  end
+
+  def ruby_replace(other)
+    # stub
+  end
+  alias replace ruby_replace
+
+  def flatten(level = nil)
+    # stub
+  end
+
+  def assoc(obj)
+    # stub
+  end
+
+  def rassoc(obj)
+    # stub
+  end
+
+  def any?(&block)
+    # stub
+  end
+
+  def dig(*args)
+    # stub
+  end
+
+end if false

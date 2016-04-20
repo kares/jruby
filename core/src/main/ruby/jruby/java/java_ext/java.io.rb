@@ -3,31 +3,26 @@
 # this file is no longer loaded but is kept to provide doc stubs
 
 class Java::java::io::InputStream
+  # Convert a stream to a Ruby `IO`
+  # @option opts [Types] autoclose (nil) sets `IO#autoclose=`
+  # @return [IO]
   def to_io(opts = nil)
-    ruby_io = org.jruby.RubyIO.new(JRuby.runtime, self)
-    if opts && !opts[:autoclose]
-      ruby_io.setAutoclose(false)
-    end
-    JRuby.dereference(ruby_io)
+    # stub implemented in org.jruby.javasupport.ext.JavaIo.java
   end
-end
+end if false
 
 class Java::java::io::OutputStream
+  # Convert a stream to a Ruby `IO`
+  # @option opts [Types] autoclose (nil) sets `IO#autoclose=`
+  # @return [IO]
   def to_io(opts = nil)
-    ruby_io = org.jruby.RubyIO.new(JRuby.runtime, self)
-    if opts && !opts[:autoclose]
-      ruby_io.setAutoclose(false)
-    end
-    JRuby.dereference(ruby_io)
+    # stub implemented in org.jruby.javasupport.ext.JavaIo.java
   end
-end
+end if false
 
 module Java::java::nio::channels::Channel
+  # @return [IO]
   def to_io(opts = nil)
-    ruby_io = org.jruby.RubyIO.new(JRuby.runtime, self)
-    if opts && !opts[:autoclose]
-      ruby_io.setAutoclose(false)
-    end
-    JRuby.dereference(ruby_io)
+    # stub implemented in org.jruby.javasupport.ext.JavaIo.java
   end
-end
+end if false
