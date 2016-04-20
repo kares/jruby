@@ -1,83 +1,78 @@
+# NOTE: these Ruby extensions were moved to native code!
+# @see org.jruby.javasupport.ext.JavaUtilRegex.java
+# this file is no longer loaded but is kept to provide doc stubs
+
 class Java::java::util::regex::Pattern
   def =~(str)
-    m = self.matcher(str)
-    m.find ? m.start : nil
+    # stub implemented in org.jruby.javasupport.ext.JavaUtilRegex.java
+    # m = self.matcher(str)
+    # m.find ? m.start : nil
   end
   
   def ===(str)
-    self.matcher(str).find
+    # stub implemented in org.jruby.javasupport.ext.JavaUtilRegex.java
+    # self.matcher(str).find
   end
 
   def match(str)
-    m = self.matcher(str)
-    m.str = str
-    m.find ? m : nil
+    # stub implemented in org.jruby.javasupport.ext.JavaUtilRegex.java
+    # m = self.matcher(str)
+    # m.str = str
+    # m.find ? m : nil
   end
-end
+end if false
 
 class Java::java::util::regex::Matcher
+  # @private
   attr_accessor :str
   
   def captures
-    g = self.group_count
-    capt = []
-    count.times do |i|
-      capt << self.group(i+1)
-    end
-    capt
+    # stub implemented in org.jruby.javasupport.ext.JavaUtilRegex.java
   end
   
   def [](*args)
-    self.to_a[*args]
+    # stub implemented in org.jruby.javasupport.ext.JavaUtilRegex.java
   end
 
   def begin(ix)
-    self.start(ix)
+    # stub implemented in org.jruby.javasupport.ext.JavaUtilRegex.java
   end
   
   def end(ix)
-    self.java_send(:end, [Java::int], ix)
+    # stub implemented in org.jruby.javasupport.ext.JavaUtilRegex.java
   end
   
   def to_a
-    arr = []
-    self.group_count.times do |gg|
-      if self.start(gg) == -1
-        arr << nil
-      else
-        arr << self.group(gg)
-      end
-    end
-    arr
+    # stub implemented in org.jruby.javasupport.ext.JavaUtilRegex.java
   end
   
   def size
-    self.group_count
+    # stub implemented in org.jruby.javasupport.ext.JavaUtilRegex.java
   end
-  
   alias length size
   
   def values_at(*args)
-    self.to_a.values_at(*args)
+    # stub implemented in org.jruby.javasupport.ext.JavaUtilRegex.java
   end
 
   def select
-    yield self.to_a
+    # stub implemented in org.jruby.javasupport.ext.JavaUtilRegex.java
   end
   
   def offset(ix)
-    [self.start(ix), self.end(ix)]
+    # stub implemented in org.jruby.javasupport.ext.JavaUtilRegex.java
   end
 
   def pre_match
-    self.str[0..(self.start(0))]
+    # stub implemented in org.jruby.javasupport.ext.JavaUtilRegex.java
   end
   
   def post_match
-    self.str[(self.end(0))..-1]
+    # stub implemented in org.jruby.javasupport.ext.JavaUtilRegex.java
   end
   
   def string
-    self.group(0)
+    # stub implemented in org.jruby.javasupport.ext.JavaUtilRegex.java
   end
-end
+
+end if false
