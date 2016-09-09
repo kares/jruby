@@ -67,39 +67,15 @@ public class JavaNameMangler {
         if (idx != -1) {
             String before = filename.substring(6, idx);
             try {
-                if (canonicalize) {
-                    classPath = new JRubyFile(before + filename.substring(idx + 1)).getCanonicalPath();
-                } else {
-                    classPath = new JRubyFile(before + filename.substring(idx + 1)).toString();
-                }
-            } catch (IOException ioe) {
-                throw new RuntimeException(ioe);
+                classPath = normalizePath(before + filename.substring(idx + 1), canonicalize);
             }
+            catch (IOException ioe) { throw new RuntimeException(ioe); }
         } else {
-            try {
-                if (canonicalize) {
-                    classPath = new JRubyFile(filename).getCanonicalPath();
-                } else {
-                    classPath = new JRubyFile(filename).toString();
-                }
-            } catch (IOException ioe) {
-                // could not get canonical path, just use given path
-                classPath = filename;
-            }
+            classPath = normalizePath(filename, canonicalize, filename);
         }
 
         if (parent != null && parent.length() > 0) {
-            String parentPath;
-            try {
-                if (canonicalize) {
-                    parentPath = new JRubyFile(parent).getCanonicalPath();
-                } else {
-                    parentPath = new JRubyFile(parent).toString();
-                }
-            } catch (IOException ioe) {
-                // could not get canonical path, just use given path
-                parentPath = parent;
-            }
+            String parentPath = normalizePath(parent, canonicalize, parent);
             if (!classPath.startsWith(parentPath)) {
                 throw new RuntimeException("File path " + classPath +
                         " does not start with parent path " + parentPath);
@@ -141,6 +117,19 @@ public class JavaNameMangler {
         return newPath.toString();
     }
 
+    private static String normalizePath(final String path, final boolean canonicalize, final String fallback) {
+        try {
+            return normalizePath(path, canonicalize);
+        }
+        catch (IOException ex) { return fallback; }
+    }
+
+    private static String normalizePath(final String path, final boolean canonicalize) throws IOException {
+        if ( canonicalize ) return new JRubyFile(path).getCanonicalPath();
+        return JRubyFile.normalizeSeps(path); // instead of new JRubyFile(path).toString()
+    }
+
+    @Deprecated // no longer used
     public static String mangleStringForCleanJavaIdentifier(final String name) {
         StringBuilder cleanBuffer = new StringBuilder(name.length() * 3);
         mangleStringForCleanJavaIdentifier(cleanBuffer, name);
