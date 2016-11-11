@@ -47,8 +47,6 @@ end
 # attempt to call stty; if failure, fall back on stubbed version
 
 if RbConfig::CONFIG['host_os'].downcase =~ /darwin|openbsd|freebsd|netbsd|linux/
-  require 'java'
-
   result = begin
     if RbConfig::CONFIG['host_os'].downcase =~ /darwin|openbsd|freebsd|netbsd/
       require File.join(File.dirname(__FILE__), 'bsd_console')
@@ -93,6 +91,7 @@ if RbConfig::CONFIG['host_os'].downcase =~ /darwin|openbsd|freebsd|netbsd|linux/
         LibC.cfmakeraw(t)
         t[:c_lflag] &= ~(LibC::ECHOE|LibC::ECHOK)
       end
+      private_constant :TTY_RAW
 
       def raw(*, &block)
         ttymode_yield(block, &TTY_RAW)
@@ -107,6 +106,7 @@ if RbConfig::CONFIG['host_os'].downcase =~ /darwin|openbsd|freebsd|netbsd|linux/
         t[:c_oflag] |= LibC::OPOST
         t[:c_lflag] |= (LibC::ECHO|LibC::ECHOE|LibC::ECHOK|LibC::ECHONL|LibC::ICANON|LibC::ISIG|LibC::IEXTEN)
       end
+      private_constant :TTY_COOKED
 
       def cooked(*, &block)
         ttymode_yield(block, &TTY_COOKED)
@@ -117,6 +117,8 @@ if RbConfig::CONFIG['host_os'].downcase =~ /darwin|openbsd|freebsd|netbsd|linux/
       end
 
       TTY_ECHO = LibC::ECHO | LibC::ECHOE | LibC::ECHOK | LibC::ECHONL
+      private_constant :TTY_ECHO
+
       def echo=(echo)
         ttymode do |t|
           if echo
