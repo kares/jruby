@@ -331,6 +331,7 @@ elsif !IO.private_method_defined? :ttymode
     # Not all systems return same format of stty -a output
     IEEE_STD_1003_2 = '(?<rows>\d+) rows; (?<columns>\d+) columns'
     UBUNTU = 'rows (?<rows>\d+); columns (?<columns>\d+)'
+    private_constant :IEEE_STD_1003_2, :UBUNTU
 
     def winsize
       match = stty('-a').match(/#{IEEE_STD_1003_2}|#{UBUNTU}/)
