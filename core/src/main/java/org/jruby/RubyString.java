@@ -2387,8 +2387,8 @@ public class RubyString extends RubyObject implements EncodingCapable, MarshalEn
     @JRubyMethod(name = "sub!", reads = BACKREF, writes = BACKREF)
     public IRubyObject sub_bang(ThreadContext context, IRubyObject arg0, IRubyObject arg1, Block block) {
         Ruby runtime = context.runtime;
-        IRubyObject hash = TypeConverter.convertToTypeWithCheck(context, arg1, runtime.getHash(), sites(context).to_hash_checked);
         frozenCheck();
+        IRubyObject hash = TypeConverter.convertToTypeWithCheck(context, arg1, runtime.getHash(), sites(context).to_hash_checked);
 
         if (hash.isNil()) {
             return subBangNoIter(runtime, context, arg0, arg1.convertToString());
@@ -2434,27 +2434,38 @@ public class RubyString extends RubyObject implements EncodingCapable, MarshalEn
 
             return subBangCommon(context, mBeg, mEnd, repl, tuFlags | repl.flags);
         }
-        return context.setBackRef(runtime.getNil());
+        return context.setBackRef(context.nil); // no sub match
     }
 
     private IRubyObject subBangNoIter(Ruby runtime, ThreadContext context, IRubyObject arg0, RubyString repl) {
-        RubyRegexp regexp = asRegexpArg(runtime, arg0);
-        Regex pattern = regexp.getPattern();
-        Regex prepared = regexp.preparePattern(this);
+        final int begin = value.getBegin();
+        final int range = begin + value.getRealSize();
 
-        int begin = value.getBegin();
-        int range = begin + value.getRealSize();
-        final Matcher matcher = prepared.matcher(value.getUnsafeBytes(), begin, range);
-
-        if (RubyRegexp.matcherSearch(runtime, matcher, begin, range, Option.NONE) >= 0) {
-            repl = RubyRegexp.regsub19(context, repl, this, matcher, pattern);
-            RubyMatchData match = RubyRegexp.createMatchData19(context, this, matcher, pattern);
-            match.regexp = regexp;
-            context.setBackRef(match);
-
-            return subBangCommon(context, matcher.getBegin(), matcher.getEnd(), repl, repl.flags);
+        if ( arg0 instanceof RubyString ) { // regexp-less str.sub('a', 'b') case
+            RubyString pat = (RubyString) arg0;
+            final int mBeg = StringSupport.index(this, pat, 0, checkEncoding(pat));
+            if ( mBeg >= 0 ) {
+                setBackRefString(context, this, mBeg, pat); // without creating a Regexp
+                return subBangCommon(context, mBeg, mBeg + pat.strLength(), repl, repl.flags);
+            }
         }
-        return context.setBackRef(runtime.getNil());
+        else {
+            RubyRegexp regexp = asRegexpArg(runtime, arg0);
+            Regex pattern = regexp.getPattern();
+            Regex prepared = regexp.preparePattern(this);
+
+            final Matcher matcher = prepared.matcher(value.getUnsafeBytes(), begin, range);
+
+            if (RubyRegexp.matcherSearch(runtime, matcher, begin, range, Option.NONE) >= 0) {
+                repl = RubyRegexp.regsub19(context, repl, this, matcher, pattern);
+                RubyMatchData match = RubyRegexp.createMatchData19(context, this, matcher, pattern);
+                match.regexp = regexp;
+                context.setBackRef(match);
+
+                return subBangCommon(context, matcher.getBegin(), matcher.getEnd(), repl, repl.flags);
+            }
+        }
+        return context.setBackRef(context.nil); // no sub match
     }
 
     private IRubyObject subBangCommon(ThreadContext context, final int beg, final int end,
@@ -2467,7 +2478,7 @@ public class RubyString extends RubyObject implements EncodingCapable, MarshalEn
         final int replSize = replValue.getRealSize();
         final int plen = end - beg;
 
-        if (replSize > plen) {
+        if (replSize > plen) { // make sure we fit into value.bytes
             modifyExpand(value.getRealSize() + replSize - plen);
         } else {
             modify19();
