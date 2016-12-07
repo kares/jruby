@@ -96,7 +96,7 @@ import static org.jruby.RubyEnumerator.SizeFn;
  * all users must synchronize externally with writers.
  *
  */
-@JRubyClass(name="Array")
+@JRubyClass(name="Array", include = { "Enumerable" })
 public class RubyArray extends RubyObject implements List, RandomAccess {
     public static final int DEFAULT_INSPECT_STR_SIZE = 10;
 
@@ -1611,7 +1611,7 @@ public class RubyArray extends RubyObject implements List, RandomAccess {
 
     protected static final ByteList OPEN_BRACKET = new ByteList(new byte[]{(byte)'['}, USASCIIEncoding.INSTANCE);
     protected static final ByteList CLOSE_BRACKET = new ByteList(new byte[]{(byte)']'}, USASCIIEncoding.INSTANCE);
-    protected static final ByteList COMMA_SPACE = new ByteList(new byte[]{(byte)',', (byte)' '}, USASCIIEncoding.INSTANCE);
+    public static final ByteList COMMA_SPACE = new ByteList(new byte[]{(byte)',', (byte)' '}, USASCIIEncoding.INSTANCE);
 
     /** rb_ary_inspect
     *
