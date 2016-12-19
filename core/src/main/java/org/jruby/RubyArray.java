@@ -3022,11 +3022,11 @@ public class RubyArray extends RubyObject implements List, RandomAccess {
         // TODO: (CON) We can flatten packed versions efficiently if length does not change (e.g. [[1,2],[]])
         unpack();
         final Ruby runtime = context.runtime;
-        ArrayList<Object> stack = null;
-        IdentityHashMap<RubyArray, IRubyObject> memo = new IdentityHashMap<>();
-        RubyArray ary = this;
-        memo.put(ary, NEVER);
 
+        ArrayList<Object> stack = null;
+        IdentityHashMap<RubyArray, IRubyObject> memo = null; // used as an IdentityHashSet
+
+        RubyArray ary = this;
         int i = 0;
 
         try {
@@ -3040,6 +3040,10 @@ public class RubyArray extends RubyObject implements List, RandomAccess {
                     IRubyObject tmp = TypeConverter.checkArrayType(elt);
                     if (tmp.isNil()) result.append(elt);
                     else { // nested array element
+                        if (memo == null) {
+                            memo = new IdentityHashMap<>(8);
+                            memo.put(this, NEVER);
+                        }
                         if (memo.get(tmp) != null) throw runtime.newArgumentError("tried to flatten recursive array");
                         if (stack == null) stack = new ArrayList<>(16);
                         stack.add(ary); stack.add(i); // add (ary, i) pair
