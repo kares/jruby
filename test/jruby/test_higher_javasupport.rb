@@ -719,8 +719,8 @@ class TestHigherJavasupport < Test::Unit::TestCase
   def test_conflicting_getter_aliasing
     assert BetaSingleton.instance.respond_to?(:beta)
     assert BetaSingleton.instance.respond_to?(:beta?)
-    assert BetaSingleton.respond_to?(:beta_class)
-    assert BetaSingleton.respond_to?(:beta_class?)
+    assert BetaSingleton.respond_to?(:betac)
+    assert BetaSingleton.respond_to?(:betac?)
 
     instance = BetaSingleton.instance
     assert_equal 'Beta', instance.getBeta
@@ -753,20 +753,20 @@ class TestHigherJavasupport < Test::Unit::TestCase
     assert_equal true, instance.beta7?
 
     klass = BetaSingleton
-    assert_equal 'BetaClass', klass.getBetaClass
-    assert_equal 'BetaClass', klass.get_beta_class
-    assert_equal 'betaClass', klass.beta_class
-    assert_equal true,        klass.beta_class?
+    assert_equal 'BetaClass', klass.getBetac
+    assert_equal 'BetaClass', klass.get_betac
+    assert_equal 'betaClass', klass.betac
+    assert_equal true,        klass.betac?
 
-    assert_equal 'BetaClass2', klass.beta_class2
-    assert_equal true,         klass.beta_class2?
+    assert_equal 'BetaClass2', klass.betac2
+    assert_equal true,         klass.betac2?
 
-    assert_equal 'BetaClass3', klass.beta_class3
-    assert_equal true,         klass.beta_class3?
+    assert_equal 'BetaClass3', klass.betac3
+    assert_equal true,         klass.betac3?
 
-    assert_equal 'betaClass4', klass.beta_class4
-    assert_equal 'BetaClass4', klass.get_beta_class4
-    assert_raises(NoMethodError) { klass.beta_class4? }
+    assert_equal 'betaClass4', klass.betac4
+    assert_equal 'BetaClass4', klass.get_betac4
+    assert_raises(NoMethodError) { klass.betac4? }
   end
 
   java_import 'org.jruby.javasupport.test.Color'

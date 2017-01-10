@@ -185,7 +185,6 @@ public abstract class Initializer {
         addUnassignedAlias(rubyCasedName, assignedNames, installer);
 
         String javaPropertyName = JavaUtil.getJavaPropertyName(name);
-        String rubyPropertyName = null;
 
         final List<Method> methods = installer.methods;
 
@@ -202,11 +201,12 @@ public abstract class Initializer {
             if (name.equals("update") && argCount == 2) {
                 addUnassignedAlias("[]=", assignedNames, installer);
             }
-
             // Scala aliases for $ method names
             if (name.startsWith("$")) {
                 addUnassignedAlias(ClassInitializer.fixScalaNames(name), assignedNames, installer);
             }
+
+            String rubyPropertyName = null;
 
             // Add property name aliases
             if (javaPropertyName != null) {
@@ -216,21 +216,24 @@ public abstract class Initializer {
                         addUnassignedAlias(javaPropertyName, assignedNames, installer);
                         addUnassignedAlias(rubyPropertyName, assignedNames, installer);
                     }
-                } else if (rubyCasedName.startsWith("set_")) {
-                    rubyPropertyName = rubyCasedName.substring(4);
+                }
+                else if (rubyCasedName.startsWith("set_")) {
+                    rubyPropertyName = rubyCasedName.substring(4); // TODO do not add foo? for setFoo (returning boolean)
                     if (argCount == 1 && resultType == void.class) {  // setFoo(Foo) => foo=(Foo)
                         addUnassignedAlias(javaPropertyName + '=', assignedNames, installer);
                         addUnassignedAlias(rubyPropertyName + '=', assignedNames, installer);
                     }
-                } else if (rubyCasedName.startsWith("is_")) {
+                }
+                else if (rubyCasedName.startsWith("is_")) {
                     rubyPropertyName = rubyCasedName.substring(3);
                     if (resultType == boolean.class) {  // isFoo() => foo, isFoo(*) => foo(*)
                         AssignedName assignedName = assignedNames.get(javaPropertyName);
                         // NOTE: we do not want a get alias to be changed to an is alias
                         if (assignedName == null || assignedName.type != Priority.ALIAS) {
                             addUnassignedAlias(javaPropertyName, assignedNames, installer);
+                            addUnassignedAlias(rubyPropertyName, assignedNames, installer);
                         }
-                        addUnassignedAlias(rubyPropertyName, assignedNames, installer);
+                        // foo? is added bellow
                     }
                 }
             }

@@ -23,45 +23,45 @@ public class BetaSingleton {
 
   // class :
 
-  public static String betaClass() {
+  public static String betac() {
       return "betaClass";
   }
 
-  public static boolean isBetaClass() {
+  public static boolean isBetac() {
       return true;
   }
 
-  public static String getBetaClass() {
+  public static String getBetac() {
       return "BetaClass";
   }
 
   // 2
 
-  public static boolean isBetaClass2() {
+  public static boolean isBetac2() {
     return true;
   }
 
-  public static String getBetaClass2() {
+  public static String getBetac2() {
     return "BetaClass2";
   }
 
   // 3
 
-  public static String getBetaClass3() {
+  public static String getBetac3() {
     return "BetaClass3";
   }
 
-  public static boolean isBetaClass3() {
+  public static boolean isBetac3() {
     return true;
   }
 
   // 4
 
-  public static String getBetaClass4() {
+  public static String getBetac4() {
     return "BetaClass4";
   }
 
-  public static Object betaClass4() {
+  public static Object betac4() {
     return "betaClass4";
   }
 
@@ -123,6 +123,40 @@ public class BetaSingleton {
 
   public Boolean beta7() {
     return null;
+  }
+
+  //
+
+  public static String betaCased() {
+    return "betaCased";
+  }
+
+  public static boolean isBetaCased() {
+    return true;
+  }
+
+  public static String getBetaCased() {
+    return "BetaCased";
+  }
+
+  // 2
+
+  public static boolean isBetaCased2() {
+    return true;
+  }
+
+  public static String getBetaCased2() {
+    return "BetaCased2";
+  }
+
+  // 3
+
+  public static String getBetaCased3() {
+    return "BetaCased3";
+  }
+
+  public static boolean isBetaCased3() {
+    return true;
   }
 
 }
