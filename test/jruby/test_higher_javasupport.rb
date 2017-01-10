@@ -752,6 +752,41 @@ class TestHigherJavasupport < Test::Unit::TestCase
     assert_equal nil , instance.beta7
     assert_equal true, instance.beta7?
 
+    assert_equal 'BetaCased', instance.getBetaCased
+    assert_equal 'BetaCased', instance.get_beta_cased
+    assert_equal 'betaCased', instance.betaCased
+    assert_equal 'betaCased', instance.beta_cased
+    assert_equal true,        instance.beta_cased?
+    assert_equal true,        instance.isBetaCased
+    assert_equal true,        instance.is_beta_cased
+    assert_equal true,        instance.is_beta_cased?
+
+    assert_equal 'BetaCased2', instance.betaCased2
+    assert_equal 'BetaCased2', instance.beta_cased2
+    assert_equal true,         instance.beta_cased2?
+
+    assert_equal 'BetaCased3', instance.betaCased3
+    assert_equal 'BetaCased3', instance.beta_cased3
+    assert_equal true,         instance.beta_cased3?
+
+    #
+
+    assert_equal 'BetaCasedc', instance.class.getBetaCasedc
+    assert_equal 'BetaCasedc', instance.class.get_beta_casedc
+    assert_equal 'betaCasedc', instance.class.betaCasedc
+    assert_equal 'betaCasedc', instance.class.beta_casedc
+    assert_equal true,         instance.class.beta_casedc?
+    assert_equal true,         instance.class.isBetaCasedc
+    assert_equal true,         instance.class.is_beta_casedc?
+
+    assert_equal 'BetaCasedc2', instance.class.betaCasedc2
+    assert_equal 'BetaCasedc2', instance.class.beta_casedc2
+    assert_equal true,          instance.class.beta_casedc2?
+
+    assert_equal 'BetaCasedc3', instance.class.betaCasedc3
+    assert_equal 'BetaCasedc3', instance.class.beta_casedc3
+    assert_equal true,          instance.class.beta_casedc3?
+
     klass = BetaSingleton
     assert_equal 'BetaClass', klass.getBetac
     assert_equal 'BetaClass', klass.get_betac

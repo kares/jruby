@@ -188,7 +188,8 @@ final class ClassInitializer extends Initializer {
     }
 
     private static void assignInstanceAliases(State state) {
-        for (Map.Entry<String, NamedInstaller> entry : state.instanceInstallers.entrySet()) {
+        final Map<String, NamedInstaller> installers = state.instanceInstallers;
+        for (Map.Entry<String, NamedInstaller> entry : installers.entrySet()) {
             if (entry.getValue().type == NamedInstaller.INSTANCE_METHOD) {
                 MethodInstaller methodInstaller = (MethodInstaller)entry.getValue();
 
@@ -196,7 +197,7 @@ final class ClassInitializer extends Initializer {
                 if (entry.getKey().endsWith(METHOD_MANGLE)) continue;
 
                 if (methodInstaller.hasLocalMethod()) {
-                    assignAliases(methodInstaller, state.instanceNames);
+                    assignAliases(methodInstaller, state.instanceNames, installers);
                 }
 
                 // JRUBY-6967: Types with java.lang.Comparable were using Ruby Comparable#== instead of dispatching directly to
