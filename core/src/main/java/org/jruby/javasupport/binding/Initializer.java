@@ -3,19 +3,14 @@ package org.jruby.javasupport.binding;
 import org.jruby.Ruby;
 import org.jruby.RubyClass;
 import org.jruby.RubyModule;
-import org.jruby.internal.runtime.methods.DynamicMethod;
 import org.jruby.internal.runtime.methods.JavaMethod;
 import org.jruby.javasupport.Java;
 import org.jruby.javasupport.JavaClass;
 import org.jruby.javasupport.JavaSupport;
 import org.jruby.javasupport.JavaUtil;
-import org.jruby.runtime.Block;
-import org.jruby.runtime.Helpers;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.util.IdUtil;
-import org.jruby.util.collections.*;
-import org.jruby.util.collections.ClassValue;
 import org.jruby.util.log.Logger;
 import org.jruby.util.log.LoggerFactory;
 
@@ -28,7 +23,6 @@ import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
-import java.util.ListIterator;
 import java.util.Map;
 
 import static org.jruby.runtime.Visibility.PUBLIC;
@@ -193,7 +187,10 @@ public abstract class Initializer {
         String javaPropertyName = JavaUtil.getJavaPropertyName(name);
         String rubyPropertyName = null;
 
-        for (Method method: installer.methods) {
+        final List<Method> methods = installer.methods;
+
+        for ( int i = 0; i < methods.size(); i++ ) {
+            final Method method = methods.get(i);
             Class<?>[] argTypes = method.getParameterTypes();
             Class<?> resultType = method.getReturnType();
             int argCount = argTypes.length;
@@ -215,20 +212,24 @@ public abstract class Initializer {
             if (javaPropertyName != null) {
                 if (rubyCasedName.startsWith("get_")) {
                     rubyPropertyName = rubyCasedName.substring(4);
-                    if (argCount == 0) {                                // getFoo      => foo
+                    if (argCount == 0) {  // getFoo      => foo
                         addUnassignedAlias(javaPropertyName, assignedNames, installer);
                         addUnassignedAlias(rubyPropertyName, assignedNames, installer);
                     }
                 } else if (rubyCasedName.startsWith("set_")) {
                     rubyPropertyName = rubyCasedName.substring(4);
-                    if (argCount == 1 && resultType == void.class) {    // setFoo(Foo) => foo=(Foo)
+                    if (argCount == 1 && resultType == void.class) {  // setFoo(Foo) => foo=(Foo)
                         addUnassignedAlias(javaPropertyName + '=', assignedNames, installer);
                         addUnassignedAlias(rubyPropertyName + '=', assignedNames, installer);
                     }
                 } else if (rubyCasedName.startsWith("is_")) {
                     rubyPropertyName = rubyCasedName.substring(3);
-                    if (resultType == boolean.class) {                  // isFoo() => foo, isFoo(*) => foo(*)
-                        addUnassignedAlias(javaPropertyName, assignedNames, installer);
+                    if (resultType == boolean.class) {  // isFoo() => foo, isFoo(*) => foo(*)
+                        AssignedName assignedName = assignedNames.get(javaPropertyName);
+                        // NOTE: we do not want a get alias to be changed to an is alias
+                        if (assignedName == null || assignedName.type != Priority.ALIAS) {
+                            addUnassignedAlias(javaPropertyName, assignedNames, installer);
+                        }
                         addUnassignedAlias(rubyPropertyName, assignedNames, installer);
                     }
                 }

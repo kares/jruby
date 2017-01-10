@@ -716,6 +716,59 @@ class TestHigherJavasupport < Test::Unit::TestCase
     assert_nothing_raised { AlphaSingleton.getInstance.alpha }
   end
 
+  def test_conflicting_getter_aliasing
+    assert BetaSingleton.instance.respond_to?(:beta)
+    assert BetaSingleton.instance.respond_to?(:beta?)
+    assert BetaSingleton.respond_to?(:beta_class)
+    assert BetaSingleton.respond_to?(:beta_class?)
+
+    instance = BetaSingleton.instance
+    assert_equal 'Beta', instance.getBeta
+    assert_equal 'Beta', instance.get_beta
+    assert_equal 'beta', instance.beta
+    assert_equal true,   instance.beta?
+
+    assert_equal 'Beta2', instance.getBeta2
+    assert_equal 'Beta2', instance.get_beta2
+    assert_equal 'Beta2', instance.beta2
+    assert_equal true,   instance.beta2?
+
+    assert_equal 'Beta3', instance.getBeta3
+    assert_equal 'Beta3', instance.get_beta3
+    assert_equal 'Beta3', instance.beta3
+    assert_equal true,   instance.beta3?
+
+    assert_equal 'Beta4', instance.getBeta4
+    assert_equal 'Beta4', instance.get_beta4
+    assert_equal true,    instance.beta4
+
+    assert_equal 'Beta5', instance.getBeta5
+    assert_equal 'Beta5', instance.get_beta5
+    assert_equal true,    instance.beta5(nil)
+
+    assert_equal 'beta6', instance.beta6
+    assert_equal true,    instance.beta6?
+
+    assert_equal nil , instance.beta7
+    assert_equal true, instance.beta7?
+
+    klass = BetaSingleton
+    assert_equal 'BetaClass', klass.getBetaClass
+    assert_equal 'BetaClass', klass.get_beta_class
+    assert_equal 'betaClass', klass.beta_class
+    assert_equal true,        klass.beta_class?
+
+    assert_equal 'BetaClass2', klass.beta_class2
+    assert_equal true,         klass.beta_class2?
+
+    assert_equal 'BetaClass3', klass.beta_class3
+    assert_equal true,         klass.beta_class3?
+
+    assert_equal 'betaClass4', klass.beta_class4
+    assert_equal 'BetaClass4', klass.get_beta_class4
+    assert_raises(NoMethodError) { klass.beta_class4? }
+  end
+
   java_import 'org.jruby.javasupport.test.Color'
 
   def test_lazy_proxy_method_tests_for_alias_and_respond_to
