@@ -688,16 +688,18 @@ public class RubyFile extends RubyIO implements EncodingCapable {
 
         if (startsWithDriveLetterOnWindows) minPathLength = 3;
 
+        int start;
         // jar like paths
-        if (name.contains(".jar!" + separator)) {
-            int start = name.indexOf("!" + separator) + 1;
+        if (( start = indexOf(name, ".jar!", separator) ) > -1) {
+            start += 5; // (skip ".jar!")
             String path = dirname(context, name.substring(start));
             if (path.equals(".") || path.equals(separator)) path = "";
             return name.substring(0, start) + path;
         }
+        Matcher match;
         // address all the url like paths first
-        if (PROTOCOL_PATTERN.matcher(name).matches()) {
-            int start = name.indexOf(":" + separator) + 2;
+        if (( match = PROTOCOL_PATTERN.matcher(name) ).matches()) {
+            start = indexOf(name, ':', separator, match.end(1)) + 2; // first char after :/
             String path = dirname(context, name.substring(start));
             if (path.equals(".")) path = "";
             return name.substring(0, start) + path;
@@ -2126,6 +2128,25 @@ public class RubyFile extends RubyIO implements EncodingCapable {
 
     private static boolean startsWith(final CharSequence str, final char c1, final char c2) {
         return str.length() >= 2 && str.charAt(0) == c1 && str.charAt(1) == c2;
+    }
+
+    // str.indexOf("!" + sep, i) -> indexOf(str, '!', sep, i)
+    private static int indexOf(final String str, final char first, final String rest, final int from) {
+        int i = str.indexOf(first, from);
+        while (i >= 0) {
+            if (str.startsWith(rest, i + 1)) return i;
+            i = str.indexOf(first, i + 1);
+        }
+        return -1;
+    }
+
+    private static int indexOf(final String str, final String first, final String rest) {
+        int i = str.indexOf(first);
+        while (i >= 0) {
+            if (str.startsWith(rest, i + first.length())) return i;
+            i = str.indexOf(first, i + 1);
+        }
+        return -1;
     }
 
     // without any char[] array copying, also StringBuilder only has lastIndexOf(String)
