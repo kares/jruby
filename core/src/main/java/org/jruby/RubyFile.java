@@ -655,19 +655,21 @@ public class RubyFile extends RubyIO implements EncodingCapable {
         return runtime.newString(dirname(context, jfilename)).infectBy(filename);
     }
 
-    static final Pattern PROTOCOL_PATTERN = Pattern.compile(URI_PREFIX_STRING + ".*");
-
-    public static String dirname(ThreadContext context, String jfilename) {
+    public static String dirname(ThreadContext context, String filename) {
         final RubyClass File = context.runtime.getFile();
         final String separator = File.getConstant("SEPARATOR").toString();
+        final IRubyObject rbAltSep = File.getConstant("ALT_SEPARATOR");
+        final String altSeparator = (rbAltSep == context.nil) ? null : rbAltSep.toString();
+        return dirname(context, filename, separator, altSeparator);
+    }
+
+    static final Pattern PROTOCOL_PATTERN = Pattern.compile(URI_PREFIX_STRING + ".*");
+
+    private static String dirname(ThreadContext context, String jfilename,
+        final String separator, final String altSeparator) {
         final char separatorChar = separator.charAt(0);
-        String altSeparator = null;
-        char altSeparatorChar = '\0';
-        final IRubyObject rbAltSeparator = File.getConstant("ALT_SEPARATOR");
-        if (rbAltSeparator != context.nil) {
-            altSeparator = rbAltSeparator.toString();
-            altSeparatorChar = altSeparator.charAt(0);
-        }
+        final char altSeparatorChar = altSeparator != null ? altSeparator.charAt(0) : '\0';
+
         String name = jfilename;
         if (altSeparator != null) {
             name = replace(jfilename, altSeparator, separator);
@@ -692,7 +694,7 @@ public class RubyFile extends RubyIO implements EncodingCapable {
         // jar like paths
         if (( start = indexOf(name, ".jar!", separator) ) > -1) {
             start += 5; // (skip ".jar!")
-            String path = dirname(context, name.substring(start));
+            String path = dirname(context, name.substring(start), separator, altSeparator);
             if (path.equals(".") || path.equals(separator)) path = "";
             return name.substring(0, start) + path;
         }
@@ -700,7 +702,7 @@ public class RubyFile extends RubyIO implements EncodingCapable {
         // address all the url like paths first
         if (( match = PROTOCOL_PATTERN.matcher(name) ).matches()) {
             start = indexOf(name, ':', separator, match.end(1)) + 2; // first char after :/
-            String path = dirname(context, name.substring(start));
+            String path = dirname(context, name.substring(start), separator, altSeparator);
             if (path.equals(".")) path = "";
             return name.substring(0, start) + path;
         }
@@ -725,13 +727,10 @@ public class RubyFile extends RubyIO implements EncodingCapable {
             if (index == -1) {
                 if (startsWithDriveLetterOnWindows) {
                     return jfilename.substring(0, 2) + '.';
-                } else {
-                    return ".";
                 }
+                return ".";
             }
-            if (index == 0) {
-                return jfilename.substring(0, 1);
-            }
+            if (index == 0) return jfilename.substring(0, 1);
 
             if (startsWithDriveLetterOnWindows && index == 2) {
                 // Include additional path separator
@@ -740,30 +739,26 @@ public class RubyFile extends RubyIO implements EncodingCapable {
             }
 
             if (startsWithUNCOnWindows) {
-              index = jfilename.length();
-              String[] split = name.split(Pattern.quote(separator));
-              int pathSectionCount = 0;
-              for (int i = 0; i < split.length; i++) {
-                if (!split[i].isEmpty()) {
-                  pathSectionCount += 1;
+                index = jfilename.length();
+                String[] split = name.split(Pattern.quote(separator));
+                int pathSectionCount = 0;
+                for (int i = 0; i < split.length; i++) {
+                    if (split[i].length() > 0) pathSectionCount += 1;
                 }
-              }
-              if (pathSectionCount > 2) {
-                  index = name.lastIndexOf(separator);
-              }
+                if (pathSectionCount > 2) {
+                    index = name.lastIndexOf(separator);
+                }
             }
             result = jfilename.substring(0, index);
         }
 
         // trim leading slashes
         if (startsWithSeparator && result.length() > minPathLength) {
-          while (
-            result.length() > minPathLength &&
-            (result.charAt(minPathLength) == separatorChar ||
-              (altSeparator != null && result.charAt(minPathLength) == altSeparatorChar))
-          ) {
-            result = result.substring(1, result.length());
-          }
+            while (result.length() > minPathLength &&
+                  (result.charAt(minPathLength) == separatorChar ||
+                          (altSeparator != null && result.charAt(minPathLength) == altSeparatorChar))) {
+                result = result.substring(1, result.length());
+            }
         }
 
         char endChar;
