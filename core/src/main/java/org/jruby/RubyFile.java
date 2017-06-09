@@ -52,6 +52,7 @@ import java.nio.file.attribute.FileTime;
 import java.nio.file.attribute.PosixFileAttributeView;
 import java.util.ArrayList;
 import java.util.Enumeration;
+import java.util.List;
 import java.util.jar.JarFile;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -677,10 +678,7 @@ public class RubyFile extends RubyIO implements EncodingCapable {
         int minPathLength = 1;
         boolean trimmedSlashes = false;
 
-        boolean startsWithSeparator = false;
-        if (!name.isEmpty()) {
-            startsWithSeparator = name.charAt(0) == separatorChar;
-        }
+        boolean startsWithSeparator = name.isEmpty() ? false : name.charAt(0) == separatorChar;
 
         boolean startsWithUNCOnWindows = Platform.IS_WINDOWS && startsWith(name, separatorChar, separatorChar);
 
@@ -723,7 +721,6 @@ public class RubyFile extends RubyIO implements EncodingCapable {
         } else {
             //TODO deal with UNC names
             int index = name.lastIndexOf(separator);
-
             if (index == -1) {
                 if (startsWithDriveLetterOnWindows) {
                     return jfilename.substring(0, 2) + '.';
@@ -740,13 +737,14 @@ public class RubyFile extends RubyIO implements EncodingCapable {
 
             if (startsWithUNCOnWindows) {
                 index = jfilename.length();
-                String[] split = name.split(Pattern.quote(separator));
+                List<String> split = StringSupport.split(name, separatorChar);
                 int pathSectionCount = 0;
-                for (int i = 0; i < split.length; i++) {
-                    if (split[i].length() > 0) pathSectionCount += 1;
-                }
-                if (pathSectionCount > 2) {
-                    index = name.lastIndexOf(separator);
+                for (int i = 0; i < split.size(); i++) {
+                    if (split.get(i).length() > 0) {
+                        if ((pathSectionCount += 1) > 2) {
+                            index = name.lastIndexOf(separator); break;
+                        }
+                    }
                 }
             }
             result = jfilename.substring(0, index);
