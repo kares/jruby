@@ -143,15 +143,19 @@ public class RubyRational extends RubyNumeric {
     /** rb_rational_new1
      * 
      */
-    static IRubyObject newRationalCanonicalize(ThreadContext context, IRubyObject x) {
+    static IRubyObject newRationalCanonicalize(ThreadContext context, RubyInteger x) {
         return newRationalCanonicalize(context, x, RubyFixnum.one(context.runtime));
     }
 
     /** rb_rational_new
      * 
      */
-    public static IRubyObject newRationalCanonicalize(ThreadContext context, IRubyObject x, IRubyObject y) {
+    public static IRubyObject newRationalCanonicalize(ThreadContext context, RubyInteger x, RubyInteger y) {
         return canonicalizeInternal(context, context.runtime.getRational(), x, y);
+    }
+
+    public static IRubyObject newRationalCanonicalize(ThreadContext context, IRubyObject x, IRubyObject y) {
+        return canonicalizeInternal(context, context.runtime.getRational(), (RubyInteger) x, (RubyInteger) y);
     }
 
     public static IRubyObject newRationalCanonicalize(ThreadContext context, long x, long y) {
@@ -162,8 +166,7 @@ public class RubyRational extends RubyNumeric {
     /** f_rational_new2
      * 
      */
-    private static IRubyObject newRational(ThreadContext context, IRubyObject clazz, IRubyObject x, IRubyObject y) {
-        assert !(x instanceof RubyRational) && !(y instanceof RubyRational);
+    private static IRubyObject newRational(ThreadContext context, IRubyObject clazz, RubyInteger x, RubyInteger y) {
         return canonicalizeInternal(context, clazz, x, y);
     }
 
@@ -220,25 +223,25 @@ public class RubyRational extends RubyNumeric {
     /** nurat_s_canonicalize_internal
      * 
      */
-    private static IRubyObject canonicalizeInternal(ThreadContext context, IRubyObject clazz, IRubyObject num, IRubyObject den) {
+    private static IRubyObject canonicalizeInternal(ThreadContext context, IRubyObject clazz, RubyInteger num, RubyInteger den) {
         Ruby runtime = context.runtime;
-        IRubyObject res = f_cmp(context, den, RubyFixnum.zero(runtime));
-        if (res == RubyFixnum.minus_one(runtime)) {
-            num = f_negate(context, num);
-            den = f_negate(context, den);
-        } else if (res == RubyFixnum.zero(runtime)) {
+        final int res = den.signum();
+        if (res < 0) {
+            num = num.negate();
+            den = den.negate();
+        } else if (res == 0) {
             throw runtime.newZeroDivisionError();
         }
 
         IRubyObject gcd = f_gcd(context, num, den);
-        num = f_idiv(context, num, gcd);
-        den = f_idiv(context, den, gcd);
+        IRubyObject _num = f_idiv(context, num, gcd); // TODO use RubyInteger#fdiv
+        IRubyObject _den = f_idiv(context, den, gcd); // TODO use RubyInteger#fdiv
 
-        if (Numeric.CANON && canonicalization && f_one_p(context, den)) {
-            return num;
+        if (Numeric.CANON && canonicalization && f_one_p(context, _den)) {
+            return _num;
         }
 
-        return new RubyRational(context.runtime, clazz, num, den);
+        return new RubyRational(context.runtime, clazz, _num, _den);
     }
 
     /** nurat_s_canonicalize_internal_no_reduce
@@ -660,13 +663,13 @@ public class RubyRational extends RubyNumeric {
     }
 
     private IRubyObject fix_expt(ThreadContext context, RubyInteger other, final int sign) {
-        final IRubyObject tnum, tden;
+        final RubyInteger tnum, tden;
         if (sign > 0) { // other > 0
-            tnum = f_expt(context, num, other);
-            tden = f_expt(context, den, other);
+            tnum = (RubyInteger) f_expt(context, num, other);
+            tden = (RubyInteger) f_expt(context, den, other);
         } else if (sign < 0) { // other < 0
-            tnum = f_expt(context, den, f_negate(context, other));
-            tden = f_expt(context, num, f_negate(context, other));
+            tnum = (RubyInteger) f_expt(context, den, f_negate(context, other));
+            tden = (RubyInteger) f_expt(context, num, f_negate(context, other));
         } else { // other == 0
             tnum = tden = RubyFixnum.one(context.runtime);
         }
@@ -985,7 +988,7 @@ public class RubyRational extends RubyNumeric {
         ary[1] = b;
         IRubyObject[] ans = nurat_rationalize_internal(context, ary);
 
-        return newRational(context, this.metaClass, ans[0], ans[1]);
+        return newRational(context, this.metaClass, (RubyInteger) ans[0], (RubyInteger) ans[1]);
     }
 
     /** nurat_hash
@@ -1089,7 +1092,7 @@ public class RubyRational extends RubyNumeric {
             IRubyObject ip = a.eltInternal(0);
             IRubyObject fp = a.size() != 2 ? runtime.getNil() : a.eltInternal(1);
             
-            IRubyObject v = RubyRational.newRationalCanonicalize(context, f_to_i(context, ip));
+            IRubyObject v = RubyRational.newRationalCanonicalize(context, (RubyInteger) f_to_i(context, ip));
             
             if (!fp.isNil()) {
                 bytes = fp.convertToString().getByteList();
