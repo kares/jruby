@@ -94,8 +94,7 @@ public class RubyNumeric extends RubyObject {
 
     public static final double DBL_EPSILON=2.2204460492503131e-16;
 
-    private static IRubyObject convertToNum(double val, Ruby runtime) {
-
+    private static RubyInteger convertToNum(final Ruby runtime, double val) {
         if (val >= (double) RubyFixnum.MAX || val < (double) RubyFixnum.MIN) {
             return RubyBignum.newBignum(runtime, val);
         }
@@ -226,14 +225,14 @@ public class RubyNumeric extends RubyObject {
     /** rb_dbl2big + LONG2FIX at once (numeric.c)
      *
      */
-    public static IRubyObject dbl2num(Ruby runtime, double val) {
+    public static RubyInteger dbl2num(Ruby runtime, double val) {
         if (Double.isInfinite(val)) {
             throw runtime.newFloatDomainError(val < 0 ? "-Infinity" : "Infinity");
         }
         if (Double.isNaN(val)) {
             throw runtime.newFloatDomainError("NaN");
         }
-        return convertToNum(val, runtime);
+        return convertToNum(runtime, val);
     }
 
     /** rb_num2dbl and NUM2DBL
@@ -692,8 +691,8 @@ public class RubyNumeric extends RubyObject {
      */
     @JRubyMethod(name = "eql?")
     public IRubyObject eql_p(ThreadContext context, IRubyObject other) {
-        if (getClass() != other.getClass()) return getRuntime().getFalse();
-        return equalInternal(context, this, other) ? getRuntime().getTrue() : getRuntime().getFalse();
+        if (getClass() != other.getClass()) return context.runtime.getFalse();
+        return equalInternal(context, this, other) ? context.runtime.getTrue() : context.runtime.getFalse();
     }
 
     /** num_quo
@@ -831,7 +830,8 @@ public class RubyNumeric extends RubyObject {
      */
     @JRubyMethod(name = "zero?")
     public IRubyObject zero_p(ThreadContext context) {
-        return equalInternal(context, this, RubyFixnum.zero(getRuntime())) ? getRuntime().getTrue() : getRuntime().getFalse();
+        final Ruby runtime = context.runtime;
+        return equalInternal(context, this, RubyFixnum.zero(runtime)) ? runtime.getTrue() : runtime.getFalse();
     }
 
     /** num_nonzero_p
@@ -896,8 +896,7 @@ public class RubyNumeric extends RubyObject {
     /** num_step_scan_args
      *
      */
-
-    private IRubyObject[] scanStepArgs(ThreadContext context, IRubyObject[] args) {
+    private static IRubyObject[] scanStepArgs(ThreadContext context, IRubyObject[] args) {
         IRubyObject to = context.nil;
         IRubyObject step = context.runtime.newFixnum(1);
 
@@ -1134,7 +1133,7 @@ public class RubyNumeric extends RubyObject {
      */
     protected final IRubyObject op_num_equal(ThreadContext context, IRubyObject other) {
         // it won't hurt fixnums
-        if (this == other)  return getRuntime().getTrue();
+        if (this == other)  return context.runtime.getTrue();
 
         return sites(context).op_equals.call(context, other, other, this);
     }
@@ -1234,6 +1233,7 @@ public class RubyNumeric extends RubyObject {
         return JavaUtil.getNumericConverter(target).coerce(this, target);
     }
 
+    @Deprecated // not-used
     public static class InvalidIntegerException extends NumberFormatException {
         private static final long serialVersionUID = 55019452543252148L;
 
@@ -1249,6 +1249,7 @@ public class RubyNumeric extends RubyObject {
         }
     }
 
+    @Deprecated // not-used
     public static class NumberTooLargeException extends NumberFormatException {
         private static final long serialVersionUID = -1835120694982699449L;
         public NumberTooLargeException() {
@@ -1268,8 +1269,7 @@ public class RubyNumeric extends RubyObject {
      */
     @JRubyMethod(name = "negative?")
     public IRubyObject isNegative(ThreadContext context) {
-        IRubyObject zero = convertToNum(0, context.runtime);
-        return sites(context).op_lt.call(context, this, this, zero);
+        return sites(context).op_lt.call(context, this, this, RubyFixnum.zero(context.runtime));
 
     }
     /** num_positive_p
@@ -1277,8 +1277,7 @@ public class RubyNumeric extends RubyObject {
      */
     @JRubyMethod(name = "positive?")
     public IRubyObject isPositive(ThreadContext context) {
-        IRubyObject zero = convertToNum(0, context.runtime);
-        return sites(context).op_gt.call(context, this, this, zero);
+        return sites(context).op_gt.call(context, this, this, RubyFixnum.zero(context.runtime));
     }
 
     private static JavaSites.NumericSites sites(ThreadContext context) {
