@@ -590,12 +590,6 @@ public class RubyRational extends RubyNumeric {
     /** nurat_fdiv
      * 
      */
-//    @Override
-//    @JRubyMethod(name = "fdiv")
-//    public IRubyObject fdiv(ThreadContext context, IRubyObject other) {
-//        return f_div(context, f_to_f(context, this), other);
-//    }
-
     @JRubyMethod(name = "fdiv")
     public IRubyObject op_fdiv(ThreadContext context, IRubyObject other) {
         return f_div(context, f_to_f(context, this), other);
