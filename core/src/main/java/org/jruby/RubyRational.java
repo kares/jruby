@@ -66,6 +66,7 @@ import org.jcodings.specific.ASCIIEncoding;
 import org.jruby.anno.JRubyClass;
 import org.jruby.anno.JRubyMethod;
 import org.jruby.common.IRubyWarnings;
+import org.jruby.exceptions.RaiseException;
 import org.jruby.runtime.Arity;
 import org.jruby.runtime.ClassIndex;
 import org.jruby.runtime.JavaSites;
@@ -320,11 +321,11 @@ public class RubyRational extends RubyNumeric {
      */
     @JRubyMethod(name = "convert", meta = true, visibility = Visibility.PRIVATE)
     public static IRubyObject convert(ThreadContext context, IRubyObject recv, IRubyObject a1) {
-        if (a1.isNil()) {
+        if (a1 == context.nil) {
             throw context.runtime.newTypeError("can't convert nil into Rational");
         }
 
-        return convertCommon(context, recv, a1, context.runtime.getNil());
+        return convertCommon(context, recv, a1, context.nil);
     }
 
     /** nurat_s_convert
@@ -332,7 +333,7 @@ public class RubyRational extends RubyNumeric {
      */
     @JRubyMethod(name = "convert", meta = true, visibility = Visibility.PRIVATE)
     public static IRubyObject convert(ThreadContext context, IRubyObject recv, IRubyObject a1, IRubyObject a2) {
-        if (a1.isNil() || a2.isNil()) {
+        if (a1 == context.nil || a2 == context.nil  ) {
             throw context.runtime.newTypeError("can't convert nil into Rational");
         }
         
@@ -354,9 +355,7 @@ public class RubyRational extends RubyNumeric {
         } else if (a1 instanceof RubyString) {
             a1 = str_to_r_strict(context, a1);
         } else {
-            if (a1 instanceof RubyObject && responds_to_to_r(context, a1)) {
-                a1 = f_to_r(context, a1);
-            }
+            a1 = object_to_r(context, a1);
         }
         
         if (a2 instanceof RubyFloat) {
@@ -366,27 +365,40 @@ public class RubyRational extends RubyNumeric {
         }
 
         if (a1 instanceof RubyRational) {
-            if (a2.isNil() || (k_exact_p(a2) && f_one_p(context, a2))) return a1;
+            if (a2 == context.nil || (k_exact_p(a2) && f_one_p(context, a2))) return a1;
         }
 
-        if (a2.isNil()) {
+        if (a2 == context.nil) {
             if (a1 instanceof RubyNumeric && !f_integer_p(context, a1).isTrue()) return a1;
             return newInstance(context, recv, a1);
-        } else {
-            if (a1 instanceof RubyNumeric && a2 instanceof RubyNumeric &&
-                (!f_integer_p(context, a1).isTrue() || !f_integer_p(context, a2).isTrue())) {
-                return f_div(context, a1, a2);
-            }
-            return newInstance(context, recv, a1, a2);
         }
+        if (a1 instanceof RubyNumeric && a2 instanceof RubyNumeric &&
+            (!f_integer_p(context, a1).isTrue() || !f_integer_p(context, a2).isTrue())) {
+            return f_div(context, a1, a2);
+        }
+        return newInstance(context, recv, a1, a2);
     }
 
-    private static boolean responds_to_to_r(ThreadContext context, IRubyObject obj) {
-        return respond_to_to_r.respondsTo(context, obj, obj);
+    private static RubyRational object_to_r(ThreadContext context, IRubyObject num) {
+        //if (num instanceof RubyObject && responds_to_to_r(context, num)) {
+        //    num = f_to_r(context, num);
+        //}
+        IRubyObject val;
+        try { // since BasicObject does not have respond_to?
+            val = context.sites.Numeric.to_r.call(context, num, num);
+        } catch (RaiseException ex) {
+            final RubyException error = ex.getException();
+            if (context.runtime.getNameError().isInstance(error)) {
+                throw context.runtime.newTypeError("can't convert " + num.getMetaClass() + " to Rational");
+            }
+            throw ex;
+        }
+        if (!(val instanceof RubyRational)) {
+            throw context.runtime.newTypeError("can't convert " + num.getMetaClass() + " to Rational" +
+                    " (" + num.getMetaClass() + "#to_r gives " + val.getMetaClass() + ')');
+        }
+        return (RubyRational) val;
     }
-
-    // TODO: wasn't sure whether to put this on NumericSites, here for now - should move
-    static final RespondToCallSite respond_to_to_r = new RespondToCallSite("to_r");
 
     /** nurat_numerator
      * 
