@@ -40,7 +40,8 @@ import org.jruby.runtime.builtin.IRubyObject;
  * missing or "undef'ed" methods. Only one instance is ever created, and it
  * can't be invoked.
  */
-public class UndefinedMethod extends DynamicMethod {
+public final class UndefinedMethod extends DynamicMethod {
+
     public static final UndefinedMethod INSTANCE = new UndefinedMethod();
 
     /**
@@ -87,6 +88,11 @@ public class UndefinedMethod extends DynamicMethod {
         // UndefinedMethod should be immutable
     }
 
+    @Override
+    public void setDefinedClass(RubyModule definedClass) {
+        // UndefinedMethod should be immutable
+    }
+
     /**
      * Dummy implementation of setVisibility that does nothing.
      * 
@@ -97,17 +103,21 @@ public class UndefinedMethod extends DynamicMethod {
         // UndefinedMethod should be immutable
     }
 
-    /**
-     * Dummy implementation of setCallConfig that does nothing.
-     * 
-     * @param callConfig Ignored
-     */
     @Override
-    @Deprecated
-    public void setCallConfig(CallConfiguration callConfig) {
+    public void setIsBuiltin(boolean isBuiltin) {
+        // UndefinedMethod should be immutable - isBuiltin() always returns false
+    }
+
+    @Override
+    public void setNotImplemented(boolean setNotImplemented) {
         // UndefinedMethod should be immutable
     }
-    
+
+    @Override
+    public void setName(String name) {
+        // UndefinedMethod should be immutable - keep the name null
+    }
+
     /**
      * UndefinedMethod is always visible because it's only used as a marker for
      * missing or undef'ed methods.
