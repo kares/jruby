@@ -51,7 +51,6 @@ import static org.jruby.runtime.Visibility.PRIVATE;
  * A "thin" Java package wrapper (for the runtime to see them as Ruby objects).
  *
  * @since 9K
- * @note previously <code>JavaPackageModuleTemplate</code> in Ruby code
  * @author kares
  */
 @JRubyClass(name="Java::JavaPackage", parent="Module")
@@ -69,10 +68,6 @@ public class JavaPackage extends RubyModule {
         JavaPackage.setParent(Java);
         Java.setConstant("JavaPackage", JavaPackage); // Java::JavaPackage
         // JavaPackage.setReifiedClass(JavaPackage.class);
-
-        // @deprecated JavaPackageModuleTemplate used previously
-        runtime.getObject().setConstant("JavaPackageModuleTemplate", JavaPackage); // JavaPackageModuleTemplate
-        runtime.getObject().deprecateConstant(runtime, "JavaPackageModuleTemplate");
 
         JavaPackage.defineAnnotatedMethods(JavaPackage.class);
         return JavaPackage;
