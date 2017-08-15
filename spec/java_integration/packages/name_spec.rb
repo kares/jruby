@@ -27,7 +27,7 @@ describe "java package (and class)" do
     expect( Java::Javax.inspect ).to eql 'Java::Javax'
     expect( Java.inspect ).to eql 'Java'
     expect( Java::java.util.inspect ).to eql 'Java::JavaUtil'
-    expect( org.xml.object_id ).to be_a Fixnum
+    expect( org.xml.object_id ).to be_a Integer
     expect( org.xml.sax.singleton_class ).to be_a Class
     expect( org.xml == org.xml.sax ).to be false
     expect( org.xml.eql? Java::org::xml ).to be true
@@ -61,6 +61,19 @@ describe "java package (and class)" do
     expect( org.xml.respond_to?(:name) ).to be true
     expect( org.xml.sax.respond_to?(:name) ).to be true
     expect( Java::Default.respond_to?(:name) ).to be true
+  end
+
+  it 'has correct super/singleton clazz' do
+    pkg = Java::JavaLang
+    expect( pkg.is_a?(Module) ).to be true
+    expect( pkg.is_a?(Class) ).to be false
+    expect( pkg.is_a?(Class) ).to be false
+    meta_class = pkg.singleton_class
+    expect( meta_class.is_a?(Class) ).to be true
+    expect( meta_class.superclass.is_a?(Class) ).to be true
+
+    expect( java.lang.singleton_class.name ).to eql nil
+    expect( java.lang.singleton_class.superclass.name ).to eql 'Java::JavaPackage'
   end
 
 end

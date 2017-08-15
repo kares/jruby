@@ -27,13 +27,7 @@
  ***** END LICENSE BLOCK *****/
 package org.jruby.javasupport;
 
-import org.jruby.IncludedModuleWrapper;
-import org.jruby.MetaClass;
-import org.jruby.Ruby;
-import org.jruby.RubyBoolean;
-import org.jruby.RubyClass;
-import org.jruby.RubyModule;
-import org.jruby.RubyString;
+import org.jruby.*;
 import org.jruby.anno.JRubyClass;
 import org.jruby.anno.JRubyMethod;
 import org.jruby.exceptions.RaiseException;
@@ -59,21 +53,18 @@ public class JavaPackage extends RubyModule {
     static RubyModule createJavaPackageClass(final Ruby runtime, final RubyModule Java) {
         RubyClass superClass = new BlankSlateWrapper(runtime, runtime.getModule(), runtime.getKernel());
         RubyClass JavaPackage = RubyClass.newClass(runtime, superClass);
-        JavaPackage.setMetaClass(runtime.getModule());
         JavaPackage.setAllocator(ObjectAllocator.NOT_ALLOCATABLE_ALLOCATOR);
-        ((MetaClass) JavaPackage.makeMetaClass(superClass)).setAttached(JavaPackage);
-
         JavaPackage.setBaseName("JavaPackage");
 
         JavaPackage.setParent(Java);
         Java.setConstant("JavaPackage", JavaPackage); // Java::JavaPackage
-        // JavaPackage.setReifiedClass(JavaPackage.class);
+        JavaPackage.setReifiedClass(JavaPackage.class);
 
         JavaPackage.defineAnnotatedMethods(JavaPackage.class);
         return JavaPackage;
     }
 
-    static RubyModule newPackage(Ruby runtime, CharSequence name, RubyModule parent) {
+    static JavaPackage newPackage(Ruby runtime, CharSequence name, RubyModule parent) {
         final JavaPackage pkgModule = new JavaPackage(runtime, name);
         // intentionally do NOT set pkgModule.setParent(parent);
 
@@ -199,27 +190,12 @@ public class JavaPackage extends RubyModule {
         return respond_to(context, name, includePrivate.isTrue());
     }
 
-    private IRubyObject respond_to(final ThreadContext context, IRubyObject mname, final boolean includePrivate) {
-        String name = mname.asJavaString();
-
-        if (getMetaClass().respondsToMethod(name, !includePrivate)) return context.runtime.getTrue();
-        /*
-        if ( ( name = BlankSlateWrapper.handlesMethod(name) ) != null ) {
-            RubyBoolean bound = checkMetaClassBoundMethod(context, name, includePrivate);
-            if ( bound != null ) return bound;
-            return context.runtime.getFalse(); // un-bound (removed) method
-        }
-        */
-
-        //if ( ! (mname instanceof RubySymbol) ) mname = context.runtime.newSymbol(name);
-        //IRubyObject respond = Helpers.invoke(context, this, "respond_to_missing?", mname, context.runtime.newBoolean(includePrivate));
-        //return context.runtime.newBoolean(respond.isTrue());
-
+    private IRubyObject respond_to(final ThreadContext context, IRubyObject name, final boolean includePrivate) {
+        if (getMetaClass().respondsToMethod(name.toString(), !includePrivate)) return context.runtime.getTrue();
         return context.nil; // NOTE: this is wrong - should be true but compatibility first, for now
     }
 
     private RubyBoolean checkMetaClassBoundMethod(final ThreadContext context, final String name, final boolean includePrivate) {
-        // getMetaClass().isMethodBound(name, !includePrivate, true)
         DynamicMethod method = getMetaClass().searchMethod(name);
         if ( ! method.isUndefined() && ! method.isNotImplemented() ) {
             if ( ! includePrivate && method.getVisibility() == PRIVATE ) {
@@ -240,9 +216,8 @@ public class JavaPackage extends RubyModule {
         return respond_to_missing(context, name, includePrivate.isTrue());
     }
 
-    private RubyBoolean respond_to_missing(final ThreadContext context, IRubyObject mname, final boolean includePrivate) {
-        final String name = mname.asJavaString();
-        if ( BlankSlateWrapper.handlesMethod(name) != null ) {
+    private RubyBoolean respond_to_missing(final ThreadContext context, IRubyObject name, final boolean includePrivate) {
+        if ( BlankSlateWrapper.handlesMethod(name.toString()) != null ) {
             return context.runtime.getFalse(); // not missing!
         }
         return context.runtime.getTrue();
@@ -333,18 +308,21 @@ public class JavaPackage extends RubyModule {
      * packages or otherwise defined on the <code>Java::JavaPackage</code> will
      * be inaccessible.
      */
-    static final class BlankSlateWrapper extends IncludedModuleWrapper {
+    static final class BlankSlateWrapper extends IncludedModule {
 
         BlankSlateWrapper(Ruby runtime, RubyClass superClass, RubyModule delegate) {
             super(runtime, superClass, delegate);
         }
 
         @Override
-        protected DynamicMethod searchMethodCommon(String name) {
-            // this module is special and only searches itself;
+        public boolean isIncluded() { return true; }
 
-            // TODO implement a switch to allow for 'more-aligned' behavior
+        @Override
+        public boolean isPrepended() { return false; }
 
+        @Override
+        protected DynamicMethod searchMethodCommon(String name) { // this module is special - only searches itself;
+            // NOTE: maybe implement a switch to allow for 'more-aligned' behavior (if necessary see GH-4528) ?!?
             return (name = handlesMethod(name)) != null ? superClass.searchMethodInner(name) : NullMethod.INSTANCE;
         }
 
