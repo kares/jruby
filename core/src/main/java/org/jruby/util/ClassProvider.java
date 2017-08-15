@@ -27,17 +27,16 @@
  ***** END LICENSE BLOCK *****/
 
 package org.jruby.util;
-// FIXME: this probably belongs in a different package.
 
 import org.jruby.RubyClass;
 import org.jruby.RubyModule;
 
 /**
  * @author Bill Dortch
- *
  */
 public interface ClassProvider {
 
-    public RubyClass defineClassUnder(RubyModule module, String name, RubyClass superClazz);
-    public RubyModule defineModuleUnder(RubyModule module, String name);
+    RubyClass defineClassUnder(RubyModule module, String name, RubyClass superClazz);
+    RubyModule defineModuleUnder(RubyModule module, String name);
+
 }
