@@ -569,7 +569,7 @@ public class Java implements Library {
         subclass.setCacheProxy(true);
 
         final RubyClass subclassSingleton = subclass.getSingletonClass();
-        subclassSingleton.addReadWriteAttribute(context, "java_proxy_class");
+        subclassSingleton.addReadAttribute(context, "java_proxy_class");
         subclassSingleton.addMethod("java_interfaces", new JavaMethodZero(subclassSingleton, PUBLIC) {
             @Override
             public IRubyObject call(ThreadContext context, IRubyObject self, RubyModule clazz, String name) {
@@ -819,8 +819,6 @@ public class Java implements Library {
                 return (RubyModule) packageAlreadySet;
             }
             parentModule.setConstant(name.intern(), packageModule);
-            //MetaClass metaClass = (MetaClass) packageModule.getMetaClass();
-            //metaClass.setAttached(packageModule);
         }
         return packageModule;
     }

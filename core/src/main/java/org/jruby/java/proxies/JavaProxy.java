@@ -71,7 +71,7 @@ public class JavaProxy extends RubyObject {
 
         RubyClass JavaProxy = runtime.defineClass("JavaProxy", runtime.getObject(), ALLOCATOR);
 
-        JavaProxy.getSingletonClass().addReadWriteAttribute(context, "java_class");
+        JavaProxy.getSingletonClass().addReadAttribute(context, "java_class");
         JavaProxy.defineAnnotatedMethods(JavaProxy.class);
         JavaProxy.includeModule(runtime.getModule("JavaProxyMethods"));
 
@@ -129,9 +129,9 @@ public class JavaProxy extends RubyObject {
     @JRubyMethod(meta = true, frame = true) // framed for invokeSuper
     public static IRubyObject inherited(ThreadContext context, IRubyObject recv, IRubyObject subclass) {
         IRubyObject subJavaClass = JavaClass.java_class(context, (RubyClass) subclass);
-        if (subJavaClass.isNil()) {
+        if (subJavaClass == null || subJavaClass == context.nil) {
             subJavaClass = JavaClass.java_class(context, (RubyClass) recv);
-            Helpers.invoke(context, subclass, "java_class=", subJavaClass);
+            ((RubyClass) subclass).setInstanceVariable("@java_class", subJavaClass);
         }
         return Helpers.invokeSuper(context, recv, subclass, Block.NULL_BLOCK);
     }
