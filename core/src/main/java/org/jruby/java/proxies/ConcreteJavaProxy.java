@@ -197,17 +197,6 @@ public class ConcreteJavaProxy extends JavaProxy {
 //        getRuntime().getJavaSupport().setJavaObjectVariable(this, index, value);
 //    }
 
-    /**
-     * Because we can't physically associate an ID with a Java object, we can
-     * only use the identity hashcode here.
-     *
-     * @return The identity hashcode for the Java object.
-     */
-    @Override
-    public IRubyObject id() {
-        return getRuntime().newFixnum(System.identityHashCode(getObject()));
-    }
-
     @Override
     @SuppressWarnings("unchecked")
     public Object toJava(final Class type) {

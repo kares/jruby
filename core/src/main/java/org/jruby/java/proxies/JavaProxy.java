@@ -115,6 +115,17 @@ public class JavaProxy extends RubyObject {
         return (JavaClass) JavaClass.java_class(context, module);
     }
 
+    /**
+     * Because we can't physically associate an ID with a Java object, we can
+     * only use the identity hashcode here.
+     *
+     * @return The identity hashcode for the Java object.
+     */
+    @Override
+    public IRubyObject id() {
+        return getRuntime().newFixnum(System.identityHashCode(getObject()));
+    }
+
     @JRubyMethod(meta = true, frame = true) // framed for invokeSuper
     public static IRubyObject inherited(ThreadContext context, IRubyObject recv, IRubyObject subclass) {
         IRubyObject subJavaClass = JavaClass.java_class(context, (RubyClass) subclass);
