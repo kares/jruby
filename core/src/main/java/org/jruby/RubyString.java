@@ -2136,7 +2136,7 @@ public class RubyString extends RubyObject implements EncodingCapable, MarshalEn
         int end = p + byteList.getRealSize();
         RubyString result = new RubyString(runtime, runtime.getString(), new ByteList(end - p));
         Encoding resultEnc = runtime.getDefaultInternalEncoding();
-        boolean isUnicode = StringSupport.isUnicode(enc);
+        boolean isUnicode = enc.isUnicode();
         boolean asciiCompat = enc.isAsciiCompatible();
 
 
@@ -2536,7 +2536,7 @@ public class RubyString extends RubyObject implements EncodingCapable, MarshalEn
         Encoding enc = value.getEncoding();
         final Matcher matcher = prepared.matcher(bytes, begin, range);
 
-        if (RubyRegexp.matcherSearch(runtime, matcher, begin, range, Option.NONE) >= 0) {
+        if (RubyRegexp.matcherSearch(context, matcher, begin, range, Option.NONE) >= 0) {
             RubyMatchData match = RubyRegexp.createMatchData(context, this, matcher, pattern);
             match.regexp = regexp;
             context.setBackRef(match);
@@ -2557,7 +2557,7 @@ public class RubyString extends RubyObject implements EncodingCapable, MarshalEn
 
             return subBangCommon(context, mBeg, mEnd, repl, tuFlags | repl.flags);
         }
-        return context.setBackRef(runtime.getNil());
+        return context.setBackRef(context.nil);
     }
 
     private IRubyObject subBangNoIter(Ruby runtime, ThreadContext context, IRubyObject arg0, RubyString repl) {
@@ -2569,15 +2569,15 @@ public class RubyString extends RubyObject implements EncodingCapable, MarshalEn
         int range = begin + value.getRealSize();
         final Matcher matcher = prepared.matcher(value.getUnsafeBytes(), begin, range);
 
-        if (RubyRegexp.matcherSearch(runtime, matcher, begin, range, Option.NONE) >= 0) {
-            repl = RubyRegexp.regsub19(context, repl, this, matcher, pattern);
+        if (RubyRegexp.matcherSearch(context, matcher, begin, range, Option.NONE) >= 0) {
+            repl = RubyRegexp.regsub(context, repl, this, matcher, pattern);
             RubyMatchData match = RubyRegexp.createMatchData(context, this, matcher, pattern);
             match.regexp = regexp;
             context.setBackRef(match);
 
             return subBangCommon(context, matcher.getBegin(), matcher.getEnd(), repl, repl.flags);
         }
-        return context.setBackRef(runtime.getNil());
+        return context.setBackRef(context.nil);
     }
 
     private IRubyObject subBangCommon(ThreadContext context, final int beg, final int end,
@@ -2636,60 +2636,60 @@ public class RubyString extends RubyObject implements EncodingCapable, MarshalEn
         return repl.value.getEncoding();
     }
 
-    /** rb_str_gsub / rb_str_gsub_bang
-     *
-     */
-    public IRubyObject gsub(ThreadContext context, IRubyObject arg0, Block block) {
-        return gsub19(context, arg0, block);
+    @Deprecated
+    public IRubyObject gsub19(ThreadContext context, IRubyObject arg0, Block block) {
+        return gsub(context, arg0, block);
     }
 
-    public IRubyObject gsub(ThreadContext context, IRubyObject arg0, IRubyObject arg1, Block block) {
-        return gsub19(context, arg0, arg1, block);
+    @Deprecated
+    public IRubyObject gsub19(ThreadContext context, IRubyObject arg0, IRubyObject arg1, Block block) {
+        return gsub(context, arg0, arg1, block);
     }
 
-    public IRubyObject gsub_bang(ThreadContext context, IRubyObject arg0, Block block) {
-        return gsub_bang19(context, arg0, block);
+    @Deprecated
+    public IRubyObject gsub_bang19(ThreadContext context, IRubyObject arg0, Block block) {
+        return gsub_bang(context, arg0, block);
     }
 
-    public IRubyObject gsub_bang(ThreadContext context, IRubyObject arg0, IRubyObject arg1, Block block) {
-        return gsub_bang19(context, arg0, arg1, block);
+    @Deprecated
+    public IRubyObject gsub_bang19(ThreadContext context, IRubyObject arg0, IRubyObject arg1, Block block) {
+        return gsub_bang(context, arg0, arg1, block);
     }
 
     @JRubyMethod(name = "gsub", reads = BACKREF, writes = BACKREF)
-    public IRubyObject gsub19(ThreadContext context, IRubyObject arg0, Block block) {
+    public IRubyObject gsub(ThreadContext context, IRubyObject arg0, Block block) {
         return block.isGiven() ? gsubCommon19(context, block, null, null, arg0, false, 0) : enumeratorize(context.runtime, this, "gsub", arg0);
     }
 
     @JRubyMethod(name = "gsub", reads = BACKREF, writes = BACKREF)
-    public IRubyObject gsub19(ThreadContext context, IRubyObject arg0, IRubyObject arg1, Block block) {
-        return gsub19(context, arg0, arg1, block, false);
+    public IRubyObject gsub(ThreadContext context, IRubyObject arg0, IRubyObject arg1, Block block) {
+        return gsubImpl(context, arg0, arg1, block, false);
     }
 
     @JRubyMethod(name = "gsub!", reads = BACKREF, writes = BACKREF)
-    public IRubyObject gsub_bang19(ThreadContext context, IRubyObject arg0, Block block) {
+    public IRubyObject gsub_bang(ThreadContext context, IRubyObject arg0, Block block) {
         checkFrozen();
         return block.isGiven() ? gsubCommon19(context, block, null, null, arg0, true, 0) : enumeratorize(context.runtime, this, "gsub!", arg0);
     }
 
     @JRubyMethod(name = "gsub!", reads = BACKREF, writes = BACKREF)
-    public IRubyObject gsub_bang19(ThreadContext context, IRubyObject arg0, IRubyObject arg1, Block block) {
+    public IRubyObject gsub_bang(ThreadContext context, IRubyObject arg0, IRubyObject arg1, Block block) {
         checkFrozen();
-        return gsub19(context, arg0, arg1, block, true);
+        return gsubImpl(context, arg0, arg1, block, true);
     }
 
-    private IRubyObject gsub19(ThreadContext context, IRubyObject arg0, IRubyObject arg1, Block block, final boolean bang) {
-        Ruby runtime = context.runtime;
-        IRubyObject tryHash = TypeConverter.convertToTypeWithCheck(context, arg1, runtime.getHash(), sites(context).to_hash_checked);
+    private IRubyObject gsubImpl(ThreadContext context, IRubyObject arg0, IRubyObject arg1, Block block, final boolean bang) {
+        IRubyObject tryHash = TypeConverter.convertToTypeWithCheck(context, arg1, context.runtime.getHash(), sites(context).to_hash_checked);
 
         final RubyHash hash;
         final RubyString str;
         final int tuFlags;
-        if (tryHash.isNil()) {
+        if (tryHash == context.nil) {
             hash = null;
             str = arg1.convertToString();
             tuFlags = str.flags;
         } else {
-            hash = (RubyHash)tryHash;
+            hash = (RubyHash) tryHash;
             str = null;
             tuFlags = hash.flags & TAINTED_F;
         }
@@ -2716,7 +2716,7 @@ public class RubyString extends RubyObject implements EncodingCapable, MarshalEn
 
         final Matcher matcher = prepared.matcher(spBytes, spBeg, spBeg + spLen);
 
-        int beg = RubyRegexp.matcherSearch(runtime, matcher, spBeg, spBeg + spLen, Option.NONE);
+        int beg = RubyRegexp.matcherSearch(context, matcher, spBeg, spBeg + spLen, Option.NONE);
         if (beg < 0) {
             if (useBackref) context.setBackRef(context.nil);
             return bang ? context.nil : strDup(runtime); /* bang: true, no match, no substitution */
@@ -2736,7 +2736,7 @@ public class RubyString extends RubyObject implements EncodingCapable, MarshalEn
             int endz = matcher.getEnd();
 
             if (repl != null) {     // string given
-                val = RubyRegexp.regsub19(context, repl, this, matcher, pattern);
+                val = RubyRegexp.regsub(context, repl, this, matcher, pattern);
             } else {
                 final RubyString substr = makeShared(runtime, begz, endz - begz);
                 if (hash != null) { // hash given
@@ -2753,7 +2753,7 @@ public class RubyString extends RubyObject implements EncodingCapable, MarshalEn
 
             tuFlags |= val.flags;
 
-            int len = beg - offset;
+            int len = begz - offset;
             if (len != 0) dest.cat(spBytes, cp, len, str_enc);
             dest.cat19(val);
             offset = endz;
@@ -2765,7 +2765,7 @@ public class RubyString extends RubyObject implements EncodingCapable, MarshalEn
             }
             cp = spBeg + offset;
             if (offset > spLen) break;
-            beg = RubyRegexp.matcherSearch(runtime, matcher, cp, spBeg + spLen, Option.NONE);
+            beg = RubyRegexp.matcherSearch(context, matcher, cp, spBeg + spLen, Option.NONE);
         } while (beg >= 0);
 
         if (spLen > offset) dest.cat(spBytes, cp, spLen - offset, str_enc);
@@ -2789,34 +2789,35 @@ public class RubyString extends RubyObject implements EncodingCapable, MarshalEn
     /** rb_str_index_m
      *
      */
+    @JRubyMethod(name = "index", reads = BACKREF, writes = BACKREF)
     public IRubyObject index(ThreadContext context, IRubyObject arg0) {
-        return index19(context, arg0);
+        return indexCommon19(context, arg0, 0);
     }
 
+    @JRubyMethod(name = "index", reads = BACKREF, writes = BACKREF)
     public IRubyObject index(ThreadContext context, IRubyObject arg0, IRubyObject arg1) {
-        return index19(context, arg0, arg1);
-    }
-
-    @JRubyMethod(name = "index", reads = BACKREF, writes = BACKREF)
-    public IRubyObject index19(ThreadContext context, IRubyObject arg0) {
-        return indexCommon19(context.runtime, context, arg0, 0);
-    }
-
-    @JRubyMethod(name = "index", reads = BACKREF, writes = BACKREF)
-    public IRubyObject index19(ThreadContext context, IRubyObject arg0, IRubyObject arg1) {
         int pos = RubyNumeric.num2int(arg1);
-        Ruby runtime = context.runtime;
         if (pos < 0) {
             pos += strLength();
             if (pos < 0) {
-                if (arg0 instanceof RubyRegexp) context.setBackRef(runtime.getNil());
-                return runtime.getNil();
+                if (arg0 instanceof RubyRegexp) context.setBackRef(context.nil);
+                return context.nil;
             }
         }
-        return indexCommon19(runtime, context, arg0, pos);
+        return indexCommon19(context, arg0, pos);
     }
 
-    private IRubyObject indexCommon19(Ruby runtime, ThreadContext context, IRubyObject sub, int pos) {
+    @Deprecated
+    public IRubyObject index19(ThreadContext context, IRubyObject arg0) {
+        return index(context, arg0);
+    }
+
+    @Deprecated
+    public IRubyObject index19(ThreadContext context, IRubyObject arg0, IRubyObject arg1) {
+        return index(context, arg0, arg1);
+    }
+
+    private IRubyObject indexCommon19(ThreadContext context, IRubyObject sub, int pos) {
         if (sub instanceof RubyRegexp) {
             if (pos > strLength()) return context.nil;
             RubyRegexp regSub = (RubyRegexp) sub;
@@ -2832,12 +2833,12 @@ public class RubyString extends RubyObject implements EncodingCapable, MarshalEn
             pos = subLength(pos);
         } else {
             IRubyObject tmp = sub.checkStringType();
-            if (tmp.isNil()) throw runtime.newTypeError("type mismatch: " + sub.getMetaClass().getName() + " given");
+            if (tmp == context.nil) throw context.runtime.newTypeError("type mismatch: " + sub.getMetaClass().getName() + " given");
             pos = StringSupport.index(this, (RubyString) tmp, pos, this.checkEncoding((RubyString) tmp));
             pos = subLength(pos);
         }
 
-        return pos == -1 ? runtime.getNil() : RubyFixnum.newFixnum(runtime, pos);
+        return pos == -1 ? context.nil : RubyFixnum.newFixnum(context.runtime, pos);
     }
 
     // MRI: rb_strseq_index
@@ -3027,7 +3028,7 @@ public class RubyString extends RubyObject implements EncodingCapable, MarshalEn
             }
             if (beg + len > length) len = length - beg;
             if (len <= 0) len = beg = 0;
-            return makeShared19(runtime, beg, len);
+            return makeShared(runtime, beg, len);
         } else {
             if (beg + len > length) len = length - beg;
             return multibyteSubstr19(runtime, enc, len, beg, length);
@@ -3085,8 +3086,6 @@ public class RubyString extends RubyObject implements EncodingCapable, MarshalEn
     /* rb_str_splice */
     private IRubyObject replaceInternal(int beg, int len, RubyString repl) {
         StringSupport.replaceInternal(beg, len, this, repl);
-
-        // TODO (nirvdrum 13-Jan-15) This should be part of the StringSupport definition but a general notion of tainted needs to emerge first.
         return infectBy(repl);
     }
 
@@ -3697,7 +3696,7 @@ public class RubyString extends RubyObject implements EncodingCapable, MarshalEn
 
         int ptr = value.getBegin();
         int len = value.getRealSize();
-        byte[]bytes = value.getUnsafeBytes();
+        byte[] bytes = value.getUnsafeBytes();
 
         RubyArray result = runtime.newArray();
         Encoding enc = value.getEncoding();
@@ -5341,13 +5340,14 @@ public class RubyString extends RubyObject implements EncodingCapable, MarshalEn
         return null;
     }
 
+    @JRubyMethod(name = {"to_sym", "intern"})
     public RubySymbol intern() {
-        return intern19();
+        return to_sym();
     }
 
-    @JRubyMethod(name = {"to_sym", "intern"})
+    @Deprecated
     public RubySymbol intern19() {
-        return to_sym();
+        return intern();
     }
 
     @JRubyMethod

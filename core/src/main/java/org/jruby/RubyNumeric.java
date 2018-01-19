@@ -248,7 +248,7 @@ public class RubyNumeric extends RubyObject {
     /**
      * MRI: macro DBL2IVAL
      */
-    public static IRubyObject dbl2ival(Ruby runtime, double val) {
+    public static RubyInteger dbl2ival(Ruby runtime, double val) {
         if (fixable(runtime, val)) {
             return RubyFixnum.newFixnum(runtime, (long) val);
         }
@@ -476,8 +476,7 @@ public class RubyNumeric extends RubyObject {
         final IRubyObject result;
         try {
             result = coerceBody(context, other);
-        }
-        catch (RaiseException e) { // e.g. NoMethodError: undefined method `coerce'
+        } catch (RaiseException e) { // e.g. NoMethodError: undefined method `coerce'
             if (context.runtime.getStandardError().isInstance( e.getException() )) {
                 context.setErrorInfo($ex); // restore $!
                 RubyWarnings warnings = context.runtime.getWarnings();
@@ -649,7 +648,7 @@ public class RubyNumeric extends RubyObject {
      */
     @JRubyMethod(name = "singleton_method_added")
     public static IRubyObject sadded(IRubyObject self, IRubyObject name) {
-        throw self.getRuntime().newTypeError("can't define singleton method " + name + " for " + self.getType().getName());
+        throw self.getRuntime().newTypeError("can't define singleton method \"" + name + "\" for " + self.getType().getName());
     }
 
     /** num_init_copy
@@ -759,6 +758,10 @@ public class RubyNumeric extends RubyObject {
      */
     public IRubyObject idiv(ThreadContext context, IRubyObject other) {
         return div(context, other);
+    }
+
+    public IRubyObject idiv(ThreadContext context, long other) {
+        return idiv(context, RubyFixnum.newFixnum(context.runtime, other));
     }
 
     /** num_divmod

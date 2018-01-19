@@ -93,31 +93,31 @@ public class InvocationMethodFactory extends MethodFactory implements Opcodes {
     private final static String COMPILED_CALL_SIG_ZERO_BLOCK = sig(IRubyObject.class,
             params(ThreadContext.class, IRubyObject.class, RubyModule.class, String.class, Block.class));
 
-    /** The outward arity-zero call-with-block signature for compiled Ruby method handles. */
+    /** The outward arity-zero call-without-block signature for compiled Ruby method handles. */
     private final static String COMPILED_CALL_SIG_ZERO = sig(IRubyObject.class,
             params(ThreadContext.class, IRubyObject.class, RubyModule.class, String.class));
 
-    /** The outward arity-zero call-with-block signature for compiled Ruby method handles. */
+    /** The outward arity-one call-with-block signature for compiled Ruby method handles. */
     private final static String COMPILED_CALL_SIG_ONE_BLOCK = sig(IRubyObject.class,
             params(ThreadContext.class, IRubyObject.class, RubyModule.class, String.class, IRubyObject.class, Block.class));
 
-    /** The outward arity-zero call-with-block signature for compiled Ruby method handles. */
+    /** The outward arity-one call-without-block signature for compiled Ruby method handles. */
     private final static String COMPILED_CALL_SIG_ONE = sig(IRubyObject.class,
             params(ThreadContext.class, IRubyObject.class, RubyModule.class, String.class, IRubyObject.class));
 
-    /** The outward arity-zero call-with-block signature for compiled Ruby method handles. */
+    /** The outward arity-two call-with-block signature for compiled Ruby method handles. */
     private final static String COMPILED_CALL_SIG_TWO_BLOCK = sig(IRubyObject.class,
             params(ThreadContext.class, IRubyObject.class, RubyModule.class, String.class, IRubyObject.class, IRubyObject.class, Block.class));
 
-    /** The outward arity-zero call-with-block signature for compiled Ruby method handles. */
+    /** The outward arity-two call-without-block signature for compiled Ruby method handles. */
     private final static String COMPILED_CALL_SIG_TWO = sig(IRubyObject.class,
             params(ThreadContext.class, IRubyObject.class, RubyModule.class, String.class, IRubyObject.class, IRubyObject.class));
 
-    /** The outward arity-zero call-with-block signature for compiled Ruby method handles. */
+    /** The outward arity-three call-with-block signature for compiled Ruby method handles. */
     private final static String COMPILED_CALL_SIG_THREE_BLOCK = sig(IRubyObject.class,
             params(ThreadContext.class, IRubyObject.class, RubyModule.class, String.class, IRubyObject.class, IRubyObject.class, IRubyObject.class, Block.class));
 
-    /** The outward arity-zero call-with-block signature for compiled Ruby method handles. */
+    /** The outward arity-three call-without-block signature for compiled Ruby method handles. */
     private final static String COMPILED_CALL_SIG_THREE = sig(IRubyObject.class,
             params(ThreadContext.class, IRubyObject.class, RubyModule.class, String.class, IRubyObject.class, IRubyObject.class, IRubyObject.class));
 
@@ -273,7 +273,7 @@ public class InvocationMethodFactory extends MethodFactory implements Opcodes {
 
                     ClassWriter cw = createJavaMethodCtor(generatedClassPath, superClassString, info.getParameterDesc());
 
-                    addAnnotatedMethodInvoker(cw, "call", superClassString, descs);
+                    addAnnotatedMethodInvoker(cw, superClassString, descs);
 
                     c = endClass(cw, generatedClassName);
                 }
@@ -675,29 +675,13 @@ public class InvocationMethodFactory extends MethodFactory implements Opcodes {
         }
     }
 
-    private void addAnnotatedMethodInvoker(ClassWriter cw, String callName, String superClass, List<JavaMethodDescriptor> descs) {
+    private void addAnnotatedMethodInvoker(ClassWriter cw, String superClass, List<JavaMethodDescriptor> descs) {
         for (JavaMethodDescriptor desc: descs) {
-            int specificArity = -1;
-            if (desc.optional == 0 && !desc.rest) {
-                if (desc.required == 0) {
-                    if (desc.actualRequired <= 3) {
-                        specificArity = desc.actualRequired;
-                    } else {
-                        specificArity = -1;
-                    }
-                } else if (desc.required >= 0 && desc.required <= 3) {
-                    specificArity = desc.required;
-                }
-            }
+            int specificArity = desc.calculateSpecificCallArity();
 
-            boolean hasBlock = desc.hasBlock;
-            SkinnyMethodAdapter mv;
-
-            mv = beginMethod(cw, callName, specificArity, hasBlock);
+            SkinnyMethodAdapter mv = beginMethod(cw, "call", specificArity, desc.hasBlock);
             mv.visitCode();
-
-            createAnnotatedMethodInvocation(desc, mv, superClass, specificArity, hasBlock);
-
+            createAnnotatedMethodInvocation(desc, mv, superClass, specificArity, desc.hasBlock);
             mv.end();
         }
     }
