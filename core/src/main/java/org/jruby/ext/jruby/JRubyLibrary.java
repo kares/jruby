@@ -93,6 +93,11 @@ public class JRubyLibrary implements Library {
         public static IRubyObject did_you_mean_disabled_p(ThreadContext context, IRubyObject self) {
             return context.runtime.newBoolean(context.runtime.getInstanceConfig().isDisableDidYouMean());
         }
+
+        @JRubyMethod(name = "native_posix?")
+        public static IRubyObject native_posix_p(ThreadContext context, IRubyObject self) {
+            return context.runtime.newBoolean(context.runtime.getPosix().isNative());
+        }
     }
 
     /**
