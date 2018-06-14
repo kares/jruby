@@ -1,10 +1,8 @@
 package org.jruby.java.proxies;
 
-import org.jruby.Ruby;
-import org.jruby.RubyClass;
-import org.jruby.RubyModule;
-import org.jruby.RubyString;
+import org.jruby.*;
 import org.jruby.anno.JRubyMethod;
+import org.jruby.ast.util.ArgsUtil;
 import org.jruby.internal.runtime.methods.DynamicMethod;
 import org.jruby.javasupport.Java;
 import org.jruby.runtime.Block;
@@ -18,6 +16,7 @@ import org.jruby.runtime.callsite.CacheEntry;
 import org.jruby.runtime.callsite.CachingCallSite;
 import org.jruby.runtime.callsite.FunctionalCachingCallSite;
 import org.jruby.util.CodegenUtils;
+import org.jruby.util.StringSupport;
 
 import java.lang.reflect.AccessibleObject;
 import java.lang.reflect.Field;
@@ -247,33 +246,51 @@ public class ConcreteJavaProxy extends JavaProxy {
         throw getRuntime().newTypeError("failed to coerce " + clazz.getName() + " to " + type.getName());
     }
 
-    @JRubyMethod(name = {"inspect", "java_inspect"}) // TODO or "reflective_inspect" ?
+    @JRubyMethod
+    public RubyString reflective_inspect(ThreadContext context) {
+        return RubyString.newString(context.runtime, reflectiveToString(context, null));
+    }
+
+    @JRubyMethod
+    public RubyString reflective_inspect(ThreadContext context, IRubyObject opts) {
+        return RubyString.newString(context.runtime, reflectiveToString(context, opts == context.nil ? null : opts.convertToHash()));
+    }
+
+    @JRubyMethod
     public IRubyObject inspect(ThreadContext context) {
-        return inspect(context.runtime);
+        return inspect(context.runtime, null); // -> toStringImpl
+    }
+
+    @Override
+    CharSequence toStringImpl(final Ruby runtime, final IRubyObject opts) {
+        final ThreadContext context = runtime.getCurrentContext();
+        DynamicMethod toString = toStringIfNotFromObject(context);
+        if (toString == null) {
+            return reflectiveToString(context, (RubyHash) opts); // a replacement for java.lang.Object#toString
+        }
+        IRubyObject str = toString.call(context, this, getMetaClass(), "toString");
+        return str == context.nil ? "null" : str.convertToString(); // we don't return a nil (unlike to_s)
     }
 
     private transient CachingCallSite toStringSite;
 
-    private DynamicMethod getToStringIfRedefined(final ThreadContext context) {
-        if (toStringSite == null) {
-            toStringSite = new FunctionalCachingCallSite("toString");
-        }
+    private DynamicMethod toStringIfNotFromObject(final ThreadContext context) {
+        if (toStringSite == null) toStringSite = new FunctionalCachingCallSite("toString");
+
         CacheEntry cache = toStringSite.retrieveCache(getMetaClass());
 
         return (cache.method.getImplementationClass() != context.runtime.getJavaSupport().getObjectClass()) ? cache.method : null;
     }
 
-    @Override
-    protected CharSequence toStringImpl(Ruby runtime) {
-        final ThreadContext context = runtime.getCurrentContext();
-        DynamicMethod toString = getToStringIfRedefined(context);
-        if (toString == null) {
-            return reflectiveToString(runtime);
+    private StringBuilder reflectiveToString(final ThreadContext context, final RubyHash opts) {
+        String[] excludedFields = null;
+        if (opts != null) { // NOTE: support nested excludes?!?
+            IRubyObject[] args = ArgsUtil.extractKeywordArgs(context, opts, "exclude");
+            if (args[0] instanceof RubyArray) {
+                excludedFields = (String[]) ((RubyArray) args[0]).toArray(StringSupport.EMPTY_STRING_ARRAY);
+            }
         }
-        return toString.call(context, this, getMetaClass(), "toString").convertToString();
-    }
 
-    private StringBuilder reflectiveToString(final Ruby runtime, final String... excludedFields) {
         final StringBuilder buffer = new StringBuilder(192);
 
         final Object obj = getObject();
@@ -283,16 +300,18 @@ public class ConcreteJavaProxy extends JavaProxy {
         buffer.append("#<").append(getMetaClass().getRealClass().getName())
               .append(":0x").append(Integer.toHexString(inspectHashCode()));
 
+        final Ruby runtime = context.runtime;
+
         if (runtime.isInspecting(obj)) return buffer.append(" ...>");
 
         try {
             runtime.registerInspecting(obj);
 
-            char sep = appendFields(runtime, buffer, obj, clazz, '\0', excludedFields);
+            char sep = appendFields(context, buffer, obj, clazz, '\0', excludedFields);
 
             while (clazz.getSuperclass() != null) {
                 clazz = clazz.getSuperclass();
-                sep = appendFields(runtime, buffer, obj, clazz, sep, excludedFields);
+                sep = appendFields(context, buffer, obj, clazz, sep, excludedFields);
             }
 
             return buffer.append('>');
@@ -302,7 +321,7 @@ public class ConcreteJavaProxy extends JavaProxy {
         }
     }
 
-    private static char appendFields(final Ruby runtime, final StringBuilder buffer,
+    private static char appendFields(final ThreadContext context, final StringBuilder buffer,
                                      Object obj, Class<?> clazz, char sep, final String[] excludedFields) {
         final Field[] fields = clazz.getDeclaredFields();
         AccessibleObject.setAccessible(fields, true);
@@ -314,7 +333,7 @@ public class ConcreteJavaProxy extends JavaProxy {
                 else buffer.append(sep);
 
                 try {
-                    buffer.append(field.getName()).append('=').append(toStringValue(runtime, field.get(obj)));
+                    buffer.append(field.getName()).append('=').append(toStringValue(context, field.get(obj)));
                 }
                 catch (IllegalAccessException ex) { throw new AssertionError(ex); } // we've set accessible
             }
@@ -322,7 +341,7 @@ public class ConcreteJavaProxy extends JavaProxy {
         return sep;
     }
 
-    private static CharSequence toStringValue(final Ruby runtime, final Object value) {
+    private static CharSequence toStringValue(final ThreadContext context, final Object value) {
         if (value == null) return "null";
         if (value instanceof CharSequence) return (CharSequence) value; // String
         final Class<?> klass = value.getClass();
@@ -335,11 +354,11 @@ public class ConcreteJavaProxy extends JavaProxy {
         //if (klass.isSynthetic()) return value.toString(); // TODO skip - unwrap class!?!
         if (value instanceof IRubyObject) {
             if (value instanceof JavaProxy) {
-                return ((JavaProxy) value).toStringImpl(runtime);
+                return ((JavaProxy) value).toStringImpl(context.runtime, null);
             }
             return ((IRubyObject) value).inspect().convertToString();
         }
-        return ((JavaProxy) Java.wrapJavaObject(runtime, value)).toStringImpl(runtime);
+        return ((JavaProxy) Java.wrapJavaObject(context.runtime, value)).toStringImpl(context.runtime, null);
     }
 
     private static final char INNER_CLASS_SEPARATOR_CHAR = '$';
