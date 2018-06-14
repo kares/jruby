@@ -23,6 +23,7 @@ import org.jruby.RubyHash;
 import org.jruby.RubyMethod;
 import org.jruby.RubyModule;
 import org.jruby.RubyObject;
+import org.jruby.RubyString;
 import org.jruby.RubyUnboundMethod;
 import org.jruby.anno.JRubyMethod;
 import org.jruby.common.IRubyWarnings;
@@ -437,6 +438,21 @@ public class JavaProxy extends RubyObject {
     protected int inspectHashCode() {
         return System.identityHashCode(object);
     }
+
+    @Override
+    public IRubyObject inspect() {
+        return inspect(getRuntime(), null);
+    }
+
+    final RubyString inspect(final Ruby runtime, final IRubyObject opts) {
+        return RubyString.newString(runtime, toStringImpl(runtime, opts));
+    }
+
+    CharSequence toStringImpl(final Ruby runtime, final IRubyObject opts) {
+        return String.valueOf(object);
+    }
+
+    // toString() dispatches the shared RubyObject to_s site, maybe setup a custom for (Concrete)JavaProxy?
 
     private Method getMethod(ThreadContext context, String name, Class... argTypes) {
         Class<?> originalClass = getObject().getClass();
