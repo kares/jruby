@@ -16,9 +16,8 @@ import org.jruby.runtime.builtin.IRubyObject;
 import static org.jruby.RubyBasicObject.getMetaClass;
 
 public abstract class CachingCallSite extends CallSite {
+
     protected CacheEntry cache = CacheEntry.NULL_CACHE;
-    //public static volatile int totalCallSites;
-    //private AtomicBoolean isPolymorphic = new AtomicBoolean(false);
 
     public CachingCallSite(String methodName, CallType callType) {
         super(methodName, callType);
@@ -30,7 +29,7 @@ public abstract class CachingCallSite extends CallSite {
     }
 
     public final boolean isOptimizable() {
-        return cache != CacheEntry.NULL_CACHE;// && !isPolymorphic.get();
+        return cache != CacheEntry.NULL_CACHE;
     }
 
     public final int getCachedClassIndex() {
@@ -71,7 +70,7 @@ public abstract class CachingCallSite extends CallSite {
         if (cache.typeOk(selfType)) {
             return cache.method.call(context, self, selfType, methodName, args);
         }
-        return cacheAndCall(caller, selfType, args, context, self);
+        return cacheAndCall(context, caller, self, selfType, args);
     }
 
     public IRubyObject call(ThreadContext context, IRubyObject caller, IRubyObject self, IRubyObject[] args, Block block) {
@@ -81,7 +80,7 @@ public abstract class CachingCallSite extends CallSite {
         if (cache.typeOk(selfType)) {
             return cache.method.call(context, self, selfType, methodName, args, block);
         }
-        return cacheAndCall(caller, selfType, block, args, context, self);
+        return cacheAndCall(context, caller, self, selfType, args, block);
     }
 
     @Override
@@ -138,7 +137,7 @@ public abstract class CachingCallSite extends CallSite {
         if (cache.typeOk(selfType)) {
             return cache.method.call(context, self, selfType, methodName);
         }
-        return cacheAndCall(caller, selfType, context, self);
+        return cacheAndCall(context, caller, self, selfType);
     }
 
     public IRubyObject call(ThreadContext context, IRubyObject caller, IRubyObject self, Block block) {
@@ -148,7 +147,7 @@ public abstract class CachingCallSite extends CallSite {
         if (cache.typeOk(selfType)) {
             return cache.method.call(context, self, selfType, methodName, block);
         }
-        return cacheAndCall(caller, selfType, block, context, self);
+        return cacheAndCall(context, caller, self, selfType, block);
     }
 
     @Override
@@ -169,7 +168,7 @@ public abstract class CachingCallSite extends CallSite {
         if (cache.typeOk(selfType)) {
             return cache.method.call(context, self, selfType, methodName, arg1);
         }
-        return cacheAndCall(caller, selfType, context, self, arg1);
+        return cacheAndCall(context, caller, self, selfType, arg1);
     }
 
     public IRubyObject call(ThreadContext context, IRubyObject caller, IRubyObject self, IRubyObject arg1, Block block) {
@@ -179,7 +178,7 @@ public abstract class CachingCallSite extends CallSite {
         if (cache.typeOk(selfType)) {
             return cache.method.call(context, self, selfType, methodName, arg1, block);
         }
-        return cacheAndCall(caller, selfType, block, context, self, arg1);
+        return cacheAndCall(context, caller, self, selfType, arg1, block);
     }
 
     @Override
@@ -200,7 +199,7 @@ public abstract class CachingCallSite extends CallSite {
         if (cache.typeOk(selfType)) {
             return cache.method.call(context, self, selfType, methodName, arg1, arg2);
         }
-        return cacheAndCall(caller, selfType, context, self, arg1, arg2);
+        return cacheAndCall(context, caller, self, selfType, arg1, arg2);
     }
 
     public IRubyObject call(ThreadContext context, IRubyObject caller, IRubyObject self, IRubyObject arg1, IRubyObject arg2, Block block) {
@@ -210,7 +209,7 @@ public abstract class CachingCallSite extends CallSite {
         if (cache.typeOk(selfType)) {
             return cache.method.call(context, self, selfType, methodName, arg1, arg2, block);
         }
-        return cacheAndCall(caller, selfType, block, context, self, arg1, arg2);
+        return cacheAndCall(context, caller, self, selfType, arg1, arg2, block);
     }
 
     @Override
@@ -231,7 +230,7 @@ public abstract class CachingCallSite extends CallSite {
         if (cache.typeOk(selfType)) {
             return cache.method.call(context, self, selfType, methodName, arg1, arg2, arg3);
         }
-        return cacheAndCall(caller, selfType, context, self, arg1, arg2, arg3);
+        return cacheAndCall(context, caller, self, selfType, arg1, arg2, arg3);
     }
 
     public IRubyObject call(ThreadContext context, IRubyObject caller, IRubyObject self, IRubyObject arg1, IRubyObject arg2, IRubyObject arg3, Block block) {
@@ -241,7 +240,7 @@ public abstract class CachingCallSite extends CallSite {
         if (cache.typeOk(selfType)) {
             return cache.method.call(context, self, selfType, methodName, arg1, arg2, arg3, block);
         }
-        return cacheAndCall(caller, selfType, block, context, self, arg1, arg2, arg3);
+        return cacheAndCall(context, caller, self, selfType, arg1, arg2, arg3, block);
     }
 
     @Override
@@ -291,9 +290,9 @@ public abstract class CachingCallSite extends CallSite {
         final DynamicMethod method = selfType.searchWithCache(methodName).method;
         return method.isUndefined() && method.isBuiltin();
     }
-    
-    private IRubyObject cacheAndCall(IRubyObject caller, RubyClass selfType, Block block,
-        IRubyObject[] args, ThreadContext context, IRubyObject self) {
+
+    protected IRubyObject cacheAndCall(ThreadContext context, IRubyObject caller,
+        IRubyObject self, RubyClass selfType, IRubyObject[] args, Block block) {
         CacheEntry entry = selfType.searchWithCache(methodName);
         DynamicMethod method = entry.method;
         if (methodMissing(method, caller)) {
@@ -303,8 +302,8 @@ public abstract class CachingCallSite extends CallSite {
         return method.call(context, self, selfType, methodName, args, block);
     }
 
-    private IRubyObject cacheAndCall(IRubyObject caller, RubyClass selfType,
-        IRubyObject[] args, ThreadContext context, IRubyObject self) {
+    protected IRubyObject cacheAndCall(ThreadContext context, IRubyObject caller,
+        IRubyObject self, RubyClass selfType, IRubyObject[] args) {
         CacheEntry entry = selfType.searchWithCache(methodName);
         DynamicMethod method = entry.method;
         if (methodMissing(method, caller)) {
@@ -314,8 +313,8 @@ public abstract class CachingCallSite extends CallSite {
         return method.call(context, self, selfType, methodName, args);
     }
 
-    private IRubyObject cacheAndCall(IRubyObject caller, RubyClass selfType,
-        ThreadContext context, IRubyObject self) {
+    protected IRubyObject cacheAndCall(ThreadContext context, IRubyObject caller,
+        IRubyObject self, RubyClass selfType) {
         CacheEntry entry = selfType.searchWithCache(methodName);
         DynamicMethod method = entry.method;
         if (methodMissing(method, caller)) {
@@ -325,8 +324,8 @@ public abstract class CachingCallSite extends CallSite {
         return method.call(context, self, selfType, methodName);
     }
 
-    private IRubyObject cacheAndCall(IRubyObject caller, RubyClass selfType, Block block,
-        ThreadContext context, IRubyObject self) {
+    protected IRubyObject cacheAndCall(ThreadContext context, IRubyObject caller,
+        IRubyObject self, RubyClass selfType, Block block) {
         CacheEntry entry = selfType.searchWithCache(methodName);
         DynamicMethod method = entry.method;
         if (methodMissing(method, caller)) {
@@ -336,7 +335,8 @@ public abstract class CachingCallSite extends CallSite {
         return method.call(context, self, selfType, methodName, block);
     }
 
-    protected IRubyObject cacheAndCall(IRubyObject caller, RubyClass selfType, ThreadContext context, IRubyObject self, IRubyObject arg) {
+    protected IRubyObject cacheAndCall(ThreadContext context, IRubyObject caller,
+        IRubyObject self, RubyClass selfType, IRubyObject arg) {
         CacheEntry entry = selfType.searchWithCache(methodName);
         DynamicMethod method = entry.method;
         if (methodMissing(method, caller)) {
@@ -346,8 +346,8 @@ public abstract class CachingCallSite extends CallSite {
         return method.call(context, self, selfType, methodName, arg);
     }
 
-    private IRubyObject cacheAndCall(IRubyObject caller, RubyClass selfType, Block block,
-        ThreadContext context, IRubyObject self, IRubyObject arg) {
+    protected IRubyObject cacheAndCall(ThreadContext context, IRubyObject caller,
+        IRubyObject self, RubyClass selfType, IRubyObject arg, Block block) {
         CacheEntry entry = selfType.searchWithCache(methodName);
         DynamicMethod method = entry.method;
         if (methodMissing(method, caller)) {
@@ -357,49 +357,48 @@ public abstract class CachingCallSite extends CallSite {
         return method.call(context, self, selfType, methodName, arg, block);
     }
 
-    protected IRubyObject cacheAndCall(IRubyObject caller, RubyClass selfType, ThreadContext context, IRubyObject self, IRubyObject arg1, IRubyObject arg2) {
+    protected IRubyObject cacheAndCall(ThreadContext context, IRubyObject caller,
+        IRubyObject self, RubyClass selfType, IRubyObject arg0, IRubyObject arg1) {
         CacheEntry entry = selfType.searchWithCache(methodName);
         DynamicMethod method = entry.method;
         if (methodMissing(method, caller)) {
-            return callMethodMissing(context, self, selfType, method, arg1, arg2);
+            return callMethodMissing(context, self, selfType, method, arg0, arg1);
         }
         cache = entry;
-        return method.call(context, self, selfType, methodName, arg1, arg2);
+        return method.call(context, self, selfType, methodName, arg0, arg1);
     }
 
-    private IRubyObject cacheAndCall(IRubyObject caller, RubyClass selfType, Block block,
-        ThreadContext context, IRubyObject self, IRubyObject arg1, IRubyObject arg2) {
+    protected IRubyObject cacheAndCall(ThreadContext context, IRubyObject caller,
+        IRubyObject self, RubyClass selfType, IRubyObject arg0, IRubyObject arg1, Block block) {
         CacheEntry entry = selfType.searchWithCache(methodName);
         DynamicMethod method = entry.method;
         if (methodMissing(method, caller)) {
-            return callMethodMissing(context, self, selfType, method, arg1, arg2, block);
+            return callMethodMissing(context, self, selfType, method, arg0, arg1, block);
         }
         cache = entry;
-        return method.call(context, self, selfType, methodName, arg1, arg2, block);
+        return method.call(context, self, selfType, methodName, arg0, arg1, block);
     }
 
-    private IRubyObject cacheAndCall(IRubyObject caller, RubyClass selfType,
-        ThreadContext context, IRubyObject self, IRubyObject arg1, IRubyObject arg2,
-        IRubyObject arg3) {
+    protected IRubyObject cacheAndCall(ThreadContext context, IRubyObject caller,
+        IRubyObject self, RubyClass selfType, IRubyObject arg0, IRubyObject arg1, IRubyObject arg2) {
         CacheEntry entry = selfType.searchWithCache(methodName);
         DynamicMethod method = entry.method;
         if (methodMissing(method, caller)) {
-            return callMethodMissing(context, self, selfType, method, arg1, arg2, arg3);
+            return callMethodMissing(context, self, selfType, method, arg0, arg1, arg2);
         }
         cache = entry;
-        return method.call(context, self, selfType, methodName, arg1, arg2, arg3);
+        return method.call(context, self, selfType, methodName, arg0, arg1, arg2);
     }
 
-    private IRubyObject cacheAndCall(IRubyObject caller, RubyClass selfType, Block block,
-        ThreadContext context, IRubyObject self, IRubyObject arg1, IRubyObject arg2,
-        IRubyObject arg3) {
+    protected IRubyObject cacheAndCall(ThreadContext context, IRubyObject caller,
+        IRubyObject self, RubyClass selfType, IRubyObject arg0, IRubyObject arg1, IRubyObject arg2, Block block) {
         CacheEntry entry = selfType.searchWithCache(methodName);
         DynamicMethod method = entry.method;
         if (methodMissing(method, caller)) {
-            return callMethodMissing(context, self, selfType, method, arg1, arg2, arg3, block);
+            return callMethodMissing(context, self, selfType, method, arg0, arg1, arg2, block);
         }
         cache = entry;
-        return method.call(context, self, selfType, methodName, arg1, arg2, arg3, block);
+        return method.call(context, self, selfType, methodName, arg0, arg1, arg2, block);
     }
 
     protected final IRubyObject callMethodMissing(ThreadContext context, IRubyObject self, RubyClass selfType,

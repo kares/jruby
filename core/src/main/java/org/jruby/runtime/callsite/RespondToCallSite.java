@@ -61,31 +61,30 @@ public class RespondToCallSite extends NormalCachingCallSite {
         RubyClass klass = getMetaClass(self);
         RespondToTuple tuple = respondToTuple;
         if (tuple.cacheOk(klass)) {
-            String strName = name.asJavaString();
-            if (strName.equals(tuple.name) && tuple.checkVisibility) return tuple.respondsTo;
+            String respondToName = name.asJavaString(); // RubySymbol
+            if (respondToName.equals(tuple.name) && tuple.checkVisibility) return tuple.respondsTo;
         }
         // go through normal call logic, which will hit overridden cacheAndCall
         return super.call(context, caller, self, name);
     }
 
     @Override
-    public IRubyObject call(ThreadContext context, IRubyObject caller, IRubyObject self, IRubyObject name, IRubyObject bool) {
+    public IRubyObject call(ThreadContext context, IRubyObject caller, IRubyObject self, IRubyObject name, IRubyObject all) {
         RubyClass klass = getMetaClass(self);
         RespondToTuple tuple = respondToTuple;
         if (tuple.cacheOk(klass)) {
-            String strName = name.asJavaString();
-            if (strName.equals(tuple.name) && !bool.isTrue() == tuple.checkVisibility) return tuple.respondsTo;
+            String respondToName = name.asJavaString(); // RubySymbol
+            if (respondToName.equals(tuple.name) && !all.isTrue() == tuple.checkVisibility) return tuple.respondsTo;
         }
         // go through normal call logic, which will hit overridden cacheAndCall
-        return super.call(context, caller, self, name, bool);
+        return super.call(context, caller, self, name, all);
     }
 
     public boolean respondsTo(ThreadContext context, IRubyObject caller, IRubyObject self) {
         RubyClass klass = getMetaClass(self);
         RespondToTuple tuple = respondToTuple;
         if (tuple.cacheOk(klass)) {
-            String strName = respondToName;
-            if (strName.equals(tuple.name) && tuple.checkVisibility) return tuple.respondsToBoolean;
+            if (respondToName.equals(tuple.name) && tuple.checkVisibility) return tuple.respondsToBoolean;
         }
         // go through normal call logic, which will hit overridden cacheAndCall
         return super.call(context, caller, self, getRespondToNameSym(context)).isTrue();
@@ -95,8 +94,7 @@ public class RespondToCallSite extends NormalCachingCallSite {
         RubyClass klass = getMetaClass(self);
         RespondToTuple tuple = respondToTuple;
         if (tuple.cacheOk(klass)) {
-            String strName = respondToName;
-            if (strName.equals(tuple.name) && !includePrivate == tuple.checkVisibility) return tuple.respondsToBoolean;
+            if (respondToName.equals(tuple.name) && !includePrivate == tuple.checkVisibility) return tuple.respondsToBoolean;
         }
         // go through normal call logic, which will hit overridden cacheAndCall
         return super.call(context, caller, self, getRespondToNameSym(context), context.runtime.newBoolean(includePrivate)).isTrue();
@@ -111,7 +109,8 @@ public class RespondToCallSite extends NormalCachingCallSite {
     }
 
     @Override
-    protected IRubyObject cacheAndCall(IRubyObject caller, RubyClass selfType, ThreadContext context, IRubyObject self, IRubyObject arg) {
+    protected IRubyObject cacheAndCall(ThreadContext context, IRubyObject caller,
+        IRubyObject self, RubyClass selfType, IRubyObject arg) {
         CacheEntry entry = selfType.searchWithCache(methodName);
         DynamicMethod method = entry.method;
         if (methodMissing(method, caller)) {
@@ -137,7 +136,8 @@ public class RespondToCallSite extends NormalCachingCallSite {
     }
 
     @Override
-    protected IRubyObject cacheAndCall(IRubyObject caller, RubyClass selfType, ThreadContext context, IRubyObject self, IRubyObject arg0, IRubyObject arg1) {
+    protected IRubyObject cacheAndCall(ThreadContext context, IRubyObject caller,
+        IRubyObject self, RubyClass selfType, IRubyObject arg0, IRubyObject arg1) {
         CacheEntry entry = selfType.searchWithCache(methodName);
         DynamicMethod method = entry.method;
         if (methodMissing(method, caller)) {
