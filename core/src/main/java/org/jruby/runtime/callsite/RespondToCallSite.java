@@ -1,5 +1,6 @@
 package org.jruby.runtime.callsite;
 
+import org.jruby.Ruby;
 import org.jruby.RubySymbol;
 import org.jruby.runtime.Helpers;
 import org.jruby.runtime.ThreadContext;
@@ -16,6 +17,7 @@ public class RespondToCallSite extends NormalCachingCallSite {
 
     private static class RespondToTuple {
         static final RespondToTuple NULL_CACHE = new RespondToTuple("", true, CacheEntry.NULL_CACHE, CacheEntry.NULL_CACHE);
+
         public final String name;
         public final boolean checkVisibility;
         public final CacheEntry respondToMethod;
@@ -23,7 +25,7 @@ public class RespondToCallSite extends NormalCachingCallSite {
         public final IRubyObject respondsTo;
         public final boolean respondsToBoolean;
         
-        public RespondToTuple(String name, boolean checkVisibility, CacheEntry respondToMethod, CacheEntry entry, IRubyObject respondsTo) {
+        RespondToTuple(String name, boolean checkVisibility, CacheEntry respondToMethod, CacheEntry entry, IRubyObject respondsTo) {
             this.name = name;
             this.checkVisibility = checkVisibility;
             this.respondToMethod = respondToMethod;
@@ -32,7 +34,7 @@ public class RespondToCallSite extends NormalCachingCallSite {
             this.respondsToBoolean = respondsTo.isTrue();
         }
 
-        public RespondToTuple(String name, boolean checkVisibility, CacheEntry respondToMethod, CacheEntry entry) {
+        private RespondToTuple(String name, boolean checkVisibility, CacheEntry respondToMethod, CacheEntry entry) {
             this.name = name;
             this.checkVisibility = checkVisibility;
             this.respondToMethod = respondToMethod;
@@ -110,20 +112,19 @@ public class RespondToCallSite extends NormalCachingCallSite {
 
     @Override
     protected IRubyObject cacheAndCall(ThreadContext context, IRubyObject caller,
-        IRubyObject self, RubyClass selfType, IRubyObject arg) {
+        IRubyObject self, RubyClass selfType, IRubyObject name) {
         CacheEntry entry = selfType.searchWithCache(methodName);
         DynamicMethod method = entry.method;
         if (methodMissing(method, caller)) {
-            return callMethodMissing(context, self, selfType, method, arg);
+            return callMethodMissing(context, self, selfType, method, name);
         }
 
         // alternate logic to cache the result of respond_to if it's the standard one
         if (entry.method.isBuiltin()) {
-            String name = arg.asJavaString();
-            RespondToTuple tuple = recacheRespondsTo(entry, name, selfType, true, context);
+            RespondToTuple tuple = newRespondToTuple(context.runtime, entry, selfType, name, true);
 
             // only cache if it does respond_to? OR there's no custom respond_to_missing? logic
-            if (tuple.respondsTo.isTrue() ||
+            if (tuple.respondsToBoolean ||
                     selfType.searchWithCache("respond_to_missing?").method == context.runtime.getRespondToMissingMethod()) {
                 respondToTuple = tuple;
                 return tuple.respondsTo;
@@ -132,25 +133,24 @@ public class RespondToCallSite extends NormalCachingCallSite {
 
         // normal logic if it's not the builtin respond_to? method
         cache = entry;
-        return method.call(context, self, selfType, methodName, arg);
+        return method.call(context, self, selfType, methodName, name);
     }
 
     @Override
     protected IRubyObject cacheAndCall(ThreadContext context, IRubyObject caller,
-        IRubyObject self, RubyClass selfType, IRubyObject arg0, IRubyObject arg1) {
+        IRubyObject self, RubyClass selfType, IRubyObject name, IRubyObject all) {
         CacheEntry entry = selfType.searchWithCache(methodName);
         DynamicMethod method = entry.method;
         if (methodMissing(method, caller)) {
-            return callMethodMissing(context, self, selfType, method, arg0, arg1);
+            return callMethodMissing(context, self, selfType, method, name, all);
         }
 
         // alternate logic to cache the result of respond_to if it's the standard one
         if (entry.method.equals(context.runtime.getRespondToMethod())) {
-            String name = arg0.asJavaString();
-            RespondToTuple tuple = recacheRespondsTo(entry, name, selfType, !arg1.isTrue(), context);
+            RespondToTuple tuple = newRespondToTuple(context.runtime, entry, selfType, name, !all.isTrue());
 
             // only cache if it does respond_to? OR there's no custom respond_to_missing? logic
-            if (tuple.respondsTo.isTrue() ||
+            if (tuple.respondsToBoolean ||
                     selfType.searchWithCache("respond_to_missing?").method == context.runtime.getRespondToMissingMethod()) {
                 respondToTuple = tuple;
                 return tuple.respondsTo;
@@ -159,13 +159,15 @@ public class RespondToCallSite extends NormalCachingCallSite {
 
         // normal logic if it's not the builtin respond_to? method
         cache = entry;
-        return method.call(context, self, selfType, methodName, arg0, arg1);
+        return method.call(context, self, selfType, methodName, name, all);
     }
 
-    private static RespondToTuple recacheRespondsTo(CacheEntry respondToMethod, String newString, RubyClass klass, boolean checkVisibility, ThreadContext context) {
-        CacheEntry respondToLookupResult = klass.searchWithCache(newString);
+    private static RespondToTuple newRespondToTuple(final Ruby runtime, CacheEntry respondToMethod,
+                                                    RubyClass klass, IRubyObject nameSym, boolean checkVisibility) {
+        final String name = nameSym.asJavaString();
+        CacheEntry respondToLookupResult = klass.searchWithCache(name);
         boolean respondsTo = Helpers.respondsToMethod(respondToLookupResult.method, checkVisibility);
 
-        return new RespondToTuple(newString, checkVisibility, respondToMethod, respondToLookupResult, context.runtime.newBoolean(respondsTo));
+        return new RespondToTuple(name, checkVisibility, respondToMethod, respondToLookupResult, runtime.newBoolean(respondsTo));
     }
 }
