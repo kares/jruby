@@ -471,7 +471,7 @@ public class RuntimeCache {
         CacheEntry entry = clazz.searchWithCache(name1);
         DynamicMethod method = entry.method;
         if (entry.method == UndefinedMethod.INSTANCE) {
-            return Helpers.selectMethodMissing(clazz, method.getVisibility(), name1, CallType.FUNCTIONAL);
+            return Helpers.selectMethodMissing(clazz.getClassRuntime(), clazz, method.getVisibility(), name1, CallType.FUNCTIONAL);
         }
         methodCache[index] = entry;
         return method;

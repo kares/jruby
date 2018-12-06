@@ -107,81 +107,64 @@ public class Helpers {
     }
 
     public static IRubyObject callMethodMissing(ThreadContext context, IRubyObject self, RubyClass klass, Visibility visibility, String name, CallType callType, IRubyObject[] args, Block block) {
-        return selectMethodMissing(context, klass, visibility, name, callType).call(context, self, klass, name, args, block);
+        return selectMethodMissing(context.runtime, klass, visibility, name, callType).call(context, self, klass, name, args, block);
     }
 
     public static IRubyObject callMethodMissing(ThreadContext context, IRubyObject receiver, Visibility visibility, String name, CallType callType, IRubyObject[] args, Block block) {
         final RubyClass klass = getMetaClass(receiver);
-        return selectMethodMissing(context, klass, visibility, name, callType).call(context, receiver, klass, name, args, block);
+        return selectMethodMissing(context.runtime, klass, visibility, name, callType).call(context, receiver, klass, name, args, block);
     }
 
     public static IRubyObject callMethodMissing(ThreadContext context, IRubyObject self, RubyClass klass, Visibility visibility, String name, CallType callType, IRubyObject arg0, Block block) {
-        return selectMethodMissing(context, klass, visibility, name, callType).call(context, self, klass, name, arg0, block);
+        return selectMethodMissing(context.runtime, klass, visibility, name, callType).call(context, self, klass, name, arg0, block);
     }
 
     public static IRubyObject callMethodMissing(ThreadContext context, IRubyObject receiver, Visibility visibility, String name, CallType callType, IRubyObject arg0, Block block) {
         final RubyClass klass = getMetaClass(receiver);
-        return selectMethodMissing(context, klass, visibility, name, callType).call(context, receiver, klass, name, arg0, block);
+        return selectMethodMissing(context.runtime, klass, visibility, name, callType).call(context, receiver, klass, name, arg0, block);
     }
 
     public static IRubyObject callMethodMissing(ThreadContext context, IRubyObject self, RubyClass klass, Visibility visibility, String name, CallType callType, IRubyObject arg0, IRubyObject arg1, Block block) {
-        return selectMethodMissing(context, klass, visibility, name, callType).call(context, self, klass, name, arg0, arg1, block);
+        return selectMethodMissing(context.runtime, klass, visibility, name, callType).call(context, self, klass, name, arg0, arg1, block);
     }
 
     public static IRubyObject callMethodMissing(ThreadContext context, IRubyObject receiver, Visibility visibility, String name, CallType callType, IRubyObject arg0, IRubyObject arg1, Block block) {
         final RubyClass klass = getMetaClass(receiver);
-        return selectMethodMissing(context, klass, visibility, name, callType).call(context, receiver, klass, name, arg0, arg1, block);
+        return selectMethodMissing(context.runtime, klass, visibility, name, callType).call(context, receiver, klass, name, arg0, arg1, block);
     }
 
     public static IRubyObject callMethodMissing(ThreadContext context, IRubyObject self, RubyClass klass, Visibility visibility, String name, CallType callType, IRubyObject arg0, IRubyObject arg1, IRubyObject arg2, Block block) {
-        return selectMethodMissing(context, klass, visibility, name, callType).call(context, self, klass, name, arg0, arg1, arg2, block);
+        return selectMethodMissing(context.runtime, klass, visibility, name, callType).call(context, self, klass, name, arg0, arg1, arg2, block);
     }
 
     public static IRubyObject callMethodMissing(ThreadContext context, IRubyObject receiver, Visibility visibility, String name, CallType callType, IRubyObject arg0, IRubyObject arg1, IRubyObject arg2, Block block) {
         final RubyClass klass = getMetaClass(receiver);
-        return selectMethodMissing(context, klass, visibility, name, callType).call(context, receiver, klass, name, arg0, arg1, arg2, block);
+        return selectMethodMissing(context.runtime, klass, visibility, name, callType).call(context, receiver, klass, name, arg0, arg1, arg2, block);
     }
 
     public static IRubyObject callMethodMissing(ThreadContext context, IRubyObject self, RubyClass klass, Visibility visibility, String name, CallType callType, Block block) {
-        return selectMethodMissing(context, klass, visibility, name, callType).call(context, self, klass, name, block);
+        return selectMethodMissing(context.runtime, klass, visibility, name, callType).call(context, self, klass, name, block);
     }
 
     public static IRubyObject callMethodMissing(ThreadContext context, IRubyObject receiver, Visibility visibility, String name, CallType callType, Block block) {
         final RubyClass klass = getMetaClass(receiver);
-        return selectMethodMissing(context, klass, visibility, name, callType).call(context, receiver, klass, name, block);
+        return selectMethodMissing(context.runtime, klass, visibility, name, callType).call(context, receiver, klass, name, block);
     }
 
-    public static DynamicMethod selectMethodMissing(ThreadContext context, IRubyObject receiver, Visibility visibility, String name, CallType callType) {
-        Ruby runtime = context.runtime;
-
-        if (name.equals("method_missing")) {
-            return selectInternalMM(runtime, visibility, callType);
-        }
-
-        DynamicMethod methodMissing = receiver.getMetaClass().searchMethod("method_missing");
-        if (methodMissing.isUndefined() || methodMissing.equals(runtime.getDefaultMethodMissing())) {
-            return selectInternalMM(runtime, visibility, callType);
-        }
-        return new MethodMissingMethod(methodMissing, visibility, callType);
+    public static DynamicMethod selectMethodMissing(ThreadContext context, IRubyObject self, Visibility visibility, String name, CallType callType) {
+        return selectMethodMissing(context.runtime, getMetaClass(self), visibility, name, callType);
     }
 
     public static DynamicMethod selectMethodMissing(ThreadContext context, RubyClass selfClass, Visibility visibility, String name, CallType callType) {
-        final Ruby runtime = context.runtime;
-
-        if (name.equals("method_missing")) {
-            return selectInternalMM(runtime, visibility, callType);
-        }
-
-        DynamicMethod methodMissing = selfClass.searchMethod("method_missing");
-        if (methodMissing.isUndefined() || methodMissing.equals(runtime.getDefaultMethodMissing())) {
-            return selectInternalMM(runtime, visibility, callType);
-        }
-        return new MethodMissingMethod(methodMissing, visibility, callType);
+        return selectMethodMissing(context.runtime, selfClass, visibility, name, callType);
     }
 
+    @Deprecated
     public static DynamicMethod selectMethodMissing(RubyClass selfClass, Visibility visibility, String name, CallType callType) {
-        Ruby runtime = selfClass.getClassRuntime();
+        return selectMethodMissing(selfClass.getClassRuntime(), selfClass, visibility, name, callType);
+    }
 
+    public static DynamicMethod selectMethodMissing(Ruby runtime, RubyClass selfClass, Visibility visibility, String name, CallType callType) {
         if (name.equals("method_missing")) {
             return selectInternalMM(runtime, visibility, callType);
         }
