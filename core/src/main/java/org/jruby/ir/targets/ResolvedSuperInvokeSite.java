@@ -68,7 +68,7 @@ public abstract class ResolvedSuperInvokeSite extends SelfInvokeSite {
 //        CacheEntry entry = superClass.searchWithCache(methodName);
 //        DynamicMethod method = entry.method;
 //
-//        if (methodMissing(entry, caller)) {
+//        if (doMethodMissing(entry, caller)) {
 //            return callMethodMissing(entry, callType, context, self, methodName, args, block);
 //        }
 //

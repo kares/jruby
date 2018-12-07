@@ -44,7 +44,7 @@ public class NormalInvokeSite extends InvokeSite {
     }
 
     @Override
-    public boolean methodMissing(CacheEntry entry, IRubyObject caller) {
+    public boolean doMethodMissing(CacheEntry entry, IRubyObject caller) {
         DynamicMethod method = entry.method;
 
         return method.isUndefined() || (!methodName.equals("method_missing") && !method.isCallableFrom(caller, callType));

@@ -1,6 +1,5 @@
 package org.jruby.ir.targets;
 
-import org.jruby.internal.runtime.methods.DynamicMethod;
 import org.jruby.runtime.CallType;
 import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.runtime.callsite.CacheEntry;
@@ -10,10 +9,8 @@ import org.objectweb.asm.Handle;
 import org.objectweb.asm.Opcodes;
 
 import java.lang.invoke.CallSite;
-import java.lang.invoke.MethodHandle;
 import java.lang.invoke.MethodHandles;
 import java.lang.invoke.MethodType;
-import java.lang.invoke.SwitchPoint;
 import java.util.List;
 
 import static org.jruby.util.CodegenUtils.p;
@@ -49,9 +46,7 @@ public class SelfInvokeSite extends InvokeSite {
     }
 
     @Override
-    public boolean methodMissing(CacheEntry entry, IRubyObject caller) {
-        DynamicMethod method = entry.method;
-
-        return method.isUndefined();
+    public boolean doMethodMissing(CacheEntry entry, IRubyObject caller) {
+        return entry.method.isUndefined();
     }
 }

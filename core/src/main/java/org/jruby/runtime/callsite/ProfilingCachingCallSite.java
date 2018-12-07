@@ -77,7 +77,8 @@ public class ProfilingCachingCallSite extends CachingCallSite {
         }
     }
 
-    protected boolean methodMissing(DynamicMethod method, IRubyObject caller) {
+    @Override
+    protected boolean doMethodMissing(DynamicMethod method, IRubyObject caller) {
         return method.isUndefined() || (!methodName.equals("method_missing") && !method.isCallableFrom(caller, callType));
     }
 

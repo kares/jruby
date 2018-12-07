@@ -17,7 +17,7 @@ public class RefinedCachingCallSite extends CachingCallSite {
         RubyClass selfType = getClass(self);
         DynamicMethod method = selfType.searchWithRefinements(methodName, context.getCurrentStaticScope());
 
-        if (methodMissing(method, caller)) {
+        if (doMethodMissing(method, caller)) {
             return callMethodMissing(context, self, selfType, method, args);
         }
 
@@ -28,7 +28,7 @@ public class RefinedCachingCallSite extends CachingCallSite {
         RubyClass selfType = getClass(self);
         DynamicMethod method = selfType.searchWithRefinements(methodName, context.getCurrentStaticScope());
 
-        if (methodMissing(method, caller)) {
+        if (doMethodMissing(method, caller)) {
             return callMethodMissing(context, self, selfType, method, args, block);
         }
 
@@ -39,7 +39,7 @@ public class RefinedCachingCallSite extends CachingCallSite {
         RubyClass selfType = getClass(self);
         DynamicMethod method = selfType.searchWithRefinements(methodName, context.getCurrentStaticScope());
 
-        if (methodMissing(method, caller)) {
+        if (doMethodMissing(method, caller)) {
             return callMethodMissing(context, self, selfType, method);
         }
 
@@ -50,7 +50,7 @@ public class RefinedCachingCallSite extends CachingCallSite {
         RubyClass selfType = getClass(self);
         DynamicMethod method = selfType.searchWithRefinements(methodName, context.getCurrentStaticScope());
 
-        if (methodMissing(method, caller)) {
+        if (doMethodMissing(method, caller)) {
             return callMethodMissing(context, self, selfType, method, block);
         }
 
@@ -61,7 +61,7 @@ public class RefinedCachingCallSite extends CachingCallSite {
         RubyClass selfType = getClass(self);
         DynamicMethod method = selfType.searchWithRefinements(methodName, context.getCurrentStaticScope());
 
-        if (methodMissing(method, caller)) {
+        if (doMethodMissing(method, caller)) {
             return callMethodMissing(context, self, selfType, method, arg0);
         }
 
@@ -72,7 +72,7 @@ public class RefinedCachingCallSite extends CachingCallSite {
         RubyClass selfType = getClass(self);
         DynamicMethod method = selfType.searchWithRefinements(methodName, context.getCurrentStaticScope());
 
-        if (methodMissing(method, caller)) {
+        if (doMethodMissing(method, caller)) {
             return callMethodMissing(context, self, selfType, method, arg0, block);
         }
 
@@ -83,7 +83,7 @@ public class RefinedCachingCallSite extends CachingCallSite {
         RubyClass selfType = getClass(self);
         DynamicMethod method = selfType.searchWithRefinements(methodName, context.getCurrentStaticScope());
 
-        if (methodMissing(method, caller)) {
+        if (doMethodMissing(method, caller)) {
             return callMethodMissing(context, self, selfType, method, arg0, arg1);
         }
 
@@ -94,7 +94,7 @@ public class RefinedCachingCallSite extends CachingCallSite {
         RubyClass selfType = getClass(self);
         DynamicMethod method = selfType.searchWithRefinements(methodName, context.getCurrentStaticScope());
 
-        if (methodMissing(method, caller)) {
+        if (doMethodMissing(method, caller)) {
             return callMethodMissing(context, self, selfType, method, arg0, arg1, block);
         }
 
@@ -105,7 +105,7 @@ public class RefinedCachingCallSite extends CachingCallSite {
         RubyClass selfType = getClass(self);
         DynamicMethod method = selfType.searchWithRefinements(methodName, context.getCurrentStaticScope());
 
-        if (methodMissing(method, caller)) {
+        if (doMethodMissing(method, caller)) {
             return callMethodMissing(context, self, selfType, method, arg0, arg1, arg2);
         }
 
@@ -116,14 +116,14 @@ public class RefinedCachingCallSite extends CachingCallSite {
         RubyClass selfType = getClass(self);
         DynamicMethod method = selfType.searchWithRefinements(methodName, context.getCurrentStaticScope());
 
-        if (methodMissing(method, caller)) {
+        if (doMethodMissing(method, caller)) {
             return callMethodMissing(context, self, selfType, method, arg0, arg1, arg2, block);
         }
 
         return method.call(context, self, selfType, methodName, arg0, arg1, arg2);
     }
 
-    protected boolean methodMissing(DynamicMethod method, IRubyObject caller) {
+    protected boolean doMethodMissing(DynamicMethod method, IRubyObject caller) {
         // doing full "normal" MM check rather than multiple refined sites by call types
         return method.isUndefined() || (!methodName.equals("method_missing") && !method.isCallableFrom(caller, callType));
     }

@@ -10,7 +10,8 @@ public class FunctionalCachingCallSite extends CachingCallSite {
         super(methodName, CallType.FUNCTIONAL);
     }
 
-    protected boolean methodMissing(DynamicMethod method, IRubyObject caller) {
+    @Override
+    protected boolean doMethodMissing(DynamicMethod method, IRubyObject caller) {
         return method.isUndefined();
     }
 }

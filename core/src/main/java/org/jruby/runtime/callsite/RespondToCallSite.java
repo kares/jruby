@@ -115,7 +115,7 @@ public class RespondToCallSite extends NormalCachingCallSite {
         IRubyObject self, RubyClass selfType, IRubyObject name) {
         CacheEntry entry = selfType.searchWithCache(methodName);
         DynamicMethod method = entry.method;
-        if (methodMissing(method, caller)) {
+        if (doMethodMissing(method, caller)) {
             return callMethodMissing(context, self, selfType, method, name);
         }
 
@@ -141,7 +141,7 @@ public class RespondToCallSite extends NormalCachingCallSite {
         IRubyObject self, RubyClass selfType, IRubyObject name, IRubyObject all) {
         CacheEntry entry = selfType.searchWithCache(methodName);
         DynamicMethod method = entry.method;
-        if (methodMissing(method, caller)) {
+        if (doMethodMissing(method, caller)) {
             return callMethodMissing(context, self, selfType, method, name, all);
         }
 

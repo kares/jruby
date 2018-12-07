@@ -6,14 +6,10 @@ import org.jruby.RubyClass;
 import org.jruby.RubyHash;
 import org.jruby.RubyString;
 import org.jruby.internal.runtime.methods.DynamicMethod;
-import org.jruby.ir.runtime.IRRuntimeHelpers;
 import org.jruby.runtime.Block;
-import org.jruby.runtime.CallType;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.runtime.callsite.CacheEntry;
-import org.jruby.runtime.callsite.FunctionalCachingCallSite;
-import org.jruby.util.JavaNameMangler;
 import org.objectweb.asm.Handle;
 import org.objectweb.asm.Opcodes;
 
@@ -75,7 +71,7 @@ public class ArrayDerefInvokeSite extends NormalInvokeSite {
             // strdup for this call
             args[0] = ((RubyString) args[0]).strDup(context.runtime);
 
-            if (methodMissing(entry, caller)) {
+            if (doMethodMissing(entry, caller)) {
                 return callMethodMissing(entry, callType, context, self, selfClass, methodName, args, block);
             }
 
@@ -106,7 +102,7 @@ public class ArrayDerefInvokeSite extends NormalInvokeSite {
 
         entry = selfClass.searchWithCache(name);
 
-        if (methodMissing(entry, caller)) {
+        if (doMethodMissing(entry, caller)) {
             return callMethodMissing(entry, callType, context, self, selfClass, name, args, block);
         }
 

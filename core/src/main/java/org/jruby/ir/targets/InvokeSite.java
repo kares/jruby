@@ -151,7 +151,7 @@ public abstract class InvokeSite extends MutableCallSite {
         CacheEntry entry = selfClass.searchWithCache(methodName);
         DynamicMethod method = entry.method;
 
-        if (methodMissing(entry, caller)) {
+        if (doMethodMissing(entry, caller)) {
             // Test thresholds so we don't do this forever (#4596)
             if (testThresholds(selfClass) == CacheAction.FAIL) {
                 logFail();
@@ -214,7 +214,7 @@ public abstract class InvokeSite extends MutableCallSite {
 
         entry = selfClass.searchWithCache(name);
 
-        if (methodMissing(entry, caller)) {
+        if (doMethodMissing(entry, caller)) {
             return callMethodMissing(entry, callType, context, self, selfClass, name, args, block);
         }
 
@@ -244,7 +244,7 @@ public abstract class InvokeSite extends MutableCallSite {
 
         entry = selfClass.searchWithCache(name);
 
-        if (methodMissing(entry, caller)) {
+        if (doMethodMissing(entry, caller)) {
             return callMethodMissing(entry, callType, context, self, selfClass, name, arg0, block);
         }
 
@@ -267,7 +267,7 @@ public abstract class InvokeSite extends MutableCallSite {
 
         entry = selfClass.searchWithCache(name);
 
-        if (methodMissing(entry, caller)) {
+        if (doMethodMissing(entry, caller)) {
             return callMethodMissing(entry, callType, context, self, selfClass, name, arg0, arg1, block);
         }
 
@@ -290,7 +290,7 @@ public abstract class InvokeSite extends MutableCallSite {
 
         entry = selfClass.searchWithCache(name);
 
-        if (methodMissing(entry, caller)) {
+        if (doMethodMissing(entry, caller)) {
             return callMethodMissing(entry, callType, context, self, selfClass, name, arg0, arg1, arg2, block);
         }
 
@@ -705,7 +705,7 @@ public abstract class InvokeSite extends MutableCallSite {
         super.setTarget(target);
     }
 
-    public abstract boolean methodMissing(CacheEntry entry, IRubyObject caller);
+    public abstract boolean doMethodMissing(CacheEntry entry, IRubyObject caller);
 
     /**
      * Variable arity method_missing invocation. Arity zero also passes through here.

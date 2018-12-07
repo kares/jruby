@@ -9,7 +9,8 @@ public class VariableCachingCallSite extends CachingCallSite {
         super(methodName, CallType.VARIABLE);
     }
 
-    protected boolean methodMissing(DynamicMethod method, IRubyObject caller) {
+    @Override
+    protected boolean doMethodMissing(DynamicMethod method, IRubyObject caller) {
         return method.isUndefined();
     }
 }
