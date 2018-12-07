@@ -4,6 +4,7 @@ import org.jruby.RubyBasicObject;
 import org.jruby.RubyClass;
 import org.jruby.RubyFixnum;
 import org.jruby.RubyFloat;
+import org.jruby.internal.runtime.methods.CacheableMethod;
 import org.jruby.internal.runtime.methods.DynamicMethod;
 import org.jruby.runtime.Helpers;
 import org.jruby.runtime.Block;
@@ -295,7 +296,7 @@ public abstract class CachingCallSite extends CallSite {
         CacheEntry entry = selfType.searchWithCache(methodName);
         DynamicMethod method = entry.method;
         if (doMethodMissing(method, caller)) {
-            return callMethodMissing(context, self, selfType, method, args, block);
+            return cacheMethodMissing(context, selfType, entry).call(context, self, selfType, methodName, args, block);
         }
         cache = entry;
         return method.call(context, self, selfType, methodName, args, block);
@@ -306,7 +307,7 @@ public abstract class CachingCallSite extends CallSite {
         CacheEntry entry = selfType.searchWithCache(methodName);
         DynamicMethod method = entry.method;
         if (doMethodMissing(method, caller)) {
-            return callMethodMissing(context, self, selfType, method, args);
+            return cacheMethodMissing(context, selfType, entry).call(context, self, selfType, methodName, args);
         }
         cache = entry;
         return method.call(context, self, selfType, methodName, args);
@@ -317,7 +318,7 @@ public abstract class CachingCallSite extends CallSite {
         CacheEntry entry = selfType.searchWithCache(methodName);
         DynamicMethod method = entry.method;
         if (doMethodMissing(method, caller)) {
-            return callMethodMissing(context, self, selfType, method);
+            return cacheMethodMissing(context, selfType, entry).call(context, self, selfType, methodName);
         }
         cache = entry;
         return method.call(context, self, selfType, methodName);
@@ -328,7 +329,7 @@ public abstract class CachingCallSite extends CallSite {
         CacheEntry entry = selfType.searchWithCache(methodName);
         DynamicMethod method = entry.method;
         if (doMethodMissing(method, caller)) {
-            return callMethodMissing(context, self, selfType, method, block);
+            return cacheMethodMissing(context, selfType, entry).call(context, self, selfType, methodName, block);
         }
         cache = entry;
         return method.call(context, self, selfType, methodName, block);
@@ -339,7 +340,7 @@ public abstract class CachingCallSite extends CallSite {
         CacheEntry entry = selfType.searchWithCache(methodName);
         DynamicMethod method = entry.method;
         if (doMethodMissing(method, caller)) {
-            return callMethodMissing(context, self, selfType, method, arg);
+            return cacheMethodMissing(context, selfType, entry).call(context, self, selfType, methodName, arg);
         }
         cache = entry;
         return method.call(context, self, selfType, methodName, arg);
@@ -350,7 +351,7 @@ public abstract class CachingCallSite extends CallSite {
         CacheEntry entry = selfType.searchWithCache(methodName);
         DynamicMethod method = entry.method;
         if (doMethodMissing(method, caller)) {
-            return callMethodMissing(context, self, selfType, method, arg, block);
+            return cacheMethodMissing(context, selfType, entry).call(context, self, selfType, methodName, arg, block);
         }
         cache = entry;
         return method.call(context, self, selfType, methodName, arg, block);
@@ -361,7 +362,7 @@ public abstract class CachingCallSite extends CallSite {
         CacheEntry entry = selfType.searchWithCache(methodName);
         DynamicMethod method = entry.method;
         if (doMethodMissing(method, caller)) {
-            return callMethodMissing(context, self, selfType, method, arg0, arg1);
+            return cacheMethodMissing(context, selfType, entry).call(context, self, selfType, methodName, arg0, arg1);
         }
         cache = entry;
         return method.call(context, self, selfType, methodName, arg0, arg1);
@@ -372,7 +373,7 @@ public abstract class CachingCallSite extends CallSite {
         CacheEntry entry = selfType.searchWithCache(methodName);
         DynamicMethod method = entry.method;
         if (doMethodMissing(method, caller)) {
-            return callMethodMissing(context, self, selfType, method, arg0, arg1, block);
+            return cacheMethodMissing(context, selfType, entry).call(context, self, selfType, methodName, arg0, arg1, block);
         }
         cache = entry;
         return method.call(context, self, selfType, methodName, arg0, arg1, block);
@@ -383,7 +384,7 @@ public abstract class CachingCallSite extends CallSite {
         CacheEntry entry = selfType.searchWithCache(methodName);
         DynamicMethod method = entry.method;
         if (doMethodMissing(method, caller)) {
-            return callMethodMissing(context, self, selfType, method, arg0, arg1, arg2);
+            return cacheMethodMissing(context, selfType, entry).call(context, self, selfType, methodName, arg0, arg1, arg2);
         }
         cache = entry;
         return method.call(context, self, selfType, methodName, arg0, arg1, arg2);
@@ -394,10 +395,28 @@ public abstract class CachingCallSite extends CallSite {
         CacheEntry entry = selfType.searchWithCache(methodName);
         DynamicMethod method = entry.method;
         if (doMethodMissing(method, caller)) {
-            return callMethodMissing(context, self, selfType, method, arg0, arg1, arg2, block);
+            return cacheMethodMissing(context, selfType, entry).call(context, self, selfType, methodName, arg0, arg1, arg2, block);
         }
         cache = entry;
         return method.call(context, self, selfType, methodName, arg0, arg1, arg2, block);
+    }
+
+    /**
+     * Attempts to (search and) cache :method_missing, when a method with a given name isn't found.
+     * @see #cacheAndCall(ThreadContext, IRubyObject, IRubyObject, RubyClass)
+     * @param context
+     * @param selfType
+     * @param missEntry
+     * @return the :method_missing method
+     */
+    protected DynamicMethod cacheMethodMissing(ThreadContext context, RubyClass selfType, CacheEntry missEntry) {
+        DynamicMethod method = Helpers.selectMethodMissing(context, selfType, missEntry.method.getVisibility(), methodName, callType);
+        if (method instanceof CacheableMethod) {
+            method = ((CacheableMethod) method).getMethodForCaching();
+        }
+        cache = selfType.newCacheEntry("method_missing", method, missEntry.token);
+        // cache with same token as we had while searching for the missed entry
+        return method;
     }
 
     protected final IRubyObject callMethodMissing(ThreadContext context, IRubyObject self, RubyClass selfType,

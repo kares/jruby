@@ -54,6 +54,7 @@ import org.jruby.util.ArraySupport;
 import org.jruby.util.ByteList;
 import org.jruby.util.MurmurHash;
 import org.jruby.util.TypeConverter;
+import org.jruby.util.io.EncodingUtils;
 
 import org.jcodings.Encoding;
 import org.jcodings.specific.ASCIIEncoding;
@@ -71,7 +72,6 @@ import static org.jruby.util.RubyStringBuilder.ids;
 import static org.jruby.util.RubyStringBuilder.types;
 import static org.jruby.util.StringSupport.EMPTY_STRING_ARRAY;
 
-import org.jruby.util.io.EncodingUtils;
 
 /**
  * Helper methods which are called by the compiler.  Note: These will show no consumers, but
@@ -101,7 +101,7 @@ public class Helpers {
             return RubyKernel.method_missing(context, receiver, args, Block.NULL_BLOCK);
         }
 
-        IRubyObject[] newArgs = prepareMethodMissingArgs(args, context, name);
+        IRubyObject[] newArgs = MethodMissingMethod.prepareArgs(context, name, args);
 
         return invoke(context, receiver, "method_missing", newArgs, Block.NULL_BLOCK);
     }
@@ -166,12 +166,12 @@ public class Helpers {
 
     public static DynamicMethod selectMethodMissing(Ruby runtime, RubyClass selfClass, Visibility visibility, String name, CallType callType) {
         if (name.equals("method_missing")) {
-            return selectInternalMM(runtime, visibility, callType);
+            return runtime.getMethodMissing(visibility, callType);
         }
 
         DynamicMethod methodMissing = selfClass.searchMethod("method_missing");
         if (methodMissing.isUndefined() || methodMissing.equals(runtime.getDefaultMethodMissing())) {
-            return selectInternalMM(runtime, visibility, callType);
+            return runtime.getMethodMissing(visibility, callType);
         }
         return new MethodMissingMethod(methodMissing, visibility, callType);
     }
@@ -364,33 +364,47 @@ public class Helpers {
         }
 
         @Override
-        public IRubyObject call(ThreadContext context, IRubyObject self, RubyModule clazz, String name, IRubyObject[] args, Block block) {
+        public IRubyObject call(ThreadContext context, IRubyObject self, RubyModule klass, String name, Block block) {
             context.setLastCallStatusAndVisibility(lastCallStatus, lastVisibility);
-            return this.delegate.call(context, self, clazz, "method_missing", prepareMethodMissingArgs(args, context, name), block);
+            return this.delegate.call(context, self, klass, "method_missing", context.runtime.newSymbol(name), block);
+        }
+
+        @Override
+        public IRubyObject call(ThreadContext context, IRubyObject self, RubyModule klass, String name, IRubyObject arg0, Block block) {
+            context.setLastCallStatusAndVisibility(lastCallStatus, lastVisibility);
+            return this.delegate.call(context, self, klass, "method_missing", context.runtime.newSymbol(name), arg0, block);
+        }
+
+        @Override
+        public IRubyObject call(ThreadContext context, IRubyObject self, RubyModule klass, String name, IRubyObject arg0, IRubyObject arg1, Block block) {
+            context.setLastCallStatusAndVisibility(lastCallStatus, lastVisibility);
+            return this.delegate.call(context, self, klass, "method_missing", context.runtime.newSymbol(name), arg0, arg1, block);
+        }
+
+        @Override
+        public IRubyObject call(ThreadContext context, IRubyObject self, RubyModule klass, String name, IRubyObject arg0, IRubyObject arg1, IRubyObject arg2, Block block) {
+            context.setLastCallStatusAndVisibility(lastCallStatus, lastVisibility);
+            return this.delegate.call(context, self, klass, "method_missing", prepareArgs(context, name, arg0, arg1, arg2), block);
+        }
+
+        @Override
+        public IRubyObject call(ThreadContext context, IRubyObject self, RubyModule klass, String name, IRubyObject[] args, Block block) {
+            context.setLastCallStatusAndVisibility(lastCallStatus, lastVisibility);
+            return this.delegate.call(context, self, klass, "method_missing", prepareArgs(context, name, args), block);
         }
 
         @Override
         public DynamicMethod dup() {
             return this;
         }
-    }
 
-    private static DynamicMethod selectInternalMM(Ruby runtime, Visibility visibility, CallType callType) {
-        if (visibility == Visibility.PRIVATE) {
-            return runtime.getPrivateMethodMissing();
-        } else if (visibility == Visibility.PROTECTED) {
-            return runtime.getProtectedMethodMissing();
-        } else if (callType == CallType.VARIABLE) {
-            return runtime.getVariableMethodMissing();
-        } else if (callType == CallType.SUPER) {
-            return runtime.getSuperMethodMissing();
-        } else {
-            return runtime.getNormalMethodMissing();
+        private static IRubyObject[] prepareArgs(ThreadContext context, String name, IRubyObject arg0, IRubyObject arg1, IRubyObject arg2) {
+            return new IRubyObject[] { context.runtime.newSymbol(name), arg0, arg1, arg2 };
         }
-    }
 
-    private static IRubyObject[] prepareMethodMissingArgs(IRubyObject[] args, ThreadContext context, String name) {
-        return ArraySupport.newCopy(context.runtime.newSymbol(name), args);
+        private static IRubyObject[] prepareArgs(ThreadContext context, String name, IRubyObject[] args) {
+            return ArraySupport.newCopy(context.runtime.newSymbol(name), args);
+        }
     }
 
     public static IRubyObject invoke(ThreadContext context, IRubyObject self, String name, Block block) {

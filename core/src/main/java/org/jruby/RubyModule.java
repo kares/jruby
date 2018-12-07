@@ -1630,10 +1630,14 @@ public class RubyModule extends RubyObject {
     }
 
     private CacheEntry addToCache(String id, DynamicMethod method, int token) {
-        CacheEntry entry = cacheEntryFactory.newCacheEntry(id, method, token);
+        CacheEntry entry = newCacheEntry(id, method, token);
         methodLocation.getCachedMethodsForWrite().put(id, entry);
 
         return entry;
+    }
+
+    public final CacheEntry newCacheEntry(String id, DynamicMethod method, int token) {
+        return cacheEntryFactory.newCacheEntry(id, method, token);
     }
 
     public DynamicMethod searchMethodInner(String id) {

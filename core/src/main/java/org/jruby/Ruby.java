@@ -64,7 +64,7 @@ import org.jruby.javasupport.JavaSupportImpl;
 import org.jruby.lexer.yacc.ISourcePosition;
 import org.jruby.management.Caches;
 import org.jruby.parser.StaticScope;
-import org.jruby.runtime.JavaSites;
+import org.jruby.runtime.*;
 import org.jruby.runtime.invokedynamic.InvokeDynamicSupport;
 import org.jruby.util.CommonByteLists;
 import org.jruby.util.MRIRecursionGuard;
@@ -121,20 +121,6 @@ import org.jruby.parser.Parser;
 import org.jruby.parser.ParserConfiguration;
 import org.jruby.parser.StaticScopeFactory;
 import org.jruby.platform.Platform;
-import org.jruby.runtime.Binding;
-import org.jruby.runtime.Block;
-import org.jruby.runtime.CallSite;
-import org.jruby.runtime.ClassIndex;
-import org.jruby.runtime.DynamicScope;
-import org.jruby.runtime.EventHook;
-import org.jruby.runtime.GlobalVariable;
-import org.jruby.runtime.Helpers;
-import org.jruby.runtime.IAccessor;
-import org.jruby.runtime.ObjectAllocator;
-import org.jruby.runtime.ObjectSpace;
-import org.jruby.runtime.RubyEvent;
-import org.jruby.runtime.ThreadContext;
-import org.jruby.runtime.Visibility;
 import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.runtime.encoding.EncodingService;
 import org.jruby.runtime.invokedynamic.MethodNames;
@@ -1917,12 +1903,28 @@ public final class Ruby implements Constantizable {
 
     public boolean isDefaultMethodMissing(DynamicMethod method) {
         return defaultMethodMissing == method || defaultModuleMethodMissing == method;
-
     }
 
     public void setDefaultMethodMissing(DynamicMethod method, DynamicMethod moduleMethod) {
         defaultMethodMissing = method;
         defaultModuleMethodMissing = moduleMethod;
+    }
+
+    /**
+     * @param visibility
+     * @param callType
+     * @return the (internal) method_missing to use based on arguments
+     */
+    public DynamicMethod getMethodMissing(Visibility visibility, CallType callType) {
+        switch (visibility) {
+            case PRIVATE: return getPrivateMethodMissing();
+            case PROTECTED: return getProtectedMethodMissing();
+        }
+        switch (callType) {
+            case VARIABLE: return getVariableMethodMissing();
+            case SUPER: return getSuperMethodMissing();
+        }
+        return getNormalMethodMissing();
     }
 
     public DynamicMethod getRespondToMethod() {
