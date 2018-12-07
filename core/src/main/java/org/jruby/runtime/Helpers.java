@@ -21,7 +21,6 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.StringTokenizer;
-import java.util.regex.Pattern;
 
 import jnr.constants.platform.Errno;
 import org.jruby.*;
@@ -80,8 +79,6 @@ import static org.jruby.util.StringSupport.EMPTY_STRING_ARRAY;
  */
 public class Helpers {
 
-    public static final Pattern SEMICOLON_PATTERN = Pattern.compile(";");
-
     public static RubyClass getSingletonClass(Ruby runtime, IRubyObject receiver) {
         if (receiver instanceof RubyFixnum || receiver instanceof RubySymbol) {
             throw runtime.newTypeError("can't define singleton");
@@ -101,9 +98,8 @@ public class Helpers {
             return RubyKernel.method_missing(context, receiver, args, Block.NULL_BLOCK);
         }
 
-        IRubyObject[] newArgs = MethodMissingMethod.prepareArgs(context, name, args);
-
-        return invoke(context, receiver, "method_missing", newArgs, Block.NULL_BLOCK);
+        args = ArraySupport.newCopy(context.runtime.newSymbol(name), args);
+        return invoke(context, receiver, "method_missing", args, Block.NULL_BLOCK);
     }
 
     public static IRubyObject callMethodMissing(ThreadContext context, IRubyObject self, RubyClass klass, Visibility visibility, String name, CallType callType, IRubyObject[] args, Block block) {
@@ -356,7 +352,7 @@ public class Helpers {
         private final CallType lastCallStatus;
         private final Visibility lastVisibility;
 
-        public MethodMissingMethod(DynamicMethod delegate, Visibility lastVisibility, CallType lastCallStatus) {
+        MethodMissingMethod(DynamicMethod delegate, Visibility lastVisibility, CallType lastCallStatus) {
             super(delegate.getImplementationClass(), lastVisibility, delegate.getName());
             this.delegate = delegate;
             this.lastCallStatus = lastCallStatus;
@@ -384,13 +380,13 @@ public class Helpers {
         @Override
         public IRubyObject call(ThreadContext context, IRubyObject self, RubyModule klass, String name, IRubyObject arg0, IRubyObject arg1, IRubyObject arg2, Block block) {
             context.setLastCallStatusAndVisibility(lastCallStatus, lastVisibility);
-            return this.delegate.call(context, self, klass, "method_missing", prepareArgs(context, name, arg0, arg1, arg2), block);
+            return this.delegate.call(context, self, klass, "method_missing", new IRubyObject[] { context.runtime.newSymbol(name), arg0, arg1, arg2 }, block);
         }
 
         @Override
         public IRubyObject call(ThreadContext context, IRubyObject self, RubyModule klass, String name, IRubyObject[] args, Block block) {
             context.setLastCallStatusAndVisibility(lastCallStatus, lastVisibility);
-            return this.delegate.call(context, self, klass, "method_missing", prepareArgs(context, name, args), block);
+            return this.delegate.call(context, self, klass, "method_missing", ArraySupport.newCopy(context.runtime.newSymbol(name), args), block);
         }
 
         @Override
@@ -398,13 +394,6 @@ public class Helpers {
             return this;
         }
 
-        private static IRubyObject[] prepareArgs(ThreadContext context, String name, IRubyObject arg0, IRubyObject arg1, IRubyObject arg2) {
-            return new IRubyObject[] { context.runtime.newSymbol(name), arg0, arg1, arg2 };
-        }
-
-        private static IRubyObject[] prepareArgs(ThreadContext context, String name, IRubyObject[] args) {
-            return ArraySupport.newCopy(context.runtime.newSymbol(name), args);
-        }
     }
 
     public static IRubyObject invoke(ThreadContext context, IRubyObject self, String name, Block block) {
@@ -634,36 +623,6 @@ public class Helpers {
      */
     public static IRubyObject nullToNil(IRubyObject value, IRubyObject nil) {
         return value != null ? value : nil;
-    }
-
-    public static void handleArgumentSizes(ThreadContext context, Ruby runtime, int given, int required, int opt, int rest) {
-        if (opt == 0) {
-            if (rest < 0) {
-                // no opt, no rest, exact match
-                if (given != required) {
-                    throw runtime.newArgumentError(given, required);
-                }
-            } else {
-                // only rest, must be at least required
-                if (given < required) {
-                    throw runtime.newArgumentError(given, required);
-                }
-            }
-        } else {
-            if (rest < 0) {
-                // opt but no rest, must be at least required and no more than required + opt
-                if (given < required) {
-                    throw runtime.newArgumentError(given, required);
-                } else if (given > (required + opt)) {
-                    throw runtime.newArgumentError(given, required + opt);
-                }
-            } else {
-                // opt and rest, must be at least required
-                if (given < required) {
-                    throw runtime.newArgumentError(given, required);
-                }
-            }
-        }
     }
 
     public static String getLocalJumpTypeOrRethrow(RaiseException re) {
