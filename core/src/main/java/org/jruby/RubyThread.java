@@ -1364,6 +1364,7 @@ public class RubyThread extends RubyObject implements ExecutionContext {
         return raise(getRuntime().getCurrentContext(), args, block);
     }
 
+    // MRI: rb_threadptr_raise (this == target_th)
     private IRubyObject genericRaise(ThreadContext context, RubyThread currentThread, IRubyObject... args) {
         if (!isAlive()) return context.nil;
 
@@ -1373,6 +1374,8 @@ public class RubyThread extends RubyObject implements ExecutionContext {
         }
 
         IRubyObject exception = prepareRaiseException(context, args, Block.NULL_BLOCK);
+
+        if (!isAlive()) return context.nil;
 
         pendingInterruptEnqueue(exception);
         interrupt();
