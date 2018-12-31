@@ -737,30 +737,37 @@ public class RubyThread extends RubyObject implements ExecutionContext {
     }
 
     @JRubyMethod(meta = true)
-    public static IRubyObject handle_interrupt(ThreadContext context, IRubyObject self, IRubyObject _mask, Block block) {
+    public static IRubyObject handle_interrupt(ThreadContext context, IRubyObject self, IRubyObject mask_arg, Block block) {
         if (!block.isGiven()) {
             throw context.runtime.newArgumentError("block is needed");
         }
 
-        final RubyHash mask = (RubyHash) TypeConverter.convertToType(_mask, context.runtime.getHash(), "to_hash");
+        mask_arg = TypeConverter.convertToType(mask_arg, context.runtime.getHash(), "to_hash");
 
-        mask.visitAll(context, HandleInterruptVisitor, null);
+        //if (((RubyHash) mask_arg).isEmpty()) return block.call(context);
+
+        ((RubyHash) mask_arg).visitAll(context, HandleInterruptVisitor, null);
+
+        final RubyHash mask = mask_arg.isFrozen() ? (RubyHash) mask_arg : ((RubyHash) mask_arg).dupFast(context);
 
         final RubyThread thread = context.getThread();
         thread.interruptMaskStack.add(mask);
-        if (thread.pendingInterruptQueue.isEmpty()) {
+        if (!thread.pendingInterruptQueue.isEmpty()) {
             thread.pendingInterruptQueueChecked = false;
             thread.setInterrupt();
         }
 
         try {
             // check for any interrupts that should fire with new masks
-            thread.pollThreadEvents();
+            thread.pollThreadEvents(context);
 
             return block.call(context);
         } finally {
             thread.interruptMaskStack.remove(thread.interruptMaskStack.size() - 1);
-            thread.setInterrupt();
+            if (!thread.pendingInterruptQueue.isEmpty()) {
+                thread.pendingInterruptQueueChecked = false;
+                thread.setInterrupt();
+            }
 
             thread.pollThreadEvents(context);
         }
@@ -1626,8 +1633,8 @@ public class RubyThread extends RubyObject implements ExecutionContext {
     }
 
     private void pendingInterruptEnqueue(IRubyObject v) {
-        pendingInterruptQueue.add(v);
         pendingInterruptQueueChecked = false;
+        pendingInterruptQueue.add(v);
     }
 
     /**
