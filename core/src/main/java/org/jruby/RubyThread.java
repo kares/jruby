@@ -1274,8 +1274,8 @@ public class RubyThread extends RubyObject implements ExecutionContext {
     }
 
     @JRubyMethod
-    public synchronized RubyThread wakeup() {
-        if(!threadImpl.isAlive() && status.get() == Status.DEAD) {
+    public RubyThread wakeup() {
+        if (!threadImpl.isAlive() && status.get() == Status.DEAD) {
             throw getRuntime().newThreadError("killed thread");
         }
 
