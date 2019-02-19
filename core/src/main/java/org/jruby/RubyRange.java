@@ -393,12 +393,11 @@ public class RubyRange extends RubyObject {
                 invokedynamic(context, this.end, equalityCheck, otherRange.end).isTrue());
     }
 
-    private static abstract class RangeCallBack {
-
-        abstract void call(ThreadContext context, IRubyObject arg);
+    private interface RangeCallBack {
+        void doCall(ThreadContext context, IRubyObject arg);
     }
 
-    private static final class StepBlockCallBack extends RangeCallBack implements BlockCallback {
+    private static final class StepBlockCallBack implements RangeCallBack, BlockCallback {
 
         final Block block;
         IRubyObject iter;
@@ -411,23 +410,44 @@ public class RubyRange extends RubyObject {
         }
 
         @Override
-        public IRubyObject call(ThreadContext context, IRubyObject[] args, Block originalBlock) {
-            call(context, args[0]);
-            return context.nil;
-        }
-
-        @Override
-        void call(ThreadContext context, IRubyObject arg) {
+        public void doCall(ThreadContext context, IRubyObject arg) {
             if (iter instanceof RubyFixnum) {
                 iter = RubyFixnum.newFixnum(context.runtime, ((RubyFixnum) iter).getLongValue() - 1);
             } else {
-                iter = iter.callMethod(context, "-", RubyFixnum.one(context.runtime));
+                iter = iter.callMethod(context, "-", one(context));
             }
-            if (iter == RubyFixnum.zero(context.runtime)) {
+            if (isZero(iter)) {
                 block.yield(context, arg);
                 iter = step;
             }
         }
+
+        @Override
+        public IRubyObject call(ThreadContext context, IRubyObject[] args, Block originalBlock) {
+            doCall(context, args[0]);
+            return context.nil;
+        }
+
+        @Override
+        public IRubyObject call(ThreadContext context, IRubyObject arg) {
+            doCall(context, arg);
+            return context.nil;
+        }
+
+        transient RubyFixnum one;
+
+        private RubyFixnum one(ThreadContext context) {
+            RubyFixnum one = this.one;
+            if (one == null) {
+                one = this.one = RubyFixnum.one(context.runtime);
+            }
+            return one;
+        }
+
+    }
+
+    private static boolean isZero(IRubyObject num) {
+        return num instanceof RubyFixnum && ((RubyNumeric) num).isZero();
     }
 
     private static IRubyObject rangeLt(ThreadContext context, IRubyObject a, IRubyObject b) {
@@ -454,14 +474,14 @@ public class RubyRange extends RubyObject {
         IRubyObject v = begin;
         if (isExclusive) {
             while (rangeLt(context, v, end) != null) {
-                callback.call(context, v);
+                callback.doCall(context, v);
                 v = v.callMethod(context, "succ");
             }
         } else {
             IRubyObject c;
             while ((c = rangeLe(context, v, end)) != null && c.isTrue()) {
-                callback.call(context, v);
-                if (c == RubyFixnum.zero(context.runtime)) {
+                callback.doCall(context, v);
+                if (isZero(c)) {
                     break;
                 }
                 v = v.callMethod(context, "succ");
@@ -519,12 +539,7 @@ public class RubyRange extends RubyObject {
                 if (!discreteObject(context, begin)) {
                     throw context.runtime.newTypeError("can't iterate from " + begin.getMetaClass().getName());
                 }
-                rangeEach(context, new RangeCallBack() {
-                    @Override
-                    void call(ThreadContext context, IRubyObject arg) {
-                        block.yield(context, arg);
-                    }
-                });
+                rangeEach(context, (ThreadContext ctx, IRubyObject arg) -> block.yield(ctx, arg));
             }
         }
         return this;
@@ -835,13 +850,20 @@ public class RubyRange extends RubyObject {
             RubyEnumerable.callEach(runtime, context, this, Signature.ONE_ARGUMENT, new BlockCallback() {
                 int n = num;
 
-                @Override
                 public IRubyObject call(ThreadContext ctx, IRubyObject[] largs, Block blk) {
                     if (n-- <= 0) {
                         throw JumpException.SPECIAL_JUMP;
                     }
                     result.append(largs[0]);
-                    return runtime.getNil();
+                    return ctx.nil;
+                }
+                @Override
+                public IRubyObject call(ThreadContext ctx, IRubyObject larg) {
+                    if (n-- <= 0) {
+                        throw JumpException.SPECIAL_JUMP;
+                    }
+                    result.append(larg);
+                    return ctx.nil;
                 }
             });
         } catch (JumpException.SpecialJump sj) {
