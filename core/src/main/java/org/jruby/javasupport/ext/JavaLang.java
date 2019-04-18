@@ -351,9 +351,6 @@ public abstract class JavaLang {
             if (val instanceof java.math.BigInteger) { // NOTE: should be moved into its own?
                 return RubyBignum.newBignum(context.runtime, (java.math.BigInteger) val);
             }
-            if (val instanceof java.math.BigDecimal) { // NOTE: should be moved into its own?
-                return RubyBignum.newBignum(context.runtime, ((java.math.BigDecimal) val).toBigInteger());
-            }
             return context.runtime.newFixnum(val.longValue());
         }
 
@@ -386,17 +383,7 @@ public abstract class JavaLang {
 
             // NOTE: a basic stub that always coverts Java numbers to Ruby ones (for simplicity)
             // gist being this is not expected to be used heavily, if so should get special care
-            final IRubyObject value;
-            if (val instanceof java.math.BigDecimal) {
-                final RubyClass klass = context.runtime.getClass("BigDecimal");
-                if (klass == null) { // user should require 'bigdecimal'
-                    throw context.runtime.newNameError("uninitialized constant BigDecimal", "BigDecimal");
-                }
-                value = new RubyBigDecimal(context.runtime, klass, (java.math.BigDecimal) val);
-            }
-            else {
-                value = convertJavaToUsableRubyObject(context.runtime, val);
-            }
+            final IRubyObject value = convertJavaToUsableRubyObject(context.runtime, val);
             return context.runtime.newArray(type, value);
         }
 
