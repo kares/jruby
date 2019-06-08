@@ -867,24 +867,25 @@ public class RubyKernel {
             if (cause == null) cause = context.getErrorInfo(); // returns nil for no error-info
         }
 
-        Throwable ex = makeException(context, args, argc);
+        IRubyObject ex = makeException(context, args, argc);
 
-        if (ex instanceof RaiseException) { // normal Ruby raise
-            RaiseException raise = (RaiseException) ex;
+        if (ex instanceof RubyException) { // normal Ruby raise
+            RubyException exception = (RubyException) ex;
+            RaiseException raise = exception.toThrowable();
 
             if (context.runtime.isDebug()) {
-                printExceptionSummary(context.runtime, raise.getException());
+                printExceptionSummary(context.runtime, exception);
             }
 
-            if (forceCause || argc > 0 && cause != raise.getException() && raise.getException().getCause() == null) {
-                raise.getException().setCause(cause);
+            if (forceCause || argc > 0 && cause != exception && exception.getCause() == null) {
+                exception.setCause(cause);
             }
 
             throw raise;
         }
 
         // otherwise we have a Java exception object passed
-        Helpers.throwException(ex);
+        Helpers.throwException(checkJavaThrowable(context.runtime, (ConcreteJavaProxy) ex));
 
         assert false; return null; // not reached
     }
@@ -900,41 +901,44 @@ public class RubyKernel {
         return null;
     }
 
+    /**
+     * @param context
+     * @param args
+     * @return RubyException (to raise) or a Java throwable proxy wrapper
+     */
+    public static IRubyObject makeException(ThreadContext context, final IRubyObject[] args) {
+        return makeException(context, args, args.length);
+    }
 
-    private static Throwable makeException(ThreadContext context, final IRubyObject[] args, final int argc) {
+    private static IRubyObject makeException(ThreadContext context, final IRubyObject[] args, final int argc) {
         final Ruby runtime = context.runtime;
-        RaiseException raise;
+        RubyException raise;
         switch (argc) {
             case 0:
                 IRubyObject errorInfo = context.getErrorInfo(); // $!
                 if (errorInfo.isNil()) {
-                    raise = RaiseException.from(runtime, runtime.getRuntimeError(), "");
+                    raise = RaiseException.from(runtime, runtime.getRuntimeError(), "").getException();
                 } else {
-                    if (errorInfo instanceof ConcreteJavaProxy) {
-                        return (Throwable) ((ConcreteJavaProxy) errorInfo).unwrap();
-                    }
+                    if (errorInfo instanceof ConcreteJavaProxy) return errorInfo; // Java Throwable
                     // non RubyException value isn't allowed to be assigned as $!
-                    raise = ((RubyException) errorInfo).toThrowable();
+                    raise = ((RubyException) errorInfo);
                 }
                 break;
             case 1:
                 final IRubyObject arg = args[0];
                 if (arg instanceof RubyString) {
-                    raise = ((RubyException) runtime.getRuntimeError().newInstance(context, args, Block.NULL_BLOCK)).toThrowable();
+                    raise = (RubyException) runtime.getRuntimeError().newInstance(context, args, Block.NULL_BLOCK);
                 } else {
-                    if (arg instanceof ConcreteJavaProxy) {
-                        return checkJavaThrowable(runtime, (ConcreteJavaProxy) arg);
-                    }
-                    raise = convertToException(context, arg, null).toThrowable();
+                    if (arg instanceof ConcreteJavaProxy) return arg; // Java Throwable (needs to be checked)
+                    raise = convertToException(context, arg, null);
                 }
                 break;
             case 2:
-                raise = convertToException(context, args[0], args[1]).toThrowable();
+                raise = convertToException(context, args[0], args[1]);
                 break;
             default:
-                RubyException exception = convertToException(context, args[0], args[1]);
-                exception.setBacktrace(args[2]);
-                raise = exception.toThrowable();
+                raise = convertToException(context, args[0], args[1]);
+                raise.setBacktrace(args[2]);
                 break;
         }
 
