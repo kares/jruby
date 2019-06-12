@@ -1372,39 +1372,27 @@ public class RubyThread extends RubyObject implements ExecutionContext {
     }
 
     // MRI: rb_threadptr_raise (this == target_th)
-    private IRubyObject genericRaise(ThreadContext context, RubyThread currentThread, IRubyObject... args) {
+    private IRubyObject genericRaise(ThreadContext context, final RubyThread currentThread, IRubyObject... args) {
         if (!isAlive()) return context.nil;
 
-        if (currentThread == this) {
-            RubyKernel.raise(context, this, args, Block.NULL_BLOCK);
-            assert false; // should not reach here
+        IRubyObject exception = RubyKernel.makeException(context, args);
+        if (exception instanceof RubyException) {
+            IRubyObject cause = context.getErrorInfo();
+            if (cause != exception) ((RubyException) exception).setCause(cause);
         }
-
-        IRubyObject exception = prepareRaiseException(context, args);
 
         if (!isAlive()) return context.nil;
 
         pendingInterruptEnqueue(exception);
         interrupt();
 
-        return context.nil;
-    }
-
-    /**
-     * @param context
-     * @param args
-     * @return (created) RubyException or Thread#errorInfo if set
-     */
-    private IRubyObject prepareRaiseException(ThreadContext context, IRubyObject[] args) {
-        IRubyObject ex = RubyKernel.makeException(context, args);
-        if (ex instanceof RubyException) {
-            RubyException exception = (RubyException) ex;
-            IRubyObject cause = context.getErrorInfo();
-            if (cause != exception) {
-                exception.setCause(cause);
-            }
+        /* To perform Thread.current.raise as Kernel.raise */
+        if (currentThread == this) {
+            RubyKernel.raise(context, this, new IRubyObject[] { exception }, Block.NULL_BLOCK);
+            assert false; // should not reach here
         }
-        return ex;
+
+        return context.nil;
     }
 
     @JRubyMethod
