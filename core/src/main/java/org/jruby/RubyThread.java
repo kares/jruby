@@ -89,7 +89,6 @@ import org.jruby.util.log.LoggerFactory;
 import org.jruby.common.IRubyWarnings.ID;
 
 import static org.jruby.runtime.Visibility.*;
-import static org.jruby.runtime.backtrace.BacktraceData.EMPTY_STACK_TRACE;
 import static org.jruby.util.RubyStringBuilder.ids;
 import static org.jruby.util.RubyStringBuilder.str;
 import static org.jruby.util.RubyStringBuilder.types;
@@ -1634,7 +1633,7 @@ public class RubyThread extends RubyObject implements ExecutionContext {
         if (myContext == null || nativeThread == null || !nativeThread.isAlive()) return context.nil;
 
         int[] ll = RubyKernel.levelAndLengthFromArgs(context, level, length, 0);
-        return WALKER.walk(getNativeThread().getStackTrace(), stream -> myContext.createCallerBacktrace(ll[0], ll[1], stream));
+        return WALKER.walk(threadImpl.getStackTrace(), stream -> myContext.createCallerBacktrace(ll[0], ll[1], stream));
     }
 
     @JRubyMethod
@@ -1662,7 +1661,7 @@ public class RubyThread extends RubyObject implements ExecutionContext {
         if (myContext == null || nativeThread == null || !nativeThread.isAlive()) return context.nil;
 
         int[] ll = RubyKernel.levelAndLengthFromArgs(context, level, length, 0);
-        return WALKER.walk(getNativeThread().getStackTrace(), stream -> myContext.createCallerLocations(ll[0], ll[1], stream));
+        return WALKER.walk(threadImpl.getStackTrace(), stream -> myContext.createCallerLocations(ll[0], ll[1], stream));
     }
 
     @JRubyMethod(name = "report_on_exception=")
@@ -1699,12 +1698,7 @@ public class RubyThread extends RubyObject implements ExecutionContext {
     }
 
     public StackTraceElement[] javaBacktrace() {
-        if (threadImpl instanceof NativeThread) {
-            return ((NativeThread)threadImpl).getThread().getStackTrace();
-        }
-
-        // Future-based threads can't get a Java trace
-        return EMPTY_STACK_TRACE;
+        return threadImpl.getStackTrace();
     }
 
     private boolean isCurrent() {

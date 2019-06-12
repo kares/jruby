@@ -31,9 +31,9 @@ package org.jruby.internal.runtime;
 import java.lang.ref.Reference;
 import java.lang.ref.WeakReference;
 
-import org.jruby.RubyString;
 import org.jruby.RubyThread;
-import org.jruby.runtime.builtin.IRubyObject;
+
+import static org.jruby.runtime.backtrace.BacktraceData.EMPTY_STACK_TRACE;
 
 /**
  * @author cnutter
@@ -108,6 +108,11 @@ public class NativeThread implements ThreadLike {
 
     public Thread nativeThread() {
         return nativeThread.get();
+    }
+
+    public StackTraceElement[] getStackTrace() {
+        final Thread thread = getThread();
+        return thread == null ? EMPTY_STACK_TRACE : thread.getStackTrace();
     }
 
     @Override

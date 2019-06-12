@@ -57,6 +57,10 @@ public interface ThreadLike {
 
     public String getReportName();
 
+    default StackTraceElement[] getStackTrace() {
+        return nativeThread().getStackTrace();
+    }
+
     ThreadLike DUMMY = new ThreadLike() {
         @Override
         public void start() {}
