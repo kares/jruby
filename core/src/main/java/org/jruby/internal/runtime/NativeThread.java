@@ -66,13 +66,21 @@ public class NativeThread implements ThreadLike {
     }
     
     public void join() throws InterruptedException {
-        Thread thread = getThread();
-        if (thread != null) thread.join();
+        join(0);
     }
     
     public void join(long timeoutMillis) throws InterruptedException {
         Thread thread = getThread();
-        if (thread != null) thread.join(timeoutMillis);
+        if (thread != null) {
+            assert timeoutMillis >= 0;
+            synchronized (thread) {
+                if (timeoutMillis == 0) {
+                    while (thread.isAlive()) thread.wait(0);
+                } else {
+                    if (thread.isAlive()) thread.wait(timeoutMillis);
+                }
+            }
+        }
     }
     
     public int getPriority() {
