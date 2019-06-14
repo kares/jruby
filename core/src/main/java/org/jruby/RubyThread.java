@@ -128,7 +128,7 @@ public class RubyThread extends RubyObject implements ExecutionContext {
     private volatile boolean abortOnException;
 
     /** Whether this thread should report_on_exception when this thread GCs, when it terminates, or never */
-    private volatile IRubyObject reportOnException;
+    private volatile boolean reportOnException;
 
     /** The final value resulting from the thread's execution */
     private volatile IRubyObject finalResult;
@@ -222,7 +222,7 @@ public class RubyThread extends RubyObject implements ExecutionContext {
         super(runtime, type);
 
         finalResult = errorInfo = runtime.getNil();
-        reportOnException = runtime.getReportOnException();
+        reportOnException = runtime.getReportOnException().isTrue();
     }
 
     public RubyThread(Ruby runtime, RubyClass klass, Runnable runnable) {
@@ -846,6 +846,10 @@ public class RubyThread extends RubyObject implements ExecutionContext {
         if (rubyName == null) return runtime.getNil();
 
         return RubyString.newString(runtime, rubyName);
+    }
+
+    public boolean isAbortOnException() {
+        return abortOnException;
     }
 
     /**
@@ -1665,19 +1669,23 @@ public class RubyThread extends RubyObject implements ExecutionContext {
         return WALKER.walk(threadImpl.getStackTrace(), stream -> myContext.createCallerLocations(ll[0], ll[1], stream));
     }
 
-    @JRubyMethod(name = "report_on_exception=")
-    public IRubyObject report_on_exception_set(ThreadContext context, IRubyObject state) {
-        if (state.isNil()) {
-            reportOnException = state;
-        } else {
-            reportOnException = state.isTrue() ? context.tru : context.fals;
-        }
-        return this;
+    public boolean isReportOnException() {
+        return reportOnException;
     }
 
     @JRubyMethod(name = "report_on_exception")
     public IRubyObject report_on_exception(ThreadContext context) {
-        return reportOnException;
+        return context.runtime.newBoolean(reportOnException);
+    }
+
+    @JRubyMethod(name = "report_on_exception=")
+    public IRubyObject report_on_exception_set(ThreadContext context, IRubyObject state) {
+        if (state.isNil()) {
+            reportOnException = false;
+        } else {
+            reportOnException = state.isTrue();
+        }
+        return this;
     }
 
     @JRubyMethod(name = "report_on_exception=", meta = true)
@@ -1742,7 +1750,7 @@ public class RubyThread extends RubyObject implements ExecutionContext {
         boolean report;
         if (runtime.getSystemExit().isInstance(rubyException)) {
             runtime.getThreadService().getMainThread().raise(rubyException);
-        } else if ((report = reportOnException.isTrue()) || abortOnException(runtime)) {
+        } else if ((report = reportOnException) || abortOnException(runtime)) {
             if (report) {
                 printReportExceptionWarning();
                 runtime.printError(throwable);
