@@ -1885,7 +1885,7 @@ public class RubyThread extends RubyObject implements ExecutionContext {
                         selectable.configureBlocking(false);
 
                         if (fptr != null) fptr.addBlockingThread(this);
-                        currentSelector = getRuntime().getSelectorPool().get(selectable.provider());
+                        Selector currentSelector = this.currentSelector = getRuntime().getSelectorPool().get(selectable.provider());
 
                         key = selectable.register(currentSelector, ops);
 
@@ -1923,11 +1923,12 @@ public class RubyThread extends RubyObject implements ExecutionContext {
 
                         // shut down and null out the selector
                         try {
+                            Selector currentSelector = this.currentSelector;
                             if (currentSelector != null) {
                                 getRuntime().getSelectorPool().put(currentSelector);
                             }
                         } catch (Exception e) {
-                            // ignore
+                            LOG.debug("put selector", e); // ignore
                         } finally {
                             currentSelector = null;
                         }
@@ -1939,7 +1940,7 @@ public class RubyThread extends RubyObject implements ExecutionContext {
                         try {
                             selectable.configureBlocking(oldBlocking);
                         } catch (Exception e) {
-                            // ignore
+                            LOG.debug("configure blocking", e); // ignore
                         }
 
                         // clear thread state from blocking call
