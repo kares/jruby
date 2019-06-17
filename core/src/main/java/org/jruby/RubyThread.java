@@ -65,8 +65,7 @@ import org.jruby.internal.runtime.NativeThread;
 import org.jruby.internal.runtime.RubyRunnable;
 import org.jruby.internal.runtime.ThreadLike;
 import org.jruby.internal.runtime.ThreadService;
-import org.jruby.java.proxies.ConcreteJavaProxy;
-import org.jruby.javasupport.JavaUtil;
+import org.jruby.javasupport.Java;
 import org.jruby.runtime.Arity;
 import org.jruby.runtime.Block;
 import org.jruby.runtime.ClassIndex;
@@ -1164,11 +1163,12 @@ public class RubyThread extends RubyObject implements ExecutionContext {
         if (exception != null) {
             if (exception instanceof RaiseException) {
                 // Set $! in the current thread before exiting
-                runtime.getGlobalVariables().set("$!", ((RaiseException) exception).getException());
+                context.setErrorInfo(((RaiseException) exception).getException());
+                throw (RaiseException) exception;
             } else {
-                runtime.getGlobalVariables().set("$!", JavaUtil.convertJavaToUsableRubyObject(runtime, exception));
+                context.setErrorInfo(wrapJavaException(runtime, exception));
+                Helpers.throwException(exception);
             }
-            Helpers.throwException(exception);
         }
 
         // check events before leaving
@@ -1743,7 +1743,7 @@ public class RubyThread extends RubyObject implements ExecutionContext {
             RaiseException exception = (RaiseException) throwable;
             rubyException = exception.getException();
         } else {
-            rubyException = JavaUtil.convertJavaToUsableRubyObject(runtime, throwable);
+            rubyException = wrapJavaException(runtime, throwable);
         }
 
         boolean report;
@@ -1766,6 +1766,11 @@ public class RubyThread extends RubyObject implements ExecutionContext {
 
     private boolean abortOnException(Ruby runtime) {
         return (runtime.isGlobalAbortOnExceptionEnabled() || abortOnException);
+    }
+
+    private static IRubyObject wrapJavaException(Ruby runtime, Throwable ex) {
+        assert !(ex instanceof RaiseException);
+        return Java.getInstance(runtime, ex);
     }
 
     public static RubyThread mainThread(IRubyObject receiver) {
