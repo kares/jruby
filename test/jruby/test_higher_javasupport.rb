@@ -1941,6 +1941,20 @@ CLASSDEF
     def checkPermission( perm ); @checked << perm end
   end
 
+  java.rmi.RemoteException.class_eval do
+    @subclasses = []
+    def self.__subclasses; @subclasses end
+
+    def self.inherited(subclass)
+      @subclasses << subclass
+    end
+  end
+
+  def test_java_class_inherited
+    java.rmi.ServerException.new(__method__.to_s)
+    assert_include java.rmi.RemoteException.__subclasses, java.rmi.ServerException
+  end
+
   private
 
   def with_stderr_captured

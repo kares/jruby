@@ -510,6 +510,7 @@ public class Java implements Library {
             if ( Modifier.isPublic(clazz.getModifiers()) ) {
                 addToJavaPackageModule(proxy);
             }
+            proxy.inherit(superClass); // execute inherited callback for Java sub-classing
         }
 
         // JRUBY-1000, fail early when attempting to subclass a final Java class;
@@ -568,12 +569,20 @@ public class Java implements Library {
 
     private static IRubyObject invokeProxyClassInherited(final ThreadContext context,
         final IRubyObject clazz, final IRubyObject subclazz) {
-        final JavaSupport javaSupport = context.runtime.getJavaSupport();
-        RubyClass javaProxyClass = javaSupport.getJavaProxyClass().getMetaClass();
-        Helpers.invokeAs(context, javaProxyClass, clazz, "inherited", subclazz, Block.NULL_BLOCK);
+
         if ( ! ( subclazz instanceof RubyClass ) ) {
             throw context.runtime.newTypeError(subclazz, context.runtime.getClassClass());
         }
+
+        // only relevant to execute for Ruby sub-classes of Java class
+        // NOTE: previously we simply did not execute inherited for Java class hierarchy
+        if (((RubyClass) subclazz).getJavaProxy()) return context.nil;
+
+        final JavaSupport javaSupport = context.runtime.getJavaSupport();
+        RubyClass javaProxyClass = javaSupport.getJavaProxyClass().getMetaClass();
+
+        Helpers.invokeAs(context, javaProxyClass, clazz, "inherited", subclazz, Block.NULL_BLOCK);
+
         setupJavaSubclass(context, (RubyClass) subclazz);
         return context.nil;
     }
@@ -764,7 +773,7 @@ public class Java implements Library {
     // from the camel-cased package segments: Java::JavaLang::Object,
     private static void addToJavaPackageModule(RubyModule proxyClass) {
         final Ruby runtime = proxyClass.getRuntime();
-        final Class<?> clazz = (Class<?>)proxyClass.dataGetStruct();
+        final Class<?> clazz = (Class<?>) proxyClass.dataGetStruct();
         final String fullName;
         if ( ( fullName = clazz.getName() ) == null ) return;
 
