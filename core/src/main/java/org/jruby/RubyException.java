@@ -466,7 +466,7 @@ public class RubyException extends RubyObject {
         }
     }
 
-    private boolean isArrayOfStrings(IRubyObject backtrace) {
+    private static boolean isArrayOfStrings(IRubyObject backtrace) {
         if (!(backtrace instanceof RubyArray)) return false;
 
         final RubyArray rTrace = ((RubyArray) backtrace);

@@ -55,8 +55,7 @@ public class RubyStopIteration extends RubyIndexError {
         final Ruby runtime = context.runtime;
         RubyClass StopIteration = runtime.getStopIteration();
         final IRubyObject msg = message == null ? context.nil : runtime.newString(message);
-        RubyStopIteration instance = (RubyStopIteration)
-                StopIteration.newInstance(context, msg, Block.NULL_BLOCK);
+        RubyStopIteration instance = (RubyStopIteration) StopIteration.newInstance(context, msg, Block.NULL_BLOCK);
         instance.result = result;
         return instance;
     }

@@ -26,6 +26,7 @@
 
 package org.jruby.exceptions;
 
+import org.jruby.RubyInstanceConfig;
 import org.jruby.RubyStopIteration;
 
 /**
@@ -37,4 +38,14 @@ public class StopIteration extends IndexError {
     public StopIteration(String message, RubyStopIteration exception) {
         super(message, exception);
     }
+
+    @Override
+    public Throwable fillInStackTrace() {
+        if (RubyInstanceConfig.STOPITERATION_BACKTRACE) {
+            return originalFillInStackTrace();
+        }
+        super.setStackTrace(EMPTY_STACK_TRACE);
+        return this;
+    }
+
 }

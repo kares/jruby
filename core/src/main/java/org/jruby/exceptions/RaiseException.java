@@ -52,6 +52,8 @@ import org.jruby.runtime.builtin.IRubyObject;
 public class RaiseException extends JumpException {
     private static final long serialVersionUID = -7612079169559973951L;
 
+    static final StackTraceElement[] EMPTY_STACK_TRACE = new StackTraceElement[0];
+
     private RubyException exception;
     private String providedMessage;
 
