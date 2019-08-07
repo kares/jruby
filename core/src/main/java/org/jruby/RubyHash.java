@@ -536,10 +536,9 @@ public class RubyHash extends RubyObject implements Map {
         internalPutNoResize(key, value, checkForExisting);
     }
 
+    @Deprecated // no longer used
     protected final IRubyObject internalJavaPut(final IRubyObject key, final IRubyObject value) {
-        checkResize();
-
-        return internalPutNoResize(key, value, true);
+        return internalPut(key, value);
     }
 
     protected IRubyObject internalPutNoResize(final IRubyObject key, final IRubyObject value, final boolean checkForExisting) {
@@ -2299,7 +2298,7 @@ public class RubyHash extends RubyObject implements Map {
     @Override
     public Object put(Object key, Object value) {
         Ruby runtime = getRuntime();
-        IRubyObject existing = internalJavaPut(JavaUtil.convertJavaToUsableRubyObject(runtime, key), JavaUtil.convertJavaToUsableRubyObject(runtime, value));
+        IRubyObject existing = internalPut(JavaUtil.convertJavaToUsableRubyObject(runtime, key), JavaUtil.convertJavaToUsableRubyObject(runtime, value));
         return existing == null ? null : existing.toJava(Object.class);
     }
 
