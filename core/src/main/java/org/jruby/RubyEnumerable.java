@@ -358,13 +358,17 @@ public class RubyEnumerable {
         final RubyArray result = runtime.newArray();
 
         try {
-            each(context, self, new JavaInternalBlockBody(runtime, Signature.ONE_REQUIRED) {
+            each(context, self, new JavaInternalBlockBody(runtime, context, "Enumerable#drop", Signature.OPTIONAL) {
                 long i = len; // Atomic ?
+                @Override
                 public IRubyObject yield(ThreadContext context, IRubyObject[] args) {
+                    return doYield(context, null, packEnumValues(context, args));
+                }
+                @Override
+                protected IRubyObject doYield(ThreadContext context, Block _, IRubyObject value) {
                     synchronized (result) {
                         if (i == 0) {
-                            IRubyObject packedArg = packEnumValues(context.runtime, args);
-                            result.append(packedArg);
+                            result.append(value);
                         } else {
                             --i;
                         }
@@ -389,11 +393,17 @@ public class RubyEnumerable {
         try {
             each(context, self, new JavaInternalBlockBody(runtime, context, "Enumerable#drop_while", Signature.OPTIONAL) {
                 boolean memo = false;
+                @Override
                 public IRubyObject yield(ThreadContext context, IRubyObject[] args) {
-                    IRubyObject packedArg = packEnumValues(context.runtime, args);
-                    if (!memo && !block.yield(context, packedArg).isTrue()) memo = true;
-                    if (memo) synchronized (result) { result.append(packedArg); }
-                    return runtime.getNil();
+                    return doYield(context, null, packEnumValues(context, args));
+                }
+                @Override
+                protected IRubyObject doYield(ThreadContext context, Block _, IRubyObject value) {
+                    if (!memo && !block.yield(context, value).isTrue()) memo = true;
+                    if (memo) {
+                        synchronized (result) { result.append(value); }
+                    }
+                    return context.nil;
                 }
             });
         } catch (JumpException.SpecialJump sj) {}
