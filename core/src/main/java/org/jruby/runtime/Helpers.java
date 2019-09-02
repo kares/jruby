@@ -1893,7 +1893,7 @@ public class Helpers {
     }
 
     public static IRubyObject setGlobalVariable(IRubyObject value, Ruby runtime, String name) {
-        return runtime.getGlobalVariables().set(name, value);
+        return runtime.getGlobalVariables().init(name, value);
     }
 
     public static IRubyObject getInstanceVariable(IRubyObject self, Ruby runtime, String internedName) {

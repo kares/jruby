@@ -214,7 +214,7 @@ public class GlobalVariable extends AbstractVariable {
         // assertion error since those names doesn't start from "$"
         final String name = this.name.startsWith("$") ? this.name : ('$' + this.name);
         synchronized (getRuntime()) {
-            getRuntime().getGlobalVariables().set(name, rubyObject);
+            getRuntime().getGlobalVariables().init(name, rubyObject);
         }
     }
 

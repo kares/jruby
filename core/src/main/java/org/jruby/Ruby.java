@@ -564,13 +564,13 @@ public final class Ruby implements Constantizable {
         getGlobalVariables().define("$0", d, GLOBAL);
 
         for (Map.Entry<String, String> entry : config.getOptionGlobals().entrySet()) {
-            final IRubyObject varvalue;
+            final IRubyObject value;
             if (entry.getValue() != null) {
-                varvalue = newString(entry.getValue());
+                value = newString(entry.getValue());
             } else {
-                varvalue = getTrue();
+                value = getTrue();
             }
-            getGlobalVariables().set('$' + entry.getKey(), varvalue);
+            getGlobalVariables().init('$' + entry.getKey(), value);
         }
 
         if (filename.endsWith(".class")) {
@@ -4499,11 +4499,8 @@ public final class Ruby implements Constantizable {
 
     public Invalidator getConstantInvalidator(String constantName) {
         Invalidator invalidator = constantNameInvalidators.get(constantName);
-        if (invalidator != null) {
-            return invalidator;
-        } else {
-            return addConstantInvalidator(constantName);
-        }
+        if (invalidator != null) return invalidator;
+        return addConstantInvalidator(constantName);
     }
 
     private Invalidator addConstantInvalidator(String constantName) {

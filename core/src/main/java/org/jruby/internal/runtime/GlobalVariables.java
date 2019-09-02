@@ -75,7 +75,10 @@ public class GlobalVariables {
         assert name != null;
         assert name.startsWith("$");
 
-        GlobalVariable variable = globalVariables.get(name);
+        return isDefined(globalVariables.get(name));
+    }
+
+    private static boolean isDefined(GlobalVariable variable) {
         return variable != null && !(variable.getAccessor() instanceof UndefinedAccessor);
     }
 
@@ -123,11 +126,22 @@ public class GlobalVariables {
         return createIfNotDefined(name);
     }
 
+    public IRubyObject init(String name, IRubyObject value) {
+        assert name != null;
+        assert name.startsWith("$");
+
+        return set(createIfNotDefined(name), value);
+    }
+
     public IRubyObject set(String name, IRubyObject value) {
         assert name != null;
         assert name.startsWith("$");
 
-        GlobalVariable variable = createIfNotDefined(name);
+        return set(globalVariables.get(name), value);
+    }
+
+    public static IRubyObject set(GlobalVariable variable, IRubyObject value) {
+        assert variable != null;
         IRubyObject result = variable.getAccessor().setValue(value);
         variable.trace(value);
         variable.invalidate();
@@ -135,7 +149,7 @@ public class GlobalVariables {
     }
 
     public IRubyObject clear(String name) {
-        return set(name, runtime.getNil());
+        return init(name, runtime.getNil());
     }
 
     public void setTraceVar(String name, RubyProc proc) {
@@ -150,8 +164,8 @@ public class GlobalVariables {
         assert name != null;
         assert name.startsWith("$");
 
-        if (isDefined(name)) {
-            GlobalVariable variable = globalVariables.get(name);
+        GlobalVariable variable = globalVariables.get(name);
+        if (isDefined(variable)) {
             return variable.removeTrace(command);
         }
         return false;
@@ -161,8 +175,8 @@ public class GlobalVariables {
         assert name != null;
         assert name.startsWith("$");
 
-        if (isDefined(name)) {
-            GlobalVariable variable = globalVariables.get(name);
+        GlobalVariable variable = globalVariables.get(name);
+        if (isDefined(variable)) {
             variable.removeTraces();
         }
     }

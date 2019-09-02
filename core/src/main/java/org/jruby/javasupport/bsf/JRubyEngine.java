@@ -142,7 +142,7 @@ public class JRubyEngine extends BSFEngineImpl {
 
     @Override
     public void undeclareBean(BSFDeclaredBean bean) throws BSFException {
-        runtime.getGlobalVariables().set(GlobalVariable.variableName(bean.name), runtime.getNil());
+        runtime.getGlobalVariables().init(GlobalVariable.variableName(bean.name), runtime.getNil());
     }
 
     public void handleException(BSFException bsfExcptn) {

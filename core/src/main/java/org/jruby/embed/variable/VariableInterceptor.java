@@ -220,7 +220,7 @@ public class VariableInterceptor {
                 if (BiVariable.Type.LocalGlobalVariable == var.getType()) {
                     String name = var.getName();
                     name = name.startsWith("$") ? name : "$" + name;
-                    runtime.getGlobalVariables().set(name, runtime.getNil());
+                    runtime.getGlobalVariables().init(name, runtime.getNil());
                 }
             }
         }

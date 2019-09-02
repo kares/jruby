@@ -68,7 +68,7 @@ public class PutGlobalVarInstr extends TwoOperandInstr implements FixedArityInst
     public Object interpret(ThreadContext context, StaticScope currScope, DynamicScope currDynScope, IRubyObject self, Object[] temp) {
         GlobalVariable target = getTarget();
         IRubyObject    value  = (IRubyObject) getValue().retrieve(context, self, currScope, currDynScope, temp);
-        context.runtime.getGlobalVariables().set(target.getId(), value);
+        context.runtime.getGlobalVariables().init(target.getId(), value);
         return null;
     }
 

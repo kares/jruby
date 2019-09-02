@@ -151,7 +151,7 @@ public class LocalGlobalVariable extends GlobalVariable {
     public void inject() {
         synchronized (getRuntime()) {
             String name = this.name.startsWith("$") ? this.name : '$' + this.name;
-            getRuntime().getGlobalVariables().set(name, rubyObject);
+            getRuntime().getGlobalVariables().init(name, rubyObject);
         }
     }
 
