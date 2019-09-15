@@ -83,9 +83,10 @@ public class JITCompiler implements JITCompilerMBean {
         this.runtime = runtime;
         this.config = runtime.getInstanceConfig();
 
+        int maxJitThreads = java.lang.Runtime.getRuntime().availableProcessors() > 4 ? 2 : 1;
         this.executor = new ThreadPoolExecutor(
                 0, // don't start threads until needed
-                2, // two max
+                maxJitThreads, // two max (for machines with more than 4 cores)
                 60, // stop then if no jitting for 60 seconds
                 TimeUnit.SECONDS,
                 new LinkedBlockingQueue<Runnable>(),
