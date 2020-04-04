@@ -89,16 +89,6 @@ public final class MapJavaProxy extends ConcreteJavaProxy {
         if (wrappedMap == null) {
             wrappedMap = new RubyHashMap(runtime, this);
         }
-        // (JavaProxy)recv).getObject() might raise exception when
-        // wrong number of args are given to the constructor.
-        IRubyObject oldExc = runtime.getGlobalVariables().get("$!"); // Save $!
-        try {
-            wrappedMap.setSize( getMapObject().size() );
-        }
-        catch (RaiseException e) {
-            wrappedMap.setSize(0);
-            runtime.getGlobalVariables().set("$!", oldExc); // Restore $!
-        }
         return wrappedMap;
     }
 
@@ -112,10 +102,6 @@ public final class MapJavaProxy extends ConcreteJavaProxy {
             super(runtime, runtime.getHash(), runtime.getNil(), EMPTY_TABLE, 0);
             this.receiver = receiver;
         }
-
-        private void syncSize() { this.size = mapDelegate().size(); }
-
-        private void setSize(int size) { this.size = size; }
 
         // the underlying Map object operations should be delegated to
         private Map mapDelegate() { return receiver.getMapObject(); }
@@ -132,31 +118,17 @@ public final class MapJavaProxy extends ConcreteJavaProxy {
 
         @Override
         public IRubyObject inspect(ThreadContext context) {
-            syncSize();
             return super.inspect(context);
         }
 
         @Override
         public RubyArray to_a(ThreadContext context) {
-            syncSize();
             return super.to_a(context);
         }
 
         @Override
         public RubyFixnum hash(ThreadContext context) {
             return getRuntime().newFixnum( mapDelegate().hashCode() );
-        }
-
-        @Override
-        public RubyArray keys(ThreadContext context) {
-            syncSize();
-            return super.keys(context);
-        }
-
-        @Override
-        public RubyArray values(ThreadContext context) {
-            syncSize();
-            return super.values(context);
         }
 
         @Override
@@ -171,13 +143,6 @@ public final class MapJavaProxy extends ConcreteJavaProxy {
         }
 
         @Override
-        public RubyHash delete_ifInternal(final ThreadContext context, final Block block) {
-            RubyHash self = super.delete_ifInternal(context, block);
-            setSize( mapDelegate().size() );
-            return self;
-        }
-
-        @Override
         public IRubyObject internalPut(final IRubyObject key, final IRubyObject value) {
             return internalPutNoResize(key, value, true);
         }
@@ -189,7 +154,6 @@ public final class MapJavaProxy extends ConcreteJavaProxy {
             final Map<Object, Object> map = mapDelegate();
             Object javaValue = value.toJava(Object.class);
             Object existing = map.put(key.toJava(Object.class), javaValue);
-            setSize( map.size() );
             if (existing != null) {
                 if (existing == javaValue) return value;
                 return JavaUtil.convertJavaToUsableRubyObject(runtime, existing);
@@ -203,7 +167,6 @@ public final class MapJavaProxy extends ConcreteJavaProxy {
             @SuppressWarnings("unchecked")
             final Map<Object, Object> map = mapDelegate();
             map.put(key.decodeString(), value.toJava(Object.class));
-            setSize( map.size() );
         }
 
         @Override
@@ -239,7 +202,6 @@ public final class MapJavaProxy extends ConcreteJavaProxy {
 
             if (value != null) {
                 map.remove(convertedKey);
-                setSize( map.size() );
                 return new RubyHashEntry(key.hashCode(), key, JavaUtil.convertJavaToUsableRubyObject(getRuntime(), value), null, null);
             }
             return NO_ENTRY;
@@ -252,7 +214,6 @@ public final class MapJavaProxy extends ConcreteJavaProxy {
 
             if (map.containsKey(convertedKey)) {
                 map.remove(convertedKey);
-                setSize( map.size() );
                 return entry;
             }
 
@@ -272,15 +233,6 @@ public final class MapJavaProxy extends ConcreteJavaProxy {
                 IRubyObject value = JavaUtil.convertJavaToUsableRubyObject(runtime, entry.getValue());
                 visitor.visit(context, this, key, value, index++, state);
             }
-        }
-
-        @Override
-        public RubyBoolean compare(final ThreadContext context, final VisitorWithState<RubyHash> method, IRubyObject other) {
-            syncSize();
-            if ( other instanceof RubyHashMap ) {
-                ((RubyHashMap) other).syncSize();
-            }
-            return super.compare(context, method, other);
         }
 
         @Override
@@ -304,7 +256,7 @@ public final class MapJavaProxy extends ConcreteJavaProxy {
         @Override
         public RubyBoolean compare_by_identity_p(ThreadContext context) {
             // NOTE: obviously little we can do to detect - but at least report Java built-in one :
-            return RubyBoolean.newBoolean(context,  mapDelegate() instanceof java.util.IdentityHashMap );
+            return RubyBoolean.newBoolean(context, mapDelegate() instanceof java.util.IdentityHashMap );
         }
 
         @Override // re-invent @JRubyMethod(name = "any?")
@@ -361,7 +313,6 @@ public final class MapJavaProxy extends ConcreteJavaProxy {
         @Override
         public RubyHash rb_clear(ThreadContext context) {
             mapDelegate().clear();
-            setSize( 0 );
             return this;
         }
 
