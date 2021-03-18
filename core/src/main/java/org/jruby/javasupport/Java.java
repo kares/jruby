@@ -635,7 +635,7 @@ public class Java implements Library {
                 default: matching = matchConstructorArityOne(context, constructors, arg0);
             }
 
-            JavaObject newObject = matching.newInstance(self, arg0);
+            IRubyObject newObject = matching.newInstance(context.runtime, self, arg0);
             return JavaUtilities.set_java_object(self, self, newObject);
         }
 
@@ -650,7 +650,7 @@ public class Java implements Library {
                 default: matching = matchConstructor(context, constructors, arity, args);
             }
 
-            JavaObject newObject = matching.newInstance(self, args);
+            IRubyObject newObject = matching.newInstance(context.runtime, self, args);
             return JavaUtilities.set_java_object(self, self, newObject);
         }
 
@@ -1322,10 +1322,10 @@ public class Java implements Library {
             interfaces[i] = ((JavaClass) javaClasses[i]).javaClass();
         }
 
-        return newInterfaceImpl(wrapper, interfaces);
+        return getInstance(recv.getRuntime(), newInterfaceImpl(wrapper, interfaces));
     }
 
-    public static JavaObject newInterfaceImpl(final IRubyObject wrapper, Class[] interfaces) {
+    public static Object newInterfaceImpl(final IRubyObject wrapper, Class[] interfaces) {
         final Ruby runtime = wrapper.getRuntime();
 
         final int length = interfaces.length;
@@ -1345,7 +1345,7 @@ public class Java implements Library {
         final JRubyClassLoader jrubyClassLoader = runtime.getJRubyClassLoader();
 
         if ( RubyInstanceConfig.INTERFACES_USE_PROXY ) {
-            return JavaObject.wrap(runtime, newProxyInterfaceImpl(wrapper, interfaces, jrubyClassLoader));
+            return newProxyInterfaceImpl(wrapper, interfaces, jrubyClassLoader);
         }
 
         final ClassDefiningClassLoader classLoader;
@@ -1372,7 +1372,7 @@ public class Java implements Library {
 
         try {
             Constructor<?> proxyConstructor = proxyImplClass.getConstructor(IRubyObject.class);
-            return JavaObject.wrap(runtime, proxyConstructor.newInstance(wrapper));
+            return proxyConstructor.newInstance(wrapper);
         }
         catch (InvocationTargetException e) {
             throw mapGeneratedProxyException(runtime, e);
@@ -1588,10 +1588,9 @@ public class Java implements Library {
         final IRubyObject proxy = clazz.allocate();
         if ( proxy instanceof JavaProxy ) {
             ((JavaProxy) proxy).setObject(javaObject);
-        }
-        else {
-            JavaObject wrappedObject = JavaObject.wrap(runtime, javaObject);
-            proxy.dataWrapStruct(wrappedObject);
+        } else {
+            // TODO (JavaObject transition) is this really necessary?
+            proxy.dataWrapStruct(new JavaProxy(runtime, clazz, javaObject));
         }
         return proxy;
     }
