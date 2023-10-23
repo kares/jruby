@@ -1667,6 +1667,15 @@ public class Java implements Library {
         return allocateProxy(object, getProxyClassForObject(runtime, object));
     }
 
+    /**
+     * @see JavaProxy#dataWrapStruct(Object) 
+     * @param proxy the proxy wrapper
+     * @param javaObject the object to be wrapped
+     */
+    public static void setJavaObject(final IRubyObject proxy, final IRubyObject javaObject) {
+        proxy.dataWrapStruct(javaObject);
+    }
+
     @SuppressWarnings("unchecked")
     public static Class[] getInterfacesFromRubyClass(RubyClass klass) {
         Set<Class> interfaces = new HashSet<Class>();

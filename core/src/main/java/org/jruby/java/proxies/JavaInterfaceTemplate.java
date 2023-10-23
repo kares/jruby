@@ -308,8 +308,8 @@ public class JavaInterfaceTemplate {
         final RubyClass current = self.getMetaClass();
         // construct the new interface impl and set it into the object
         Object impl = Java.newInterfaceImpl(self, Java.getInterfacesFromRubyClass(current));
-        IRubyObject implWrapper = Java.getInstance(self.getRuntime(), impl);
-        JavaUtilities.set_java_object(self, self, implWrapper); // self.dataWrapStruct(newObject);
+        IRubyObject implWrapper = Java.getInstance(current.getRuntime(), impl);
+        Java.setJavaObject(self, implWrapper);
         return implWrapper;
     }
 

@@ -16,7 +16,7 @@ import static org.jruby.anno.FrameField.*;
 public class JavaUtilities {
     @JRubyMethod(module = true, visibility = Visibility.PRIVATE)
     public static IRubyObject set_java_object(IRubyObject recv, IRubyObject self, IRubyObject java_object) {
-        self.dataWrapStruct(java_object);
+        Java.setJavaObject(self, java_object);
         return java_object;
     }
 
