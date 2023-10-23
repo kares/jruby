@@ -41,11 +41,9 @@ import org.jruby.RubyString;
 import org.jruby.anno.JRubyClass;
 import org.jruby.anno.JRubyMethod;
 import org.jruby.exceptions.RaiseException;
-import org.jruby.internal.runtime.methods.DynamicMethod;
 import org.jruby.java.invokers.RubyToJavaInvoker;
 import org.jruby.javasupport.Java;
 import org.jruby.javasupport.ParameterTypes;
-import org.jruby.runtime.Helpers;
 import org.jruby.runtime.Arity;
 import org.jruby.runtime.Block;
 import org.jruby.runtime.ObjectAllocator;
@@ -107,37 +105,17 @@ public class JavaProxyConstructor extends JavaProxyReflectionObject implements P
         return declaringProxyClass;
     }
 
-    public final Object newInstance(Object[] args, Ruby runtime, IRubyObject clazz)
-        throws IllegalArgumentException, InstantiationException,
-               IllegalAccessException, InvocationTargetException {
-        final int len = args.length;
-        if ( len != actualParameterTypes.length ) {
-            throw new IllegalArgumentException("wrong number of parameters");
-        }
-        if (exportable)
-        	return newInstanceImpl(args, null, null);
-        else
-        	return newInstanceImpl(ArraySupport.newCopy(args, len + 2), runtime, clazz); // does args[ len ] = handler;
+    public Object newInstance(Object... args)
+        throws IllegalArgumentException, InstantiationException, IllegalAccessException, InvocationTargetException {
+        return proxyConstructor.newInstance(args);
     }
 
-    /**
-     * For exportable objects, argsPlus1 is not plus one
-     * 
-     * @param argsPlus1
-     * @param handler
-     * @return
-     * @throws IllegalArgumentException
-     * @throws InstantiationException
-     * @throws IllegalAccessException
-     * @throws InvocationTargetException
-     */
-    final Object newInstanceImpl(Object[] argsPlus1, Ruby runtime, IRubyObject clazz)
-            throws IllegalArgumentException, InstantiationException, IllegalAccessException, InvocationTargetException {
-        if (!exportable) {
-            argsPlus1[argsPlus1.length - 2] = runtime;
-            argsPlus1[argsPlus1.length - 1] = (RubyClass) clazz;
+    private Object newInstanceInternal(Object[] args) throws RaiseException {
+        try {
+            return newInstance(args); // does args[ len ] = handler;
+        } catch (Exception e) {
+            throw mapInstantiationException(getRuntime(), e);
         }
-        return proxyConstructor.newInstance(argsPlus1);
     }
 
     @JRubyMethod
@@ -181,43 +159,34 @@ public class JavaProxyConstructor extends JavaProxyReflectionObject implements P
         return toClassArray(getRuntime(), getParameterTypes());
     }
 
-    @JRubyMethod(rest = true)
-    public IRubyObject new_instance2(ThreadContext context, IRubyObject[] args, Block unusedBlock) {
-        final Ruby runtime = context.runtime;
-        Arity.checkArgumentCount(runtime, args, 2, 2);
-
-        final IRubyObject self = args[0];
-        final Object[] convertedArgs = convertArguments((RubyArray) args[1]); // constructor arguments
-
-        try {
-            return wrapJavaObject(runtime, newInstance(convertedArgs, runtime, self));
-        }
-        catch (Exception ex) { throw mapInstantiationException(runtime, ex); }
-    }
-
-    public final IRubyObject newInstance(final Ruby runtime, final IRubyObject self, Object[] args) throws RaiseException {
-        try {
-            return wrapJavaObject(runtime, newInstance(args, runtime, self));
-        }
-        catch (Exception ex) { throw mapInstantiationException(runtime, ex); }
-    }
-
     public final IRubyObject newInstance(final Ruby runtime, final IRubyObject self, IRubyObject[] args) throws RaiseException {
-        final Object[] javaArgsPlus1 = RubyToJavaInvoker.convertArguments(this, args, (exportable?0:+2));
-
-        try {
-            return wrapJavaObject(runtime, newInstanceImpl(javaArgsPlus1, runtime, self));
-        }
-        catch (Exception ex) { throw mapInstantiationException(runtime, ex); }
+        return wrapJavaObject(runtime, newInstanceInternal(convertArguments(args, self)));
     }
 
     public final IRubyObject newInstance(final Ruby runtime, final IRubyObject self, IRubyObject arg0) throws RaiseException {
-        final Object[] javaArgsPlus1 = RubyToJavaInvoker.convertArguments(this, arg0, (exportable?0:+2));
+        return wrapJavaObject(runtime, newInstanceInternal(convertArguments(arg0, self)));
+    }
 
-        try {
-            return wrapJavaObject(runtime, newInstanceImpl(javaArgsPlus1, runtime, self));
+    private Object[] convertArguments(final IRubyObject[] args, final IRubyObject clazz) {
+        if (exportable) {
+            return RubyToJavaInvoker.convertArguments(this, args, 0);
         }
-        catch (Exception ex) { throw mapInstantiationException(runtime, ex); }
+
+        Object[] convertedArgs = RubyToJavaInvoker.convertArguments(this, args, +2);
+        convertedArgs[convertedArgs.length - 2] = getRuntime();
+        convertedArgs[convertedArgs.length - 1] = (RubyClass) clazz;
+        return convertedArgs;
+    }
+
+    private Object[] convertArguments(final IRubyObject arg0, final IRubyObject clazz) {
+        if (exportable) {
+            return RubyToJavaInvoker.convertArguments(this, arg0, 0);
+        }
+
+        Object[] convertedArgs = RubyToJavaInvoker.convertArguments(this, arg0, +2);
+        convertedArgs[convertedArgs.length - 2] = getRuntime();
+        convertedArgs[convertedArgs.length - 1] = (RubyClass) clazz;
+        return convertedArgs;
     }
 
     private static IRubyObject wrapJavaObject(final Ruby runtime, final Object obj) {
@@ -234,13 +203,6 @@ public class JavaProxyConstructor extends JavaProxyReflectionObject implements P
         ex.initCause(e);
         ex.addSuppressed(e);
         throw ex;
-    }
-    
-    public static RuntimeException throwInstantiationExceptionCause(final Ruby runtime, final ReflectiveOperationException e) {
-        Throwable cause = e;
-        if (cause.getCause() != null) cause = cause.getCause();
-        Helpers.throwException(cause);
-        return new RuntimeException("Dead code... If you see this, file a bug: JPCtIEC fail"); // greppable
     }
 
     @JRubyMethod(required = 1, optional = 1, checkArity = false)
@@ -267,7 +229,6 @@ public class JavaProxyConstructor extends JavaProxyReflectionObject implements P
         }
     }
 
-    //TODO: should I replace this with RubyToJavaInvoker.convertArguments calls?
     private Object[] convertArguments(final RubyArray arguments) {
         final int argsSize = arguments.size();
 
@@ -278,6 +239,21 @@ public class JavaProxyConstructor extends JavaProxyReflectionObject implements P
             args[i] = arguments.eltInternal(i).toJava( parameterTypes[i] );
         }
         return args;
+    }
+
+    @Deprecated
+    @JRubyMethod(rest = true)
+    public IRubyObject new_instance2(ThreadContext context, IRubyObject[] args) {
+        final Ruby runtime = context.runtime;
+        Arity.checkArgumentCount(runtime, args, 2, 2);
+
+        final IRubyObject self = args[0];
+        final Object[] convertedArgs = convertArguments((RubyArray) args[1]);
+
+        try {
+            return wrapJavaObject(runtime, newInstance(convertedArgs, runtime, self));
+        }
+        catch (Exception ex) { throw mapInstantiationException(runtime, ex); }
     }
 
 }

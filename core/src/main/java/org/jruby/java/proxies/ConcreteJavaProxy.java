@@ -50,6 +50,7 @@ import org.jruby.javasupport.proxy.JavaProxyConstructor;
 import org.jruby.javasupport.proxy.ReifiedJavaProxy;
 import org.jruby.runtime.Block;
 import org.jruby.runtime.CallSite;
+import org.jruby.runtime.Helpers;
 import org.jruby.runtime.MethodIndex;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.Visibility;
@@ -225,7 +226,7 @@ public class ConcreteJavaProxy extends JavaProxy {
                     // note: the generated ctor sets self.object = our discarded return of the new object
                 }
             } catch (InstantiationException | InvocationTargetException e) {
-                throw JavaProxyConstructor.throwInstantiationExceptionCause(context.runtime, e);
+                throwExceptionCause(e);
             } catch (IllegalAccessException | IllegalArgumentException e) {
                 throw JavaProxyConstructor.mapInstantiationException(context.runtime, e);
             }
@@ -296,13 +297,20 @@ public class ConcreteJavaProxy extends JavaProxy {
                     // note: the generated ctor sets self.object = our discarded return of the new object
                     return object;
                 } catch (InstantiationException | InvocationTargetException e) {
-                    throw JavaProxyConstructor.throwInstantiationExceptionCause(context.runtime, e);
+                    return throwExceptionCause(e);
                 } catch (IllegalAccessException | IllegalArgumentException e) {
                     throw JavaProxyConstructor.mapInstantiationException(context.runtime, e);
                 }
             }
         }
 
+    }
+
+    private static <T> T throwExceptionCause(final ReflectiveOperationException e) {
+        Throwable cause = e;
+        if (cause.getCause() != null) cause = cause.getCause();
+        Helpers.throwException(cause);
+        return null; // never happens
     }
 
     public static int findSuperLine(Ruby runtime, DynamicMethod dm, int start) {
