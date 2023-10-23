@@ -678,8 +678,9 @@ public class Java implements Library {
             if (self instanceof JavaProxy) {
                 return context.nil;
             }
-            IRubyObject newObject = matching.newInstance(context.runtime, self, arg0);
-            return JavaUtilities.set_java_object(self, self, newObject);
+            IRubyObject newObject = matching.newInstance(context.runtime, (RubyClass) self, arg0);
+            Java.setJavaObject(self, newObject);
+            return newObject;
         }
         
         @Override
@@ -693,8 +694,9 @@ public class Java implements Library {
                 default: matching = matchConstructor(context, constructors, arity, args);
             }
 
-            IRubyObject newObject = matching.newInstance(context.runtime, self, args);
-            return JavaUtilities.set_java_object(self, self, newObject);
+            IRubyObject newObject = matching.newInstance(context.runtime, (RubyClass) self, args);
+            Java.setJavaObject(self, newObject);
+            return newObject;
         }
 
         // assumes only 1 *Ruby* constructor exists! (Filters out nonruby)

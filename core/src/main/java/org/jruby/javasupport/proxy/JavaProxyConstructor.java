@@ -159,33 +159,33 @@ public class JavaProxyConstructor extends JavaProxyReflectionObject implements P
         return toClassArray(getRuntime(), getParameterTypes());
     }
 
-    public final IRubyObject newInstance(final Ruby runtime, final IRubyObject self, IRubyObject[] args) throws RaiseException {
-        return wrapJavaObject(runtime, newInstanceInternal(convertArguments(args, self)));
+    public final IRubyObject newInstance(final Ruby runtime, final RubyClass clazz, IRubyObject[] args) throws RaiseException {
+        return wrapJavaObject(runtime, newInstanceInternal(convertArguments(runtime, args, clazz)));
     }
 
-    public final IRubyObject newInstance(final Ruby runtime, final IRubyObject self, IRubyObject arg0) throws RaiseException {
-        return wrapJavaObject(runtime, newInstanceInternal(convertArguments(arg0, self)));
+    public final IRubyObject newInstance(final Ruby runtime, final RubyClass clazz, IRubyObject arg0) throws RaiseException {
+        return wrapJavaObject(runtime, newInstanceInternal(convertArguments(runtime, arg0, clazz)));
     }
 
-    private Object[] convertArguments(final IRubyObject[] args, final IRubyObject clazz) {
+    private Object[] convertArguments(final Ruby runtime, final IRubyObject[] args, final RubyClass clazz) {
         if (exportable) {
             return RubyToJavaInvoker.convertArguments(this, args, 0);
         }
 
         Object[] convertedArgs = RubyToJavaInvoker.convertArguments(this, args, +2);
-        convertedArgs[convertedArgs.length - 2] = getRuntime();
-        convertedArgs[convertedArgs.length - 1] = (RubyClass) clazz;
+        convertedArgs[convertedArgs.length - 2] = runtime;
+        convertedArgs[convertedArgs.length - 1] = clazz;
         return convertedArgs;
     }
 
-    private Object[] convertArguments(final IRubyObject arg0, final IRubyObject clazz) {
+    private Object[] convertArguments(final Ruby runtime, final IRubyObject arg0, final RubyClass clazz) {
         if (exportable) {
             return RubyToJavaInvoker.convertArguments(this, arg0, 0);
         }
 
         Object[] convertedArgs = RubyToJavaInvoker.convertArguments(this, arg0, +2);
-        convertedArgs[convertedArgs.length - 2] = getRuntime();
-        convertedArgs[convertedArgs.length - 1] = (RubyClass) clazz;
+        convertedArgs[convertedArgs.length - 2] = runtime;
+        convertedArgs[convertedArgs.length - 1] = clazz;
         return convertedArgs;
     }
 
