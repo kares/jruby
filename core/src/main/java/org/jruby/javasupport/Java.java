@@ -605,15 +605,17 @@ public class Java implements Library {
 
         private final NonBlockingHashMapLong<ParameterTypes> cache = new NonBlockingHashMapLong<>(8);
         public final JavaConstructor[] constructors;
-        private final List<JavaConstructor> constructorList;
 
         public JCtorCache(JavaConstructor[] constructors) {
             this.constructors = constructors;
-            constructorList = Arrays.asList(constructors);
         }
 
-        public int indexOf(JavaConstructor ctor) {
-            return constructorList.indexOf(ctor);
+        public int indexOf(final JavaConstructor constructor) {
+            assert constructor != null;
+            for (int i=0; i < constructors.length; i++) {
+                if (constructor.doEquals(constructors[i])) return i;
+            }
+            return -1;
         }
 
         public final ParameterTypes getSignature(int signatureCode) {

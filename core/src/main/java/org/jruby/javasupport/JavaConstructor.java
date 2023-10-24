@@ -76,8 +76,11 @@ public class JavaConstructor extends JavaCallable {
 
     @Override
     public final boolean equals(Object other) {
-        return other instanceof JavaConstructor &&
-            this.constructor.equals( ((JavaConstructor) other).constructor );
+        return other instanceof JavaConstructor && doEquals((JavaConstructor) other);
+    }
+
+    final boolean doEquals(final JavaConstructor other) {
+        return this.constructor.equals(other.constructor);
     }
 
     @Override
