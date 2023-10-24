@@ -1495,11 +1495,11 @@ public class RubyClass extends RubyModule {
         public final String javaPath;
         public final String rubyName;
         public final String rubyPath;
-        protected final JavaClassConfiguration jcc;
+        protected final JavaClassConfiguration classConfig;
         protected final ClassWriter cw;
 
-        public final static String RUBY_FIELD = "ruby";
-        public final static String RUBY_CLASS_FIELD = "rubyClass";
+        public final static String RUBY_FIELD = "RUBY$";
+        public final static String RUBY_CLASS_FIELD = "RUBY_CLASS$";
 
         BaseReificator(Class<?> reifiedParent, String javaName, String javaPath, String rubyName, String rubyPath) {
             this.reifiedParent = reifiedParent;
@@ -1507,11 +1507,10 @@ public class RubyClass extends RubyModule {
             this.javaPath = javaPath;
             this.rubyName = rubyName;
             this.rubyPath = rubyPath;
-            jcc = getClassConfig();
+            classConfig = getClassConfig();
 
             cw = new ClassWriter(ClassWriter.COMPUTE_FRAMES | ClassWriter.COMPUTE_MAXS);
-            cw.visit(RubyInstanceConfig.JAVA_VERSION, ACC_PUBLIC + ACC_SUPER, javaPath, null, p(reifiedParent),
-                    interfaces());
+            cw.visit(RubyInstanceConfig.JAVA_VERSION, ACC_PUBLIC + ACC_SUPER, javaPath, null, p(reifiedParent), interfaces());
             cw.visitSource("generated:Reificator@" + this.getClass().getName(), null);
         }
 
@@ -1579,7 +1578,7 @@ public class RubyClass extends RubyModule {
             m.aload(2); // rubyclass
             allocAndInitialize(m, false);
 
-            if (jcc.javaConstructable) {
+            if (classConfig.javaConstructable) {
                 // no-arg constructor using static references to Ruby and RubyClass. For use by java
                 m = new SkinnyMethodAdapter(cw, ACC_PUBLIC, "<init>", CodegenUtils.sig(void.class), null, null);
                 m.aload(0); // uninitialized this
@@ -1592,9 +1591,9 @@ public class RubyClass extends RubyModule {
         // java can't pass args to normal ruby classes right now, only concrete (below)
         protected void allocAndInitialize(SkinnyMethodAdapter m, boolean initIfAllowed) {
             m.invokespecial(p(reifiedParent), "<init>", sig(void.class, Ruby.class, RubyClass.class));
-            if (jcc.callInitialize && initIfAllowed) { // if we want to initialize
+            if (classConfig.callInitialize && initIfAllowed) { // if we want to initialize
                 m.aload(0); // initialized this
-                m.ldc(jcc.javaCtorMethodName);
+                m.ldc(classConfig.javaCtorMethodName);
                 rubycall(m, sig(IRubyObject.class, String.class));
             }
             m.voidreturn();
@@ -1632,8 +1631,8 @@ public class RubyClass extends RubyModule {
         }
 
         private void addClassAnnotations() {
-            if (jcc.classAnnotations != null && !jcc.classAnnotations.isEmpty()) {
-                for (Map.Entry<Class<?>,Map<String,Object>> entry : jcc.classAnnotations.entrySet()) {
+            if (classConfig.classAnnotations != null && !classConfig.classAnnotations.isEmpty()) {
+                for (Map.Entry<Class<?>,Map<String,Object>> entry : classConfig.classAnnotations.entrySet()) {
                     Class<?> annoType = entry.getKey();
                     Map<String,Object> fields = entry.getValue();
 
@@ -1666,10 +1665,11 @@ public class RubyClass extends RubyModule {
         private void defineClassMethods(Set<String> instanceMethods) {
             SkinnyMethodAdapter m;
 
+            final Set<String> classConfigExcluded = classConfig.getExcluded();
             // define class/static methods
             for (Map.Entry<String, DynamicMethod> methodEntry : getMetaClass().getMethods().entrySet()) { // TODO: explicitly included but not-yet defined methods?
                 String id = methodEntry.getKey();
-                if (jcc.getExcluded().contains(id)) continue;
+                if (classConfigExcluded.contains(id)) continue;
 
                 String javaMethodName = JavaNameMangler.mangleMethodName(id);
                 PositionAware position = getPositionOrDefault(methodEntry.getValue());
@@ -1681,7 +1681,7 @@ public class RubyClass extends RubyModule {
 
                 String signature;
                 if (methodSignature == null) {
-                    if (!jcc.allClassMethods) continue;
+                    if (!classConfig.allClassMethods) continue;
                     Signature sig = methodEntry.getValue().getSignature();
                     // non-signature signature with just IRubyObject
                     if (sig.isNoArguments()) {
@@ -1741,12 +1741,13 @@ public class RubyClass extends RubyModule {
 
         //TODO: only generate that are overrideable (javaproxyclass)
         protected void defineInstanceMethods(Set<String> instanceMethods) {
-            Set<String> defined = new HashSet<>();
+            final Set<String> defined = new HashSet<>();
+            final Set<String> classConfigExcluded = classConfig.getExcluded();
             for (Map.Entry<String,DynamicMethod> methodEntry : getMethods().entrySet()) { // TODO: explicitly included but not-yet defined methods?
                 final String id = methodEntry.getKey();
-                final String callid = jcc.renamedMethods.getOrDefault(id, id);
+                final String callid = classConfig.renamedMethods.getOrDefault(id, id);
 
-                if (defined.contains(id) || jcc.getExcluded().contains(id)) continue;
+                if (defined.contains(id) || classConfigExcluded.contains(id)) continue;
 
                 defined.add(callid); // id we won't see again, and are only defining java methods named id
                 
@@ -1786,7 +1787,7 @@ public class RubyClass extends RubyModule {
             final String signature;
             SkinnyMethodAdapter m;
             if (methodSignature == null) { // non-signature signature with just IRubyObject
-                if (!jcc.allMethods) return null;
+                if (!classConfig.allMethods) return null;
                 if (sig.isFixed()) {
                     switch (sig.required()) {
                         case 0:
@@ -1985,7 +1986,7 @@ public class RubyClass extends RubyModule {
         // sane reflection tools. Also similarly marked as synthetic
         public static final String RUBY_OBJECT_FIELD = "this$rubyObject";
         protected static final String RUBY_PROXY_CLASS_FIELD = "this$rubyProxyClass";
-        public static final String RUBY_CTOR_CACHE_FIELD = "this$rubyCtorCache";
+        public static final String RUBY_CTOR_CACHE_FIELD = "RUBY_CTOR_CACHE$";
         
         JavaConstructor[] savedSuperCtors = null;
         Map<String, List<String>> supers = new HashMap<>();
@@ -2146,7 +2147,7 @@ public class RubyClass extends RubyModule {
             boolean isNestedRuby = ReifiedJavaProxy.class.isAssignableFrom(reifiedParent);
 
             // update the source location
-            DynamicMethod methodEntry = searchMethod(jcc.javaCtorMethodName);
+            DynamicMethod methodEntry = searchMethod(classConfig.javaCtorMethodName);
             PositionAware position = getPositionOrDefault(methodEntry);
             cw.visitSource(position.getFile(), null);
             int superpos = ConcreteJavaProxy.findSuperLine(runtime, methodEntry, position.getLine());
@@ -2166,13 +2167,13 @@ public class RubyClass extends RubyModule {
 
             if (zeroArg.isPresent()) {
                 // standard constructor that accepts Ruby, RubyClass. For use by JRuby (internally)
-                if (!jcc.allCtors) {
+                if (!classConfig.allCtors) {
                     if (!isNestedRuby) {
                         generatedCtors.add(RealClassGenerator.makeConcreteConstructorProxy(cw, position, true, this,
                                 new Class[0], isNestedRuby));
                     }
 
-                    if (jcc.javaConstructable) {
+                    if (classConfig.javaConstructable) {
                         generatedCtors.add(RealClassGenerator.makeConcreteConstructorProxy(cw, position, false, this,
                                 new Class[0], isNestedRuby));
                     }
@@ -2180,33 +2181,33 @@ public class RubyClass extends RubyModule {
             }
 
             // TODO: remove rubyCtors if IRO is enabled (by default)
-            if (jcc.allCtors && !isNestedRuby) {
+            if (classConfig.allCtors && !isNestedRuby) {
                 for (Constructor<?> constructor : candidates) {
-                    if (jcc.rubyConstructable) generatedCtors.add(RealClassGenerator.makeConcreteConstructorProxy(cw,
+                    if (classConfig.rubyConstructable) generatedCtors.add(RealClassGenerator.makeConcreteConstructorProxy(cw,
                             position, true, this, constructor.getParameterTypes(), false));
 
-                    if (jcc.javaConstructable) generatedCtors.add(RealClassGenerator.makeConcreteConstructorProxy(cw,
+                    if (classConfig.javaConstructable) generatedCtors.add(RealClassGenerator.makeConcreteConstructorProxy(cw,
                             position, false, this, constructor.getParameterTypes(), false));
 
                 }
             }
 
-            if (jcc.extraCtors != null && jcc.extraCtors.size() > 0) {
-                for (Class<?>[] constructor : jcc.extraCtors) {
+            if (classConfig.extraCtors != null && classConfig.extraCtors.size() > 0) {
+                for (Class<?>[] constructor : classConfig.extraCtors) {
                     // TODO: support annotations in ctor params
 
-                    if (jcc.rubyConstructable && !generatedCtors.contains(sig(void.class, join(constructor, Ruby.class, RubyClass.class)))) {
+                    if (classConfig.rubyConstructable && !generatedCtors.contains(sig(void.class, join(constructor, Ruby.class, RubyClass.class)))) {
                         generatedCtors.add(RealClassGenerator.makeConcreteConstructorProxy(cw, position, true, this,
                                 constructor, isNestedRuby));
                     }
 
-                    if (jcc.javaConstructable && !generatedCtors.contains(sig(void.class, constructor))) {
+                    if (classConfig.javaConstructable && !generatedCtors.contains(sig(void.class, constructor))) {
                         generatedCtors.add(RealClassGenerator.makeConcreteConstructorProxy(cw, position, false, this,
                                 constructor, isNestedRuby));
                     }
                 }
             }
-            if (jcc.IroCtors) {
+            if (classConfig.IroCtors) {
                 RealClassGenerator.makeConcreteConstructorIROProxy(cw, position, this);
             } else if (generatedCtors.size() == 0) {
                 //TODO: Warn for static classe?
