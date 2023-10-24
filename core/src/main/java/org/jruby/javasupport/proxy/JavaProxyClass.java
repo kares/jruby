@@ -493,21 +493,6 @@ public class JavaProxyClass extends JavaProxyReflectionObject {
         JavaProxyClass.defineAnnotatedMethods(JavaProxyClass.class);
         return JavaProxyClass;
     }
-//
-//    @JRubyMethod(meta = true)
-//    public static RubyObject get(IRubyObject self, IRubyObject obj) {
-//        final Ruby runtime = self.getRuntime();
-//
-//        throw runtime.newNotImplementedError("Internal implementation has changed. JavaProxyClass's have been partially replaced with reification.");
-//    }
-
-    private static final HashSet<String> EXCLUDE_MODULES = new HashSet<>(8, 1);
-    static {
-        EXCLUDE_MODULES.add("Kernel");
-        EXCLUDE_MODULES.add("Java");
-        EXCLUDE_MODULES.add("JavaProxyMethods");
-        EXCLUDE_MODULES.add("Enumerable");
-    }
 
     @JRubyMethod(meta = true)
     public static RubyObject get_with_class(final IRubyObject self, IRubyObject obj) {
