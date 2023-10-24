@@ -74,12 +74,9 @@ public final class MapJavaProxy extends ConcreteJavaProxy {
         super(runtime, klazz, map);
     }
 
-    public static RubyClass createMapJavaProxy(final Ruby runtime) {
-        RubyClass MapJavaProxy = runtime.defineClass(
-            "MapJavaProxy", runtime.getJavaSupport().getConcreteProxyClass(), MapJavaProxy::new
-        );
-        // this is done while proxy class is created.
-        // See org.jruby.javasuppoer.java.createProxyClass()
+    public static RubyClass createMapJavaProxy(final Ruby runtime, final RubyClass superClass) {
+        assert runtime.getJavaSupport().getConcreteProxyClass() == superClass;
+        RubyClass MapJavaProxy = runtime.defineClass("MapJavaProxy", superClass, MapJavaProxy::new);
         // MapJavaProxy.defineAnnotatedMethods(MapJavaProxy.class);
         ConcreteJavaProxy.initialize(MapJavaProxy);
         return MapJavaProxy;

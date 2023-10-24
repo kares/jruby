@@ -168,14 +168,14 @@ public class Java implements Library {
         JavaProxyMethods.createJavaProxyMethods(context);
 
         // the proxy (wrapper) type hierarchy
-        JavaProxy.createJavaProxy(context);
+        RubyClass _JavaProxy = JavaProxy.createJavaProxy(context);
         ArrayJavaProxyCreator.createArrayJavaProxyCreator(context);
-        RubyClass _ConcreteJavaProxy = ConcreteJavaProxy.createConcreteJavaProxy(context);
+        RubyClass _ConcreteJavaProxy = ConcreteJavaProxy.createConcreteJavaProxy(context, _JavaProxy);
         InterfaceJavaProxy.createInterfaceJavaProxy(context);
         RubyClass _ArrayJavaProxy = ArrayJavaProxy.createArrayJavaProxy(context);
 
         // creates ruby's hash methods' proxy for Map interface
-        MapJavaProxy.createMapJavaProxy(runtime);
+        MapJavaProxy.createMapJavaProxy(runtime, _ConcreteJavaProxy);
 
         // also create the JavaProxy* classes
         JavaProxyClass.createJavaProxyClasses(runtime, Java);

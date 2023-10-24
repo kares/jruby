@@ -67,10 +67,10 @@ public class ConcreteJavaProxy extends JavaProxy {
         super(runtime, klazz, object);
     }
 
-    public static RubyClass createConcreteJavaProxy(final ThreadContext context) {
+    public static RubyClass createConcreteJavaProxy(final ThreadContext context, final RubyClass superClass) {
         final Ruby runtime = context.runtime;
-        final RubyClass JavaProxy = runtime.getJavaSupport().getJavaProxyClass();
-        RubyClass ConcreteJavaProxy = runtime.defineClass("ConcreteJavaProxy", JavaProxy, ConcreteJavaProxy::new);
+        assert runtime.getJavaSupport().getJavaProxyClass() == superClass;
+        RubyClass ConcreteJavaProxy = runtime.defineClass("ConcreteJavaProxy", superClass, ConcreteJavaProxy::new);
         initialize(ConcreteJavaProxy);
         return ConcreteJavaProxy;
     }
