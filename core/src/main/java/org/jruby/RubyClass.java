@@ -915,6 +915,10 @@ public class RubyClass extends RubyModule {
         return obj;
     }
 
+    public IRubyObject newInstance(ThreadContext context) {
+        return newInstance(context, Block.NULL_BLOCK);
+    }
+
     @JRubyMethod(name = "new", keywords = true)
     public IRubyObject newInstance(ThreadContext context, IRubyObject arg0, Block block) {
         IRubyObject obj = allocate();
@@ -923,9 +927,7 @@ public class RubyClass extends RubyModule {
     }
 
     public IRubyObject newInstance(ThreadContext context, IRubyObject arg0) {
-        IRubyObject obj = allocate();
-        baseCallSites[CS_IDX_INITIALIZE].call(context, obj, obj, arg0);
-        return obj;
+        return newInstance(context, arg0, Block.NULL_BLOCK);
     }
 
     @JRubyMethod(name = "new", keywords = true)
