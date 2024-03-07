@@ -289,11 +289,6 @@ public class Java implements Library {
         return runtime.getNil();
     }
 
-    @Deprecated
-    public static RubyModule getInterfaceModule(final Ruby runtime, final JavaClass javaClass) {
-        return getInterfaceModule(runtime, javaClass.javaClass());
-    }
-
     public static RubyModule getInterfaceModule(final Ruby runtime, final Class javaClass) {
         return Java.getProxyClass(runtime, javaClass);
     }
@@ -407,12 +402,6 @@ public class Java implements Library {
         return null;
     }
 
-    @Deprecated
-    public static RubyModule getProxyClass(Ruby runtime, JavaClass javaClass) {
-        return getProxyClass(runtime, javaClass.javaClass());
-    }
-
-    @SuppressWarnings("deprecation")
     public static RubyModule getProxyClass(final Ruby runtime, final Class<?> clazz) {
         RubyModule proxy = runtime.getJavaSupport().getUnfinishedProxy(clazz);
         if (proxy != null) return proxy;
@@ -1335,11 +1324,6 @@ public class Java implements Library {
         final IRubyObject self, final IRubyObject name) {
         final RubyModule result = getTopLevelProxyOrPackage(context.runtime, name.asJavaString(), true);
         return result != null ? result : context.nil;
-    }
-
-    @Deprecated
-    public static IRubyObject wrap(Ruby runtime, IRubyObject java_object) {
-        return getInstance(runtime, ((JavaObject) java_object).getValue());
     }
 
     /**
