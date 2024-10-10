@@ -48,7 +48,7 @@ import static org.jruby.RubyArray.DefaultComparator;
 public class RubySortedSet extends RubySet implements SortedSet {
 
     static RubyClass createSortedSetClass(final Ruby runtime) {
-        RubyClass SortedSet = runtime.defineClass("SortedSet", runtime.getClass("Set"), RubySortedSet::new);
+        RubyClass SortedSet = runtime.defineClass("SortedSet", runtime.getClass("Set"), RubySortedSet::newSortedSet);
 
         SortedSet.setReifiedClass(RubySortedSet.class);
         SortedSet.defineAnnotatedMethods(RubySortedSet.class);
@@ -87,6 +87,29 @@ public class RubySortedSet extends RubySet implements SortedSet {
     protected RubySortedSet(Ruby runtime, RubyClass klass) {
         super(runtime, klass);
         order = new TreeSet<>(new OrderComparator(runtime));
+    }
+
+    /**
+     * Construct a new SortedSet.
+     *
+     * @param runtime the current runtime
+     * @return a new Set
+     */
+    public static RubySortedSet newSortedSet(final Ruby runtime) {
+        return newSortedSet(runtime, runtime.getClass("SortedSet"));
+    }
+
+    /**
+     * Construct a new SortedSet.
+     *
+     * @param runtime the current runtime
+     * @param metaclass the class to assign to the new set
+     * @return a new Set
+     */
+    public static RubySortedSet newSortedSet(final Ruby runtime, final RubyClass metaclass) {
+        RubySortedSet set = new RubySortedSet(runtime, metaclass);
+        set.allocHash(runtime);
+        return set;
     }
 
     @Override

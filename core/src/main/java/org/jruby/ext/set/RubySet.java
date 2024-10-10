@@ -59,7 +59,7 @@ import static org.jruby.RubyEnumerator.enumeratorizeWithSize;
 public class RubySet extends RubyObject implements Set {
 
     static RubyClass createSetClass(final Ruby runtime) {
-        RubyClass Set = runtime.defineClass("Set", runtime.getObject(), RubySet::new);
+        RubyClass Set = runtime.defineClass("Set", runtime.getObject(), RubySet::newSet);
 
         Set.setReifiedClass(RubySet.class);
 
@@ -143,7 +143,7 @@ public class RubySet extends RubyObject implements Set {
      * @return a new Set
      */
     public static RubySet newSet(final Ruby runtime) {
-        return newSet(runtime, (RubyClass) runtime.getClassFromPath("Set"));
+        return newSet(runtime, runtime.getClass("Set"));
     }
 
     /**
@@ -191,7 +191,7 @@ public class RubySet extends RubyObject implements Set {
         if ( block.isGiven() && context.runtime.isVerbose() ) {
             context.runtime.getWarnings().warning(IRubyWarnings.ID.BLOCK_UNUSED, "given block not used");
         }
-        allocHash(context.runtime);
+
         return this;
     }
 
@@ -206,7 +206,6 @@ public class RubySet extends RubyObject implements Set {
             return initWithEnum(context, enume, block);
         }
 
-        allocHash(context.runtime);
         return sites(context).merge.call(context, this, this, enume); // TODO site-cache
     }
 
@@ -237,12 +236,8 @@ public class RubySet extends RubyObject implements Set {
             return set; // done
         }
 
-        final Ruby runtime = context.runtime;
-
-        allocHash(runtime);
-
         // set.rb do_with_enum :
-        return doWithEnum(context, enume, new EachBody(runtime) {
+        return doWithEnum(context, enume, new EachBody(context.runtime) {
             IRubyObject yieldImpl(ThreadContext context, IRubyObject val) {
                 return invokeAdd(context, block.yield(context, val));
             }
@@ -389,7 +384,7 @@ public class RubySet extends RubyObject implements Set {
     @JRubyMethod
     public RubySet to_set(final ThreadContext context, final Block block) {
         if ( block.isGiven() ) {
-            RubySet set = new RubySet(context.runtime, getMetaClass());
+            RubySet set = newSet(context.runtime, getMetaClass());
             set.initialize(context, this, block);
             return set;
         }
@@ -417,7 +412,7 @@ public class RubySet extends RubyObject implements Set {
             klass = Set; rest = args;
         }
 
-        RubySet set = new RubySet(context.runtime, (RubyClass) klass);
+        RubySet set = newSet(context.runtime, (RubyClass) klass);
         set.initialize(context, rest, block);
         return set;
     }
@@ -869,7 +864,7 @@ public class RubySet extends RubyObject implements Set {
     public IRubyObject op_xor(final ThreadContext context, IRubyObject enume) {
         final Ruby runtime = context.runtime;
 
-        RubySet newSet = new RubySet(runtime, runtime.getClass("Set"));
+        RubySet newSet = newSet(runtime);
         newSet.initialize(context, enume, Block.NULL_BLOCK); // Set.new(enum)
         for ( IRubyObject o : elementsOrdered() ) {
             if ( newSet.containsImpl(o) ) newSet.deleteImpl(o); // exclusive or
