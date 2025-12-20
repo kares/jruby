@@ -86,8 +86,9 @@ import static org.jruby.util.RubyStringBuilder.str;
 public class MarshalLoader {
     private final List<IRubyObject> links = new ArrayList<>();
     private final List<RubySymbol> symbols = new ArrayList<>();
-    private final Map<IRubyObject, IRubyObject> partials = new IdentityHashMap<>();
+    private final Map<IRubyObject, IRubyObject> partials;
     private final IRubyObject proc;
+    private final boolean hasProc;
     private final boolean freeze;
 
     public MarshalLoader(ThreadContext context, IRubyObject proc) {
@@ -99,6 +100,8 @@ public class MarshalLoader {
         if (proc == null) proc = context.nil;
         
         this.proc = proc;
+        this.hasProc = !(proc == null || proc.isNil());
+        this.partials = hasProc ? new IdentityHashMap<>() : null;
         this.freeze = freeze;
     }
 
@@ -153,7 +156,7 @@ public class MarshalLoader {
     }
 
     private IRubyObject doCallProcForObj(ThreadContext context, IRubyObject result) {
-        if (proc == null || proc.isNil()) return result;
+        if (!hasProc) return result;
 
         return Helpers.invoke(context, proc, "call", result);
     }
@@ -733,15 +736,15 @@ public class MarshalLoader {
     }
 
     private boolean isPartialObject(IRubyObject value) {
-        return partials.containsKey(value);
+        return hasProc && partials.containsKey(value);
     }
 
     private void markAsPartialObject(IRubyObject value) {
-        partials.put(value, value);
+        if (hasProc) partials.put(value, value);
     }
 
     private void noLongerPartial(IRubyObject value) {
-        partials.remove(value);
+        if (hasProc) partials.remove(value);
     }
 
     private IRubyObject readSymbolLink(ThreadContext context, RubyInputStream in, MarshalLoader input) {
