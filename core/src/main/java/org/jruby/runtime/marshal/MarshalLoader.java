@@ -366,19 +366,19 @@ public class MarshalLoader {
     }
 
     private IRubyObject objectForFixnum(ThreadContext context, RubyInputStream in) {
-        return leave(context, RubyFixnum.unmarshalFrom(context, in, this), false);
+        return postProc(context, RubyFixnum.unmarshalFrom(context, in, this));
     }
 
     private IRubyObject objectForFalse(ThreadContext context) {
-        return leave(context, context.fals, false);
+        return postProc(context, context.fals);
     }
 
     private IRubyObject objectForTrue(ThreadContext context) {
-        return leave(context, context.tru, false);
+        return postProc(context, context.tru);
     }
 
     private IRubyObject objectForNil(ThreadContext context) {
-        return leave(context, context.nil, false);
+        return postProc(context, context.nil);
     }
 
     private IRubyObject objectForUClass(ThreadContext context, RubyInputStream in, boolean partial, List<RubyModule> extendedModules) {
