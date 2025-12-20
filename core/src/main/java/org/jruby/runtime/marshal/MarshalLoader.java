@@ -84,8 +84,8 @@ import static org.jruby.util.RubyStringBuilder.str;
  * Unmarshals objects from strings or streams in Ruby's marshal format.
  */
 public class MarshalLoader {
-    private final List<IRubyObject> links = new ArrayList<>();
-    private final List<RubySymbol> symbols = new ArrayList<>();
+    private List<IRubyObject> links;
+    private List<RubySymbol> symbols;
     private final Map<IRubyObject, IRubyObject> partials;
     private final IRubyObject proc;
     private final boolean hasProc;
@@ -759,6 +759,7 @@ public class MarshalLoader {
 
     private IRubyObject readSymbolLink(ThreadContext context, RubyInputStream in, MarshalLoader input) {
         try {
+            assert symbols != null : "symbols were found but symbols list was uninitialized";
             return symbols.get(input.unmarshalInt(context, in));
         } catch (IndexOutOfBoundsException e) {
             throw typeError(context,"bad symbol");
@@ -768,6 +769,7 @@ public class MarshalLoader {
     private IRubyObject readDataLink(ThreadContext context, RubyInputStream in, MarshalLoader input) {
         int index = input.unmarshalInt(context, in);
         try {
+            assert links != null : "links were found but links list was uninitialized";
             return links.get(index);
         } catch (IndexOutOfBoundsException e) {
             throw argumentError(context, "dump format error (unlinked, index: " + index + ")");
@@ -775,10 +777,12 @@ public class MarshalLoader {
     }
 
     private void registerDataLink(IRubyObject value) {
+        if (links == null) links = new ArrayList<>(4);
         links.add(value);
     }
 
     private void registerSymbolLink(RubySymbol value) {
+        if (symbols == null) symbols = new ArrayList<>(4);
         symbols.add(value);
     }
 }
