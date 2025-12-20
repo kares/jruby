@@ -209,21 +209,31 @@ public class MarshalLoader {
         if (!partial) {
             noLongerPartial(value);
             if (freeze) {
-                RubyClass metaClass = value.getMetaClass();
-                if (metaClass == stringClass(context)) {
-                    IRubyObject original = value;
-                    // FIXME: We need to modify original to be frozen but we also need it to be part of the deduped table.
-                    value = context.runtime.freezeAndDedupString((RubyString) value);
-                    if (value != original) {
-                        original.setFrozen(value.isFrozen());
-                    }
-                } else if (!value.isModule() && !value.isClass()) {
-                    value.setFrozen(true);
-                }
+                value = freezeObject(context, value);
             }
             value = postProc(context, value);
         }
 
+        return value;
+    }
+
+    private static IRubyObject freezeObject(ThreadContext context, IRubyObject value) {
+        RubyClass metaClass = value.getMetaClass();
+        if (metaClass == stringClass(context)) {
+            value = freezeString(context, value);
+        } else if (!value.isModule() && !value.isClass()) {
+            value.setFrozen(true);
+        }
+        return value;
+    }
+
+    private static IRubyObject freezeString(ThreadContext context, IRubyObject value) {
+        IRubyObject original = value;
+        // FIXME: We need to modify original to be frozen but we also need it to be part of the deduped table.
+        value = context.runtime.freezeAndDedupString((RubyString) value);
+        if (value != original) {
+            original.setFrozen(value.isFrozen());
+        }
         return value;
     }
 
