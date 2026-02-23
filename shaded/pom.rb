@@ -25,7 +25,8 @@ project 'JRuby Core' do
                     { pattern: 'org.objectweb', shadedPattern: 'org.jruby.org.objectweb' },
                     { pattern: 'me.qmx.jitescript', shadedPattern: 'org.jruby.me.qmx.jitescript' },
                     { pattern: 'com.dylibso.chicory', shadedPattern: 'com.jruby.internal.org.dylibso.chicory'},
-                    { pattern: 'org.prism', shadedPattern: 'org.jruby.internal.prism'}
+                    { pattern: 'org.ruby_lang.prism', shadedPattern: 'org.jruby.internal.prism'},
+                    { pattern: 'org.jruby.parser.prism', shadedPattern: 'org.jruby.internal.parser.prism'}
                   ],
                   transformers: [{ :@implementation => 'org.apache.maven.plugins.shade.resource.ManifestResourceTransformer',
                                    mainClass: 'org.jruby.main.Main',

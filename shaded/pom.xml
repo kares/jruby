@@ -57,8 +57,12 @@ DO NOT MODIFY - GENERATED CODE
                   <shadedPattern>com.jruby.internal.org.dylibso.chicory</shadedPattern>
                 </relocation>
                 <relocation>
-                  <pattern>org.prism</pattern>
+                  <pattern>org.ruby_lang.prism</pattern>
                   <shadedPattern>org.jruby.internal.prism</shadedPattern>
+                </relocation>
+                <relocation>
+                  <pattern>org.jruby.parser.prism</pattern>
+                  <shadedPattern>org.jruby.internal.parser.prism</shadedPattern>
                 </relocation>
               </relocations>
               <transformers>
