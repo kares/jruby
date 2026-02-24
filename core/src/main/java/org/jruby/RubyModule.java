@@ -4939,7 +4939,7 @@ public class RubyModule extends RubyObject {
 
     private RubyArray<?> constantsCommon(ThreadContext context, boolean replaceModule, boolean allConstants) {
         Collection<String> constantNames = constantsCommon(context.runtime, replaceModule, allConstants, false);
-        var array = RubyArray.newBlankArrayInternal(context.runtime, constantNames.size());
+        var array = RubyArrayNative.newBlankArrayInternal(context.runtime, constantNames.size());
 
         int i = 0;
         for (String name : constantNames) {
@@ -6929,8 +6929,20 @@ public class RubyModule extends RubyObject {
             DynamicMethod dup = entry.getValue().dup();
             dup.setImplementationClass(selfModule);
 
-            // maybe insufficient if we have already compiled assuming no refinements
-            ((AbstractIRMethod) dup).getIRScope().setIsMaybeUsingRefinements();
+            AbstractIRMethod dupAir = (AbstractIRMethod) dup;
+            dupAir.getIRScope().setIsMaybeUsingRefinements();
+
+            RubyModule definedAt = selfModule.getRefinementStoreForWrite().definedAt;
+            if (definedAt != null) {
+                Map<RubyModule, RubyModule> refinements = definedAt.getRefinements();
+                if (!refinements.isEmpty()) {
+                    dupAir
+                      .getStaticScope()
+                      .getOverlayModuleForWrite(context)
+                      .getRefinementsForWrite()
+                      .putAll(refinements);
+                }
+            }
 
             selfModule.addMethod(context, entry.getKey(), dup);
         }

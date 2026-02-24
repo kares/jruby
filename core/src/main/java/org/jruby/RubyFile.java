@@ -1404,6 +1404,10 @@ public class RubyFile extends RubyIO implements EncodingCapable {
     protected static RubyString filePathConvert(ThreadContext context, RubyString path) {
         checkEmbeddedNulls(context, path);
 
+        if (!path.getEncoding().isAsciiCompatible()) {
+            throw context.runtime.newEncodingCompatibilityError("path name must be ASCII-compatible (" + path.getEncoding() + "): " + path);
+        }
+
         if (!Platform.IS_WINDOWS) {
             var encodingService = encodingService(context);
             Encoding pathEncoding = path.getEncoding();

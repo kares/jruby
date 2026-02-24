@@ -652,7 +652,7 @@ public class Convert {
     public static long toLong(ThreadContext context, RubyFloat value) {
         final double aFloat = value.getValue();
 
-        if (aFloat <= (double) Long.MAX_VALUE && aFloat >= (double) Long.MIN_VALUE) {
+        if (aFloat < (double) Long.MAX_VALUE && aFloat >= (double) Long.MIN_VALUE) {
             return (long) aFloat;
         }
 
@@ -692,7 +692,7 @@ public class Convert {
     public static long toInt(ThreadContext context, RubyFloat value) {
         final double aFloat = value.getValue();
 
-        if (aFloat <= (double) Long.MAX_VALUE && aFloat >= (double) Long.MIN_VALUE) {
+        if (aFloat < (double) Long.MAX_VALUE && aFloat >= (double) Long.MIN_VALUE) {
             return (long) aFloat;
         }
 
