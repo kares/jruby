@@ -4810,7 +4810,7 @@ public final class Ruby implements Constantizable {
      *
      * @return the builtin bits array
      */
-    public short[] getBuiltinBits() {
+    public int[] getBuiltinBits() {
         return builtinBits;
     }
 
@@ -5217,7 +5217,7 @@ public final class Ruby implements Constantizable {
     private ThreadService threadService;
 
     /** Bit flags tracking which builtin methods have been redefined (thread-local builtin tracking system) */
-    private final short[] builtinBits = Builtins.allocate();
+    private final int[] builtinBits = Builtins.allocate();
 
     private final POSIX posix;
     private POSIX nativePosix;

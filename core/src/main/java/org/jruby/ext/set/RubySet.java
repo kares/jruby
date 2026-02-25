@@ -56,6 +56,7 @@ import java.util.Set;
 import static org.jruby.RubyEnumerator.enumeratorizeWithSize;
 import static org.jruby.api.Access.enumerableModule;
 import static org.jruby.api.Access.getModule;
+import static org.jruby.api.Access.hashClass;
 import static org.jruby.api.Access.loadService;
 import static org.jruby.api.Access.objectClass;
 import static org.jruby.api.Convert.asBoolean;
@@ -158,15 +159,20 @@ public class RubySet extends RubyObject implements Set {
     // ... this is important with Rails using Sprockets at its marshalling Set instances
 
     final void allocHash(final ThreadContext context) {
-        this.hash = new RubyHash(context.runtime, context.fals);
+        setHash(RubyHashLinkedBuckets.newLBHash(context.runtime, context.fals));
     }
 
     final void allocHash(final Ruby runtime) {
-        this.hash = new RubyHash(runtime, runtime.getFalse());
+        setHash(RubyHashLinkedBuckets.newLBHash(runtime, runtime.getFalse()));
     }
 
     final void allocHash(final ThreadContext context, final int size) {
-        this.hash = new RubyHash(context.runtime, context.fals, size);
+        setHash(RubyHashLinkedBuckets.newLBHash(context.runtime, context.fals, size));
+    }
+
+    final void setHash(final RubyHash hash) {
+        this.hash = hash;
+        setInstanceVariable("@hash", hash); // MRI compat with set.rb
     }
 
     /**
@@ -934,7 +940,7 @@ public class RubySet extends RubyObject implements Set {
     public IRubyObject classify(ThreadContext context, final Block block) {
         if (!block.isGiven()) return enumeratorizeWithSize(context, this, "classify", RubySet::size);
 
-        final RubyHash h = new RubyHash(context.runtime, size());
+        final RubyHash h = RubyHashLinkedBuckets.newLBHash(context.runtime, size());
 
         for ( IRubyObject i : elementsOrdered() ) {
             final IRubyObject key = block.yield(context, i);
