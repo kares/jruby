@@ -15,6 +15,8 @@ import org.jruby.runtime.JavaSites;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
 
+import java.math.BigInteger;
+
 import static org.jruby.RubyTime.TIME_SCALE;
 import static org.jruby.api.Convert.asFixnum;
 import static org.jruby.api.Convert.toDouble;
@@ -129,14 +131,17 @@ public class TimeArgs {
                     var numerator = subSecond.getNumerator().asLong(context);
                     var denominator = subSecond.getDenominator().asLong(context);
                     if (numerator >= denominator) {
-                        secondsInRational = (int) (numerator / (double) denominator);
+                        secondsInRational = (int) (numerator / denominator);
                         numerator = numerator % denominator;
-                        subSecond = RubyRational.newRational(context.runtime, numerator, denominator);
                     }
-                    var subSeconds = subSecond.asDouble(context) * TIME_SCALE;
 
-                    millis = (long) subSeconds / 1_000_000;
-                    nanos = (long) subSeconds % 1_000_000;
+                    long subSeconds = BigInteger.valueOf(numerator)
+                            .multiply(BigInteger.valueOf(TIME_SCALE))
+                            .divide(BigInteger.valueOf(denominator))
+                            .longValue();
+
+                    millis = subSeconds / 1_000_000;
+                    nanos = subSeconds % 1_000_000;
                 } else {
                     double secs = toDouble(context, secondObj);
 
@@ -149,10 +154,10 @@ public class TimeArgs {
         } else if (usecObj instanceof RubyRational subSecond) {
             if (subSecond.isNegativeNumber(context)) throw argumentError(context, "argument out of range");
 
-            var subSeconds = subSecond.asDouble(context) * 1_000;
+            long subNanos = subSecond.getNumerator().asLong(context) * 1_000 / subSecond.getDenominator().asLong(context);
 
-            millis = (long) subSeconds / 1_000_000;
-            nanos = (long) subSeconds % 1_000_000;
+            millis = subNanos / 1_000_000;
+            nanos = subNanos % 1_000_000;
         } else if (usecObj instanceof RubyFloat flo) {
             if (flo.isNegativeNumber(context)) throw argumentError(context, "argument out of range");
 
