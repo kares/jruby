@@ -136,7 +136,7 @@ public class TimeArgs {
                     }
 
                     long subSeconds = BigInteger.valueOf(numerator)
-                            .multiply(BigInteger.valueOf(TIME_SCALE))
+                            .multiply(RubyTime.TIME_SCALE_BI)
                             .divide(BigInteger.valueOf(denominator))
                             .longValue();
 
