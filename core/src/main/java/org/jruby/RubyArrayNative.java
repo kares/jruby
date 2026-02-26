@@ -923,20 +923,10 @@ public class RubyArrayNative<T extends IRubyObject> extends RubyArray<T> {
 
     public IRubyObject fetch_values(ThreadContext context, IRubyObject[] args, Block block) {
         int length = args.length;
-        if (length == 0) return Create.newEmptyArray(context);
-
-        int arraySize = size();
-        var result = Create.allocArray(context, length);
-
-        for (int index = 0; index < length; index++) {
-            if (index >= arraySize) {
-                if (!block.isGiven()) throw indexError(context, "index " + index + " outside of array bounds: 0...0");
-                result.append(context, block.yield(context, asFixnum(context, index)));
-            } else {
-                result.append(context, eltOk(index));
-            }
+        RubyArray result = RubyArrayNative.newBlankArrayInternal(context.runtime, length);
+        for (int i = 0; i < args.length; i++) {
+            result.storeInternal(context, i, fetch(context, args[i], block));
         }
-
         return result;
     }
 
