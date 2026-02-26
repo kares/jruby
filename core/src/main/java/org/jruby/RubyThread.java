@@ -1601,7 +1601,6 @@ public class RubyThread extends RubyObject implements ExecutionContext {
             break;
         }
 
-
         if (!exceptionClass(context).isInstance(tmp)) throw typeError(context, "exception object expected");
 
         RubyException exception = (RubyException) tmp;
