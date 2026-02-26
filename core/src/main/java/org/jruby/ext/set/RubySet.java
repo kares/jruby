@@ -172,7 +172,6 @@ public class RubySet extends RubyObject implements Set {
 
     final void setHash(final RubyHash hash) {
         this.hash = hash;
-        setInstanceVariable("@hash", hash); // MRI compat with set.rb
     }
 
     /**
