@@ -144,7 +144,7 @@ public class RubyBinding extends RubyObject implements DataType {
     @JRubyMethod(name = "local_variable_defined?")
     public IRubyObject local_variable_defined_p(ThreadContext context, IRubyObject symbol) {
         String id = checkLocalId(context, symbol);
-        return asBoolean(context, binding.getEvalScope(context.runtime).getStaticScope().isDefined(id) != -1);
+        return asBoolean(context, binding.getEvalScope(context.runtime).getStaticScope().isDefinedNotImplicit(id) >= 0);
     }
 
     @JRubyMethod
