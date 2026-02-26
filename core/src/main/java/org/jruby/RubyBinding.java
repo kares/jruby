@@ -144,7 +144,7 @@ public class RubyBinding extends RubyObject implements DataType {
     @JRubyMethod(name = "local_variable_defined?")
     public IRubyObject local_variable_defined_p(ThreadContext context, IRubyObject symbol) {
         String id = checkLocalId(context, symbol);
-        return asBoolean(context, binding.getEvalScope(context.runtime).getStaticScope().isDefinedNotImplicit(id) >= 0);
+        return asBoolean(context, binding.getEvalScope(context.runtime).getStaticScope().isDefinedOrImplicit(id) >= 0);
     }
 
     @JRubyMethod
@@ -152,7 +152,7 @@ public class RubyBinding extends RubyObject implements DataType {
         String id = checkLocalId(context, symbol);
         DynamicScope evalScope = binding.getEvalScope(context.runtime);
         StaticScope staticScope = evalScope.getStaticScope();
-        int slot = staticScope.isDefinedNotImplicit(id);
+        int slot = staticScope.isDefinedOrImplicit(id);
 
         if (slot < 0) throw undefinedVariableError(context, symbol);
 
@@ -164,7 +164,7 @@ public class RubyBinding extends RubyObject implements DataType {
         String id = checkLocalId(context, symbol);
         DynamicScope evalScope = binding.getEvalScope(context.runtime);
         StaticScope staticScope = evalScope.getStaticScope();
-        int slot = staticScope.isDefinedNotImplicit(id);
+        int slot = staticScope.isDefinedOrImplicit(id);
 
         // for the implicit "it" variable
         if (slot == StaticScope.IMPLICIT) throw undefinedVariableError(context, symbol);
@@ -180,21 +180,21 @@ public class RubyBinding extends RubyObject implements DataType {
     @JRubyMethod(name = "implicit_parameter_defined?")
     public IRubyObject implicit_parameter_defined_p(ThreadContext context, IRubyObject symbol) {
         String id = checkImplicitId(context, symbol);
-        return asBoolean(context, binding.getEvalScope(context.runtime).getStaticScope().isDefined(id) != -1);
+        return asBoolean(context, binding.getDynamicScope().getStaticScope().isDefinedImplicitParameter(id) != -1);
     }
 
     @JRubyMethod
     public IRubyObject implicit_parameter_get(ThreadContext context, IRubyObject symbol) {
         String id = checkImplicitId(context, symbol);
-        DynamicScope evalScope = binding.getEvalScope(context.runtime);
-        StaticScope staticScope = evalScope.getStaticScope();
-        int slot = staticScope.isDefinedNotImplicit(id);
+        DynamicScope dynamicScope = binding.getDynamicScope();
+        StaticScope staticScope = dynamicScope.getStaticScope();
+        int slot = staticScope.isDefinedImplicitParameter(id);
 
         if (slot != StaticScope.IMPLICIT) throw undefinedImplicitVariableError(context, symbol);
 
         slot = staticScope.isDefined(id);
 
-        return evalScope.getValueOrNil(slot & 0xffff, slot >> 16, context.nil);
+        return dynamicScope.getValueOrNil(slot & 0xffff, slot >> 16, context.nil);
     }
 
     private static boolean isNumberedVariable(String id) {
@@ -241,7 +241,7 @@ public class RubyBinding extends RubyObject implements DataType {
 
     @JRubyMethod
     public IRubyObject implicit_parameters(ThreadContext context) {
-        return binding.getEvalScope(context.runtime).getStaticScope().getImplicitLocalVariables(context);
+        return binding.getEvalScope(context.runtime).getStaticScope().getEnclosingScope().getImplicitParameters(context);
     }
 
     @JRubyMethod(name = "receiver")
