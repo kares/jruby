@@ -2642,7 +2642,12 @@ public class Helpers {
                 if (args[i] instanceof MultipleAsgnNode) {
                     descs.add(new ArgumentDescriptor(ArgumentType.anonreq));
                 } else {
-                    descs.add(new ArgumentDescriptor(ArgumentType.req, ((ArgumentNode) args[i]).getName()));
+                    ArgumentNode arg = (ArgumentNode) args[i];
+                    ArgumentDescriptor desc =
+                            arg.isImplicit() ?
+                                    new ArgumentDescriptor(ArgumentType.anonreq) :
+                                    new ArgumentDescriptor(ArgumentType.req, arg.getName());
+                    descs.add(desc);
                 }
             }
         }

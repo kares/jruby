@@ -205,7 +205,7 @@ public abstract class RubyParserBase {
             args = new_args(lexer.getRubySourceline(), pre, null, null, null, null);
         } else if (itNode != null) {
             DVarNode dvar = (DVarNode) itNode;
-            Node arg = new ArgumentNode(dvar.getLine(), dvar.getName(), dvar.getDepth());
+            Node arg = new ArgumentNode(dvar.getLine(), dvar.getName(), dvar.getDepth(), true);
             args = new_args(lexer.getRubySourceline(), newArrayNode(arg.getLine(), arg), null, null, null, null);
         }
         return args;
