@@ -39,7 +39,9 @@ describe "Kernel#require" do
 
     requires = provided
     ruby_version_is "4.0" do
-      requires = requires.map { |f| f == "pathname" ? "pathname.so" : f }
+      if RUBY_ENGINE != "jruby"
+        requires = requires.map { |f| f == "pathname" ? "pathname.so" : f }
+      end
     end
 
     code = requires.map { |f| "puts require #{f.inspect}\n" }.join
