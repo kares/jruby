@@ -1560,6 +1560,12 @@ public class RubyThread extends RubyObject implements ExecutionContext {
         }
         Arity.checkArgumentCount(context, argc, 0, 3);
 
+        Throwable throwable = RubyKernel.unwrapJavaException(context, args, argc);
+
+        if (throwable != null) {
+            return args[0];
+        }
+
         switch (argc) {
             case 0:
                 if (errorInfo.isNil()) {

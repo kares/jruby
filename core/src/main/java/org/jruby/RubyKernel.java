@@ -1137,7 +1137,7 @@ public class RubyKernel {
      * @param argc the count of arguments passed to Kernel#raise
      * @return a Java Throwable for the unwrapped exception, or null if no Java exception is available
      */
-    private static Throwable unwrapJavaException(ThreadContext context, final IRubyObject[] args, final int argc) {
+    public static Throwable unwrapJavaException(ThreadContext context, final IRubyObject[] args, final int argc) {
         // Check for a Java exception
         IRubyObject maybeException = null;
         switch (argc) {
