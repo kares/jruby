@@ -1477,12 +1477,14 @@ public class RubyModule extends RubyObject {
         IRubyObject realVal;
 
         try {
-            if(tp == Integer.class || tp == Integer.TYPE || tp == Short.class || tp == Short.TYPE || tp == Byte.class || tp == Byte.TYPE) {
+            if (tp == Integer.class || tp == Integer.TYPE || tp == Short.class || tp == Short.TYPE || tp == Byte.class || tp == Byte.TYPE) {
                 realVal = asFixnum(context, field.getInt(null));
-            } else if(tp == Boolean.class || tp == Boolean.TYPE) {
+            } else if (tp == Boolean.class || tp == Boolean.TYPE) {
                 realVal = asBoolean(context, field.getBoolean(null));
+            } else if (tp == String.class) {
+                realVal = newString(context, field.get(null).toString());
             } else {
-                realVal = context.nil;
+                throw new RuntimeException("Unsupported type for annotated constant: " + tp.getName());
             }
         } catch(Exception e) {
             realVal = context.nil;
