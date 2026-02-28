@@ -1437,6 +1437,11 @@ public final class ThreadContext {
         IRubyObject call(ThreadContext context, T state, IRubyObject obj, boolean recur);
     }
 
+    // MRI: rb_exec_recursive
+    public <T> IRubyObject execRecursive(RecursiveFunctionEx<T> func, T state, IRubyObject obj, String name) {
+        return safeRecurse(func, state, obj, name, false);
+    }
+
     public <T> IRubyObject safeRecurse(RecursiveFunctionEx<T> func, T state, IRubyObject obj, String name, boolean outer) {
         Map<IRubyObject, IRubyObject> guards = safeRecurseGetGuards(name);
 

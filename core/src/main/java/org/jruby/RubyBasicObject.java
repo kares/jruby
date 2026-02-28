@@ -1154,9 +1154,9 @@ public class RubyBasicObject implements Cloneable, IRubyObject, Serializable, Co
 
         RubyString part = inspectPrefix(context, metaClass.getRealClass(), inspectHashCode());
 
-        return context.safeRecurse(
+        return context.execRecursive(
                 (ctx, p, obj, recur) -> inspectObj(ctx, p, ivars, recur),
-                part, this, "inspect", true);
+                part, this, "inspect");
     }
 
     // MRI: rb_inspect, which does dispatch
