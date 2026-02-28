@@ -378,6 +378,11 @@ public class RubyPathname extends RubyObject {
                 fileTest.callMethod(context, "empty?", getPath());
     }
 
+    @JRubyMethod(name = "lutime")
+    public IRubyObject lutime(ThreadContext context, IRubyObject atime, IRubyObject mtime) {
+        return RubyFile.lutime(context, context.runtime.getFile(), atime, mtime, getPath());
+    }
+
     /* Helpers */
 
     private IRubyObject[] insertPath(IRubyObject[] args, int i) {

@@ -92,7 +92,6 @@ import static org.jruby.api.Create.*;
 import static org.jruby.api.Define.defineClass;
 import static org.jruby.api.Error.argumentError;
 import static org.jruby.api.Error.runtimeError;
-import static org.jruby.runtime.ThreadContext.hasKeywords;
 import static org.jruby.runtime.Visibility.PRIVATE;
 import static org.jruby.util.StringSupport.*;
 import static org.jruby.util.io.EncodingUtils.vmode;
@@ -1127,6 +1126,31 @@ public class RubyFile extends RubyIO implements EncodingCapable {
         return asFixnum(context, oldMask);
     }
 
+    @JRubyMethod(meta = true)
+    public static IRubyObject lutime(ThreadContext context, IRubyObject recv, IRubyObject atime, IRubyObject mtime) {
+        if (atime != context.nil || mtime != context.nil) {
+            extractTimespec(context, atime);
+            extractTimespec(context, mtime);
+        }
+
+        return asFixnum(context, 0);
+    }
+
+    @JRubyMethod(meta = true)
+    public static IRubyObject lutime(ThreadContext context, IRubyObject recv, IRubyObject atime, IRubyObject mtime, IRubyObject path) {
+        long[] atimeval = null;
+        long[] mtimeval = null;
+
+        if (atime != context.nil || mtime != context.nil) {
+            atimeval = convertTimespecToTimeval(extractTimespec(context, atime));
+            mtimeval = convertTimespecToTimeval(extractTimespec(context, mtime));
+        }
+
+        lutime(context, path, atimeval, mtimeval);
+
+        return asFixnum(context, 1);
+    }
+
     @JRubyMethod(required = 2, rest = true, checkArity = false, meta = true)
     public static IRubyObject lutime(ThreadContext context, IRubyObject recv, IRubyObject[] args) {
         int argc = Arity.checkArgumentCount(context, args, 2, -1);
@@ -1141,22 +1165,52 @@ public class RubyFile extends RubyIO implements EncodingCapable {
         }
 
         for (int i = 2, j = argc; i < j; i++) {
-            var filename = get_path(context, args[i]).toString();
-            JRubyFile fileToTouch = JRubyFile.create(runtime.getCurrentDirectory(), filename);
-            if (!fileToTouch.exists()) throw runtime.newErrnoENOENTError(filename);
-
-            int result = runtime.getPosix().lutimes(fileToTouch.getAbsolutePath(), atimeval, mtimeval);
-            if (result == -1) throw runtime.newErrnoFromInt(runtime.getPosix().errno());
+            lutime(context, args[i], atimeval, mtimeval);
         }
 
         return asFixnum(context, argc - 2);
+    }
+
+    private static void lutime(ThreadContext context, IRubyObject _path, long[] atimeval, long[] mtimeval) {
+        Ruby runtime = context.runtime;
+
+        var filename = get_path(context, _path).toString();
+
+        JRubyFile fileToTouch = JRubyFile.create(runtime.getCurrentDirectory(), filename);
+        if (!fileToTouch.exists()) throw runtime.newErrnoENOENTError(filename);
+
+        int result = runtime.getPosix().lutimes(fileToTouch.getAbsolutePath(), atimeval, mtimeval);
+        if (result == -1) throw runtime.newErrnoFromInt(runtime.getPosix().errno());
+    }
+
+    @JRubyMethod(meta = true)
+    public static IRubyObject utime(ThreadContext context, IRubyObject recv, IRubyObject atime, IRubyObject mtime) {
+        if (atime != context.nil || mtime != context.nil) {
+            extractTimespec(context, atime);
+            extractTimespec(context, mtime);
+        }
+
+        return asFixnum(context, 0);
+    }
+
+    @JRubyMethod(meta = true)
+    public static IRubyObject utime(ThreadContext context, IRubyObject recv, IRubyObject atime, IRubyObject mtime, IRubyObject path) {
+        long[] atimespec = null;
+        long[] mtimespec = null;
+        if (atime != context.nil || mtime != context.nil) {
+            atimespec = extractTimespec(context, atime);
+            mtimespec = extractTimespec(context, mtime);
+        }
+
+        utime(context, atimespec, mtimespec, path);
+
+        return asFixnum(context, 1);
     }
 
     @JRubyMethod(required = 2, rest = true, checkArity = false, meta = true)
     public static IRubyObject utime(ThreadContext context, IRubyObject recv, IRubyObject[] args) {
         int argc = Arity.checkArgumentCount(context, args, 2, -1);
 
-        Ruby runtime = context.runtime;
         long[] atimespec = null;
         long[] mtimespec = null;
 
@@ -1166,24 +1220,28 @@ public class RubyFile extends RubyIO implements EncodingCapable {
         }
 
         for (int i = 2, j = argc; i < j; i++) {
-            var filename = get_path(context, args[i]).toString();
+            utime(context, atimespec, mtimespec, args[i]);
 
-            JRubyFile fileToTouch = JRubyFile.create(runtime.getCurrentDirectory(), filename);
-            if (!fileToTouch.exists()) throw runtime.newErrnoENOENTError(filename);
-
-            int result;
-            try {
-                result = runtime.getPosix().utimensat(0, fileToTouch.getAbsolutePath(), atimespec, mtimespec, 0);
-            } catch (NotImplementedError re) {
-                // fall back on utimes
-                result = runtime.getPosix().utimes(fileToTouch.getAbsolutePath(),
-                        convertTimespecToTimeval(atimespec), convertTimespecToTimeval(mtimespec));
-            }
-
-            if (result == -1) throw runtime.newErrnoFromInt(runtime.getPosix().errno());
         }
 
         return asFixnum(context, argc - 2);
+    }
+
+    private static void utime(ThreadContext context, long[] atimespec, long[] mtimespec, IRubyObject args) {
+        Ruby runtime = context.runtime;
+
+        var filename = get_path(context, args).toString();
+        JRubyFile fileToTouch = JRubyFile.create(runtime.getCurrentDirectory(), filename);
+        if (!fileToTouch.exists()) throw runtime.newErrnoENOENTError(filename);
+        int result;
+        try {
+            result = runtime.getPosix().utimensat(0, fileToTouch.getAbsolutePath(), atimespec, mtimespec, 0);
+        } catch (NotImplementedError re) {
+            // fall back on utimes
+            result = runtime.getPosix().utimes(fileToTouch.getAbsolutePath(),
+                    convertTimespecToTimeval(atimespec), convertTimespecToTimeval(mtimespec));
+        }
+        if (result == -1) throw runtime.newErrnoFromInt(runtime.getPosix().errno());
     }
 
     @JRubyMethod(rest = true, meta = true)
