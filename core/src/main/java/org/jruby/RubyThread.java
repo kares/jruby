@@ -460,6 +460,9 @@ public class RubyThread extends RubyObject implements ExecutionContext {
                 FiberScheduler.close(getContext(), scheduler);
             }
 
+            // unregister all event hooks
+            getContext().traceEvents.removeAllCallEventHooksFor(getContext());
+
             // mark thread as DEAD
             beDead();
         }

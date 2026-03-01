@@ -169,10 +169,11 @@ public class TraceEventManager {
     public void removeAllCallEventHooksFor(ThreadContext context) {
         if (eventHooks.length == 0) return;
 
+        int size = eventHooks.length;
         List<EventHook> hooks = new ArrayList<>(Arrays.asList(eventHooks));
 
         hooks = hooks.stream().filter(hook ->
-                !(hook instanceof CallTraceFuncHook) || !((CallTraceFuncHook) hook).getThread().equals(context)
+                !(hook instanceof CallTraceFuncHook ctfHook && ctfHook.getThread().equals(context))
         ).collect(Collectors.toList());
 
         EventHook[] newHooks = new EventHook[hooks.size()];
@@ -182,6 +183,9 @@ public class TraceEventManager {
 
             disableTraceSites();
         }
+
+        added -= size - newHooks.length;
+        deleted += size - newHooks.length;
     }
 
     public void callEventHooks(ThreadContext context, RubyEvent event, String file, int line, String name, IRubyObject type) {
