@@ -27,6 +27,7 @@ exclude :test_once_multithread, "seems to be flaky, failed in JIT mode on Linux 
 exclude :test_posix_bracket, "work in progress"
 exclude :test_regsub_no_memory_leak, "no working assert_no_memory_leak method"
 exclude :test_s_timeout_memory_leak, "no working assert_no_memory_leak method"
+exclude :test_ss_in_look_behind, "new syntax for Ruby 4.0"
 exclude :test_timeout_memory_leak, "no working assert_no_memory_leak method"
 exclude :test_timeout_nil, "times out without error on JRuby, adds 10s for no value"
 exclude :test_to_s, "needs investigation"
