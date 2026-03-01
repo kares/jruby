@@ -46,8 +46,6 @@ public class TraceEventManager {
     private final Ruby runtime;
     private volatile EventHook[] eventHooks = EMPTY_HOOKS;
     private boolean hasEventHooks;
-    private volatile int added;
-    private volatile int deleted;
     private final CallTraceFuncHook callTraceFuncHook = new CallTraceFuncHook(null);
 
     private final MutableCallSite callTrace = new MutableCallSite(TRACE_OFF);
@@ -86,7 +84,6 @@ public class TraceEventManager {
         eventHooks = newHooks;
 
         hasEventHooks = true;
-        added++;
 
         enableTraceSites(hook);
     }
@@ -118,8 +115,6 @@ public class TraceEventManager {
 
             disableTraceSites(hook);
         }
-        added--;
-        deleted++;
     }
 
     private void enableTraceSites(EventHook hook) {
@@ -183,9 +178,6 @@ public class TraceEventManager {
 
             disableTraceSites();
         }
-
-        added -= size - newHooks.length;
-        deleted += size - newHooks.length;
     }
 
     public void callEventHooks(ThreadContext context, RubyEvent event, String file, int line, String name, IRubyObject type) {
@@ -221,7 +213,7 @@ public class TraceEventManager {
     }
 
     public int[] eventHookStats() {
-        return new int[] {added, deleted};
+        return new int[] {eventHooks.length, 0};
     }
 
     public static class CallTraceFuncHook extends EventHook {
