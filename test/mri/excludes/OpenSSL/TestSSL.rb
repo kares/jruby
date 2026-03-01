@@ -38,6 +38,7 @@ exclude :test_options_defaults_to_OP_ALL_on, 'needs investigation'
 exclude :test_options_setting_nil_means_all, 'needs investigation'
 exclude :test_post_connect_check_with_anon_ciphers, 'needs investigation'
 exclude :test_read_nonblock_without_session, 'HANGS'
+exclude :test_read_with_timeout, "timeout methods not implemented, https://github.com/jruby/jruby-openssl/issues/342"
 exclude :test_readbyte, "work in progress"
 exclude :test_renegotiation_cb, 'SSLContext#renegotiation_cb= not supported'
 exclude :test_respect_system_default_min, "new failure with Ruby 4.0 tests, tested on MacOS, https://github.com/jruby/jruby/issues/9271"
