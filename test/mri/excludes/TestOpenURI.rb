@@ -1,4 +1,7 @@
+exclude :test_404, "fails in http test logic, https://github.com/jruby/jruby/issues/9276"
 exclude :test_encoding, "fails in http test logic, https://github.com/jruby/jruby/issues/9276"
+exclude :test_header, "fails in http test logic, https://github.com/jruby/jruby/issues/9276"
+exclude :test_max_redirects_success, "fails in http test logic, https://github.com/jruby/jruby/issues/9276"
 exclude :test_mode, "fails in http test logic, https://github.com/jruby/jruby/issues/9276"
 exclude :test_multiple_cookies, "fails in http test logic, https://github.com/jruby/jruby/issues/9276"
 exclude :test_open_timeout, "hangs on macos m1"
@@ -6,3 +9,5 @@ exclude :test_progress, "fails in http test logic, https://github.com/jruby/jrub
 exclude :test_redirect, "fails in http test logic, https://github.com/jruby/jruby/issues/9276"
 exclude :test_redirect_auth_failure_r2, "fails in http test logic, https://github.com/jruby/jruby/issues/9276"
 exclude :test_redirect_auth_success, "fails in http test logic, https://github.com/jruby/jruby/issues/9276"
+exclude :test_redirect_loop, "fails in http test logic, https://github.com/jruby/jruby/issues/9276"
+exclude :test_redirect_without_request_specific_fields_hash, "fails in http test logic, https://github.com/jruby/jruby/issues/9276"
