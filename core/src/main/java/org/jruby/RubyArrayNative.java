@@ -39,6 +39,7 @@
 package org.jruby;
 
 import org.jcodings.specific.USASCIIEncoding;
+import org.jruby.anno.JRubyMethod;
 import org.jruby.api.Create;
 import org.jruby.api.JRubyAPI;
 import org.jruby.ast.util.ArgsUtil;
@@ -922,21 +923,10 @@ public class RubyArrayNative<T extends IRubyObject> extends RubyArray<T> {
 
     public IRubyObject fetch_values(ThreadContext context, IRubyObject[] args, Block block) {
         int length = args.length;
-        if (length == 0) return Create.newEmptyArray(context);
-
-        int arraySize = size();
-        var result = Create.allocArray(context, length);
-        for (int i = 0; i < length; i++) {
-            int index = toInt(context, args[i]);
-            // FIXME: lookup the bounds part of this in error message??
-            if (index >= arraySize) {
-                if (!block.isGiven()) throw indexError(context, "index " + index + " outside of array bounds: 0...0");
-                result.append(context, block.yield(context, asFixnum(context, index)));
-            } else {
-                result.append(context, eltOk(index));
-            }
+        RubyArray result = RubyArrayNative.newBlankArrayInternal(context.runtime, length);
+        for (int i = 0; i < args.length; i++) {
+            result.storeInternal(context, i, fetch(context, args[i], block));
         }
-
         return result;
     }
 
@@ -5203,6 +5193,25 @@ float_loop:
             return op_equal(metaClass.runtime.getCurrentContext(), (RubyArray) other).isTrue();
         }
         return false;
+    }
+
+    @JRubyMethod
+    public IRubyObject rfind(ThreadContext context, Block block) {
+        return rfind(context, context.nil, block);
+    }
+
+    @JRubyMethod
+    public IRubyObject rfind(ThreadContext context, IRubyObject ifnone, Block block) {
+        CachingCallSite self_each = sites(context).self_each;
+        if (!self_each.isBuiltin(this)) return RubyEnumerable.detectCommon(context, self_each, this, block);
+
+        for (int i = realLength - 1; i >= 0; i--) {
+            IRubyObject value = eltOk(i);
+
+            if (block.yield(context, value).isTrue()) return value;
+        }
+
+        return ifnone != null && !ifnone.isNil() ? sites(context).call.call(context, ifnone, ifnone) : context.nil;
     }
 
     private static IRubyObject safeArrayRef(ThreadContext context, IRubyObject[] values, int i) {

@@ -24,6 +24,7 @@ exclude :test_invalid_symbol_in_hash_memory_leak, "uses MRI-specific memory leak
 exclude :test_it, "missing error for combining `it` with `_2`"
 exclude :test_keyword_invalid_name, "work in progress"
 exclude :test_keyword_self_reference, "circular variable reference error"
+exclude :test_methoddef_endless_command, "endless method with modifier call does not parse successfully (https://github.com/jruby/jruby/issues/9266)"
 exclude :test_numbered_parameter, "work in progress"
 exclude :test_optional_self_reference, "circular variable reference error"
 exclude :test_return_in_proc_in_class, "may be expecting SyntaxError for something but we reaise LocalJumpError at runtime"

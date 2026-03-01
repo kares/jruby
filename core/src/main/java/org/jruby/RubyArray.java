@@ -58,6 +58,7 @@ import org.jruby.runtime.ClassIndex;
 import org.jruby.runtime.JavaSites;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
+import org.jruby.runtime.callsite.CachingCallSite;
 import org.jruby.runtime.marshal.MarshalDumper;
 import org.jruby.runtime.marshal.MarshalLoader;
 import org.jruby.specialized.RubyArrayOneObject;
@@ -1356,6 +1357,12 @@ public abstract class RubyArray<T extends IRubyObject> extends RubyObject implem
 
     @Override
     public abstract boolean equals(Object other);
+
+    @JRubyMethod
+    public abstract IRubyObject rfind(ThreadContext context, Block block);
+
+    @JRubyMethod
+    public abstract IRubyObject rfind(ThreadContext context, IRubyObject ifnone, Block block);
 
     @Deprecated(since = "10.0.0.0", forRemoval = true)
     @SuppressWarnings("removal")

@@ -10,6 +10,7 @@ exclude :test_create_inf_length_primitive, 'needs investigation'
 exclude :test_decode_constructed_overread, "work in progress"
 exclude :test_decode_x509_certificate, "work in progress"
 exclude :test_end_of_content, "work in progress"
+exclude :test_generalizedtime, "new failure with Ruby 4.0 tests, tested on MacOS, https://github.com/jruby/jruby/issues/9271"
 exclude :test_object_identifier, "work in progress"
 exclude :test_octet_string_constructed_tagging, "work in progress"
 exclude :test_octet_string_infinite_length_explicit_tagging, 'needs investigation'
@@ -21,3 +22,4 @@ exclude :test_recursive_octet_string_parse, 'needs investigation'
 exclude :test_sequence, "work in progress"
 exclude :test_set, "work in progress"
 exclude :test_string_basic, "work in progress"
+exclude :test_utctime, "new failure with Ruby 4.0 tests, tested on MacOS, https://github.com/jruby/jruby/issues/9271"

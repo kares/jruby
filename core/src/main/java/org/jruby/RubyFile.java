@@ -45,6 +45,7 @@ import org.jcodings.specific.UTF8Encoding;
 import org.jruby.anno.JRubyClass;
 import org.jruby.anno.JRubyMethod;
 import org.jruby.api.API;
+import org.jruby.api.Error;
 import org.jruby.exceptions.NotImplementedError;
 import org.jruby.ir.runtime.IRRuntimeHelpers;
 import org.jruby.runtime.*;
@@ -91,7 +92,6 @@ import static org.jruby.api.Create.*;
 import static org.jruby.api.Define.defineClass;
 import static org.jruby.api.Error.argumentError;
 import static org.jruby.api.Error.runtimeError;
-import static org.jruby.runtime.ThreadContext.hasKeywords;
 import static org.jruby.runtime.Visibility.PRIVATE;
 import static org.jruby.util.StringSupport.*;
 import static org.jruby.util.io.EncodingUtils.vmode;
@@ -1126,6 +1126,31 @@ public class RubyFile extends RubyIO implements EncodingCapable {
         return asFixnum(context, oldMask);
     }
 
+    @JRubyMethod(meta = true)
+    public static IRubyObject lutime(ThreadContext context, IRubyObject recv, IRubyObject atime, IRubyObject mtime) {
+        if (atime != context.nil || mtime != context.nil) {
+            extractTimespec(context, atime);
+            extractTimespec(context, mtime);
+        }
+
+        return asFixnum(context, 0);
+    }
+
+    @JRubyMethod(meta = true)
+    public static IRubyObject lutime(ThreadContext context, IRubyObject recv, IRubyObject atime, IRubyObject mtime, IRubyObject path) {
+        long[] atimeval = null;
+        long[] mtimeval = null;
+
+        if (atime != context.nil || mtime != context.nil) {
+            atimeval = convertTimespecToTimeval(extractTimespec(context, atime));
+            mtimeval = convertTimespecToTimeval(extractTimespec(context, mtime));
+        }
+
+        lutime(context, path, atimeval, mtimeval);
+
+        return asFixnum(context, 1);
+    }
+
     @JRubyMethod(required = 2, rest = true, checkArity = false, meta = true)
     public static IRubyObject lutime(ThreadContext context, IRubyObject recv, IRubyObject[] args) {
         int argc = Arity.checkArgumentCount(context, args, 2, -1);
@@ -1140,22 +1165,52 @@ public class RubyFile extends RubyIO implements EncodingCapable {
         }
 
         for (int i = 2, j = argc; i < j; i++) {
-            var filename = get_path(context, args[i]).toString();
-            JRubyFile fileToTouch = JRubyFile.create(runtime.getCurrentDirectory(), filename);
-            if (!fileToTouch.exists()) throw runtime.newErrnoENOENTError(filename);
-
-            int result = runtime.getPosix().lutimes(fileToTouch.getAbsolutePath(), atimeval, mtimeval);
-            if (result == -1) throw runtime.newErrnoFromInt(runtime.getPosix().errno());
+            lutime(context, args[i], atimeval, mtimeval);
         }
 
         return asFixnum(context, argc - 2);
+    }
+
+    private static void lutime(ThreadContext context, IRubyObject _path, long[] atimeval, long[] mtimeval) {
+        Ruby runtime = context.runtime;
+
+        var filename = get_path(context, _path).toString();
+
+        JRubyFile fileToTouch = JRubyFile.create(runtime.getCurrentDirectory(), filename);
+        if (!fileToTouch.exists()) throw runtime.newErrnoENOENTError(filename);
+
+        int result = runtime.getPosix().lutimes(fileToTouch.getAbsolutePath(), atimeval, mtimeval);
+        if (result == -1) throw runtime.newErrnoFromInt(runtime.getPosix().errno());
+    }
+
+    @JRubyMethod(meta = true)
+    public static IRubyObject utime(ThreadContext context, IRubyObject recv, IRubyObject atime, IRubyObject mtime) {
+        if (atime != context.nil || mtime != context.nil) {
+            extractTimespec(context, atime);
+            extractTimespec(context, mtime);
+        }
+
+        return asFixnum(context, 0);
+    }
+
+    @JRubyMethod(meta = true)
+    public static IRubyObject utime(ThreadContext context, IRubyObject recv, IRubyObject atime, IRubyObject mtime, IRubyObject path) {
+        long[] atimespec = null;
+        long[] mtimespec = null;
+        if (atime != context.nil || mtime != context.nil) {
+            atimespec = extractTimespec(context, atime);
+            mtimespec = extractTimespec(context, mtime);
+        }
+
+        utime(context, atimespec, mtimespec, path);
+
+        return asFixnum(context, 1);
     }
 
     @JRubyMethod(required = 2, rest = true, checkArity = false, meta = true)
     public static IRubyObject utime(ThreadContext context, IRubyObject recv, IRubyObject[] args) {
         int argc = Arity.checkArgumentCount(context, args, 2, -1);
 
-        Ruby runtime = context.runtime;
         long[] atimespec = null;
         long[] mtimespec = null;
 
@@ -1165,24 +1220,28 @@ public class RubyFile extends RubyIO implements EncodingCapable {
         }
 
         for (int i = 2, j = argc; i < j; i++) {
-            var filename = get_path(context, args[i]).toString();
+            utime(context, atimespec, mtimespec, args[i]);
 
-            JRubyFile fileToTouch = JRubyFile.create(runtime.getCurrentDirectory(), filename);
-            if (!fileToTouch.exists()) throw runtime.newErrnoENOENTError(filename);
-
-            int result;
-            try {
-                result = runtime.getPosix().utimensat(0, fileToTouch.getAbsolutePath(), atimespec, mtimespec, 0);
-            } catch (NotImplementedError re) {
-                // fall back on utimes
-                result = runtime.getPosix().utimes(fileToTouch.getAbsolutePath(),
-                        convertTimespecToTimeval(atimespec), convertTimespecToTimeval(mtimespec));
-            }
-
-            if (result == -1) throw runtime.newErrnoFromInt(runtime.getPosix().errno());
         }
 
         return asFixnum(context, argc - 2);
+    }
+
+    private static void utime(ThreadContext context, long[] atimespec, long[] mtimespec, IRubyObject args) {
+        Ruby runtime = context.runtime;
+
+        var filename = get_path(context, args).toString();
+        JRubyFile fileToTouch = JRubyFile.create(runtime.getCurrentDirectory(), filename);
+        if (!fileToTouch.exists()) throw runtime.newErrnoENOENTError(filename);
+        int result;
+        try {
+            result = runtime.getPosix().utimensat(0, fileToTouch.getAbsolutePath(), atimespec, mtimespec, 0);
+        } catch (NotImplementedError re) {
+            // fall back on utimes
+            result = runtime.getPosix().utimes(fileToTouch.getAbsolutePath(),
+                    convertTimespecToTimeval(atimespec), convertTimespecToTimeval(mtimespec));
+        }
+        if (result == -1) throw runtime.newErrnoFromInt(runtime.getPosix().errno());
     }
 
     @JRubyMethod(rest = true, meta = true)
@@ -1365,12 +1424,37 @@ public class RubyFile extends RubyIO implements EncodingCapable {
 
     // mri: FilePathValue/rb_get_path/rb_get_patch_check
     public static RubyString get_path(ThreadContext context, IRubyObject path) {
-        if (path instanceof RubyString) return filePathConvert(context, (RubyString) path);
+        return getPathCheckConvert(context, getPathCheckToString(context, path));
+    }
+
+    // CRuby rb_get_path_check_convert
+    private static RubyString getPathCheckConvert(ThreadContext context, RubyString path) {
+        path = filePathConvert(context, path);
+
+        checkPathEncoding(context, path);
+
+        checkEmbeddedNulls(context, path);
+
+        return path.strDup(context.runtime);
+    }
+
+    // CRuby: check_path_encoding
+    private static Encoding checkPathEncoding(ThreadContext context, RubyString str) {
+        Encoding enc = str.getEncoding();
+        if (!enc.isAsciiCompatible()) {
+            throw Error.encodingCompatibilityError(context, "path name must be ASCII-compatible (" + enc + "): " + str);
+        }
+        return enc;
+    }
+
+    // CRuby: rb_get_path_check_to_string
+    private static RubyString getPathCheckToString(ThreadContext context, IRubyObject path) {
+        if (path instanceof RubyString) return (RubyString) path;
 
         FileSites sites = sites(context);
         if (sites.respond_to_to_path.respondsTo(context, path, path, true)) path = sites.to_path.call(context, path, path);
 
-        return filePathConvert(context, path.convertToString());
+        return path.convertToString();
     }
 
     // FIXME: MRI skips this logic on windows?  Does not make sense to me why so I left it in.

@@ -300,9 +300,13 @@ public class RubyThread extends RubyObject implements ExecutionContext {
                     if (getStatus() == Status.SLEEP) exitSleep();
 
                     // if it's a Ruby exception, force the cause through
-                    IRubyObject[] args = err instanceof RubyException exc ?
-                            Helpers.arrayOf(err, RubyHash.newKwargs(runtime, "cause", exc.cause(context))) :
-                            Helpers.arrayOf(err);
+                    IRubyObject[] args;
+                    if (err instanceof RubyException exc ) {
+                        context.callInfo = ThreadContext.CALL_KEYWORD;
+                        args = Helpers.arrayOf(err, RubyHash.newKwargs(runtime, "cause", exc.cause(context)));
+                    } else {
+                        args = Helpers.arrayOf(err);
+                    }
                     RubyKernel.raise(context, this, args, Block.NULL_BLOCK);
                 }
             }
@@ -1492,10 +1496,8 @@ public class RubyThread extends RubyObject implements ExecutionContext {
         return genericRaise(context, context.getThread(), exception, message);
     }
 
-    @JRubyMethod(optional = 3, checkArity = false)
+    @JRubyMethod(optional = 4, checkArity = false, keywords = true)
     public IRubyObject raise(ThreadContext context, IRubyObject[] args, Block block) {
-        Arity.checkArgumentCount(context, args, 0, 3);
-
         return genericRaise(context, context.getThread(), args);
     }
 
@@ -1521,7 +1523,10 @@ public class RubyThread extends RubyObject implements ExecutionContext {
     }
 
     private IRubyObject genericRaise(ThreadContext context, RubyThread currentThread, IRubyObject... args) {
-        if (!isAlive()) return context.nil;
+        if (!isAlive()) {
+            ThreadContext.resetCallInfo(context);
+            return context.nil;
+        }
 
         pendingInterruptEnqueue(prepareRaiseException(context, args));
         interrupt();
@@ -1534,45 +1539,89 @@ public class RubyThread extends RubyObject implements ExecutionContext {
     }
 
     public static IRubyObject prepareRaiseException(ThreadContext context, IRubyObject[] args) {
+        int argc = args.length;
         IRubyObject errorInfo = context.getErrorInfo();
+        IRubyObject tmp =  context.nil;
 
-        if (args.length == 0) {
-            if (errorInfo.isNil()) {
-                // We force RaiseException here to populate backtrace
-                return RaiseException.from(context.runtime, runtimeErrorClass(context), "").getException();
+        // semi extract_raise_opts, duplicated from RubyKernel.raise
+        int callInfo = ThreadContext.resetCallInfo(context);
+        IRubyObject cause = null;
+        if (ThreadContext.hasNonemptyKeywords(callInfo) && argc > 0) {
+            IRubyObject last = args[argc - 1];
+            if (last instanceof RubyHash opt) {
+                RubySymbol key;
+                if (!opt.isEmpty() && (opt.has_key_p(context, key = asSymbol(context, "cause")) == context.tru)) {
+                    cause = opt.delete(context, key, Block.NULL_BLOCK);
+                    if (opt.isEmpty() && --argc == 0) { // more opts will be passed along
+                        throw argumentError(context, "only cause is given with no arguments");
+                    }
+                }
             }
-            return errorInfo;
+        }
+        Arity.checkArgumentCount(context, argc, 0, 3);
+
+        Throwable throwable = RubyKernel.unwrapJavaException(context, args, argc);
+
+        if (throwable != null) {
+            return args[0];
         }
 
-        final IRubyObject arg = args[0];
+        switch (argc) {
+            case 0:
+                if (errorInfo.isNil()) {
+                    // We force RaiseException here to populate backtrace
+                    tmp = RaiseException.from(context.runtime, runtimeErrorClass(context), "").getException();
+                } else if (errorInfo instanceof ConcreteJavaProxy) {
+                    return errorInfo;
+                } else {
+                    tmp = errorInfo;
+                }
+                break;
+            case 1: {
+                final IRubyObject arg = args[0];
 
-        IRubyObject tmp;
-        final RubyException exception;
-        if (args.length == 1) {
-            if (arg instanceof RubyString) {
-                tmp = runtimeErrorClass(context).newInstance(context, args, Block.NULL_BLOCK);
-            } else if (arg instanceof ConcreteJavaProxy ) {
-                return arg;
-            } else {
-                if (!arg.respondsTo("exception")) throw typeError(context, "exception class/object expected");
-                tmp = arg.callMethod(context, "exception");
+                if (arg instanceof RubyString) {
+                    tmp = runtimeErrorClass(context).newInstance(context, arg);
+                } else if (arg instanceof ConcreteJavaProxy) {
+                    tmp = arg;
+                } else {
+                    if (!arg.respondsTo("exception")) throw typeError(context, "exception class/object expected");
+                    tmp = arg.callMethod(context, "exception");
+                }
             }
-        } else {
-            if (!arg.respondsTo("exception")) throw typeError(context, "exception class/object expected");
-            tmp = arg.callMethod(context, "exception", args[1]);
+            break;
+
+            case 2:
+            case 3: {
+                final IRubyObject arg0 = args[0];
+                final IRubyObject message = args[1];
+                if (!arg0.respondsTo("exception")) throw typeError(context, "exception class/object expected");
+                tmp = arg0.callMethod(context, "exception", message);
+            }
+            break;
         }
 
         if (!exceptionClass(context).isInstance(tmp)) throw typeError(context, "exception object expected");
 
-        exception = (RubyException) tmp;
+        RubyException exception = (RubyException) tmp;
 
-        if (args.length == 3) {
+        if (argc == 3) {
             exception.set_backtrace(context, args[2]);
         }
 
-        IRubyObject cause = errorInfo;
-        if (cause != exception) {
-            exception.setCause(cause);
+        if (cause == null) {
+            cause = errorInfo;
+        }
+
+        if (!cause.isNil() && cause != exception) {
+            // check for circular causes
+            for (Object cur = cause; cur instanceof RubyException curException && cur != null;) {
+                if (cur == exception) {
+                    throw argumentError(context, "circular causes");
+                }
+                cur = curException.getCause();
+            }
+            exception.setCause(context, cause);
         }
 
         return exception;
