@@ -2279,6 +2279,7 @@ public class RubyIO extends RubyObject implements IOEncodable, Closeable, Flusha
             fptr.encs = orig.encs;
             fptr.setProcess(orig.getProcess());
             fptr.setLineNumber(orig.getLineNumber());
+            fptr.setTimeout(orig.getTimeout());
             if (orig.getPath() != null) fptr.setPath(orig.getPath());
             fptr.setFinalizer(orig.getFinalizer());
             // TODO: not using pipe_finalize yet
@@ -5300,6 +5301,22 @@ public class RubyIO extends RubyObject implements IOEncodable, Closeable, Flusha
     protected void setPath(String path) {
         if (openFile == null) return;
         openFile.setPath(path);
+    }
+
+    @JRubyMethod(name = "timeout")
+    public IRubyObject timeout_get(ThreadContext context) {
+        return getOpenFileInitialized().getTimeout();
+    }
+
+    @JRubyMethod(name = "timeout=")
+    public IRubyObject timeout_set(ThreadContext context, IRubyObject timeout) {
+        if (timeout.isTrue()) {
+            RubyTime.convertTimeInterval(context, timeout);
+        }
+
+        getOpenFileInitialized().setTimeout(timeout);
+
+        return this;
     }
 
     /**

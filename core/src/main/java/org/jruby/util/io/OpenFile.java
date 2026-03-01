@@ -134,6 +134,7 @@ public class OpenFile implements Finalizable {
     private Finalizer finalizer;
     public Closeable stdio_file;
     public volatile FileLock currentLock;
+    private IRubyObject timeout;
 
     public static class Buffer {
         public byte[] ptr;
@@ -3042,6 +3043,14 @@ public class OpenFile implements Finalizable {
 
     public boolean lockedByMe() {
         return lock.isHeldByCurrentThread();
+    }
+
+    public IRubyObject getTimeout() {
+        return timeout;
+    }
+
+    public void setTimeout(IRubyObject timeout) {
+        this.timeout = timeout;
     }
 
     @Deprecated(since = "9.3.0.0")
