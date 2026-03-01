@@ -1734,8 +1734,10 @@ public class RubyBasicObject implements Cloneable, IRubyObject, Serializable, Co
     }
 
     private void raiseFrozenError() throws RaiseException {
-        if (this instanceof RubyModule) {
-            throw getRuntime().newFrozenError("class/module ", this);
+        if (this instanceof RubyClass) {
+            throw getRuntime().newFrozenError("Class", this);
+        } else if (this instanceof RubyModule) {
+            throw getRuntime().newFrozenError("Module", this);
         } else {
             throw getRuntime().newFrozenError(this);
         }
