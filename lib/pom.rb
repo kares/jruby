@@ -38,6 +38,8 @@ default_gems = [
   # https://github.com/ruby/fcntl/issues/9
   # ['fcntl', '1.3.0'],
   ['ffi', '1.17.0'],
+  # Temporarily moved back to default gems, see https://github.com/jruby/jruby/issues/9278
+  ['fiddle', '1.1.8'],
   ['fileutils', '1.8.0'],
   ['find', '0.2.0'],
   ['forwardable', '1.4.0'],
@@ -105,7 +107,6 @@ bundled_gems = [
   # ['debug', '1.11.1'],
   ['debug', '0.2.1'],
   ['drb', '2.2.3'],
-  ['fiddle', '1.1.8'],
   ['getoptlong', '0.2.1'],
   ['irb', '1.16.0'],
   ['logger', '1.7.0'],
