@@ -163,6 +163,19 @@ DO NOT MODIFY - GENERATED CODE
     </dependency>
     <dependency>
       <groupId>rubygems</groupId>
+      <artifactId>fiddle</artifactId>
+      <version>1.1.8</version>
+      <type>gem</type>
+      <scope>provided</scope>
+      <exclusions>
+        <exclusion>
+          <groupId>rubygems</groupId>
+          <artifactId>jar-dependencies</artifactId>
+        </exclusion>
+      </exclusions>
+    </dependency>
+    <dependency>
+      <groupId>rubygems</groupId>
       <artifactId>fileutils</artifactId>
       <version>1.8.0</version>
       <type>gem</type>
@@ -774,19 +787,6 @@ DO NOT MODIFY - GENERATED CODE
     </dependency>
     <dependency>
       <groupId>rubygems</groupId>
-      <artifactId>fiddle</artifactId>
-      <version>1.1.8</version>
-      <type>gem</type>
-      <scope>provided</scope>
-      <exclusions>
-        <exclusion>
-          <groupId>rubygems</groupId>
-          <artifactId>jar-dependencies</artifactId>
-        </exclusion>
-      </exclusions>
-    </dependency>
-    <dependency>
-      <groupId>rubygems</groupId>
       <artifactId>getoptlong</artifactId>
       <version>0.2.1</version>
       <type>gem</type>
@@ -1154,6 +1154,7 @@ DO NOT MODIFY - GENERATED CODE
           <include>specifications/erb-6.0.1*</include>
           <include>specifications/error_highlight-0.7.1*</include>
           <include>specifications/ffi-1.17.0*</include>
+          <include>specifications/fiddle-1.1.8*</include>
           <include>specifications/fileutils-1.8.0*</include>
           <include>specifications/find-0.2.0*</include>
           <include>specifications/forwardable-1.4.0*</include>
@@ -1201,7 +1202,6 @@ DO NOT MODIFY - GENERATED CODE
           <include>specifications/csv-3.3.5*</include>
           <include>specifications/debug-0.2.1*</include>
           <include>specifications/drb-2.2.3*</include>
-          <include>specifications/fiddle-1.1.8*</include>
           <include>specifications/getoptlong-0.2.1*</include>
           <include>specifications/irb-1.16.0*</include>
           <include>specifications/logger-1.7.0*</include>
@@ -1238,6 +1238,7 @@ DO NOT MODIFY - GENERATED CODE
           <include>gems/erb-6.0.1*/**/*</include>
           <include>gems/error_highlight-0.7.1*/**/*</include>
           <include>gems/ffi-1.17.0*/**/*</include>
+          <include>gems/fiddle-1.1.8*/**/*</include>
           <include>gems/fileutils-1.8.0*/**/*</include>
           <include>gems/find-0.2.0*/**/*</include>
           <include>gems/forwardable-1.4.0*/**/*</include>
@@ -1285,7 +1286,6 @@ DO NOT MODIFY - GENERATED CODE
           <include>gems/csv-3.3.5*/**/*</include>
           <include>gems/debug-0.2.1*/**/*</include>
           <include>gems/drb-2.2.3*/**/*</include>
-          <include>gems/fiddle-1.1.8*/**/*</include>
           <include>gems/getoptlong-0.2.1*/**/*</include>
           <include>gems/irb-1.16.0*/**/*</include>
           <include>gems/logger-1.7.0*/**/*</include>
@@ -1322,6 +1322,7 @@ DO NOT MODIFY - GENERATED CODE
           <include>cache/erb-6.0.1*</include>
           <include>cache/error_highlight-0.7.1*</include>
           <include>cache/ffi-1.17.0*</include>
+          <include>cache/fiddle-1.1.8*</include>
           <include>cache/fileutils-1.8.0*</include>
           <include>cache/find-0.2.0*</include>
           <include>cache/forwardable-1.4.0*</include>
@@ -1369,7 +1370,6 @@ DO NOT MODIFY - GENERATED CODE
           <include>cache/csv-3.3.5*</include>
           <include>cache/debug-0.2.1*</include>
           <include>cache/drb-2.2.3*</include>
-          <include>cache/fiddle-1.1.8*</include>
           <include>cache/getoptlong-0.2.1*</include>
           <include>cache/irb-1.16.0*</include>
           <include>cache/logger-1.7.0*</include>
