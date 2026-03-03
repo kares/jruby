@@ -7,6 +7,7 @@ import org.jruby.RubyBinding;
 import org.jruby.RubyClass;
 import org.jruby.RubyObject;
 import org.jruby.RubySymbol;
+import org.jruby.RubyThread;
 import org.jruby.anno.JRubyMethod;
 import org.jruby.exceptions.RaiseException;
 import org.jruby.runtime.Block;
@@ -77,60 +78,70 @@ public class TracePoint extends RubyObject {
 
         if (!block.isGiven()) throw argumentError(context, "must be called with a block");
 
-        final ThreadContext threadToTrace = context;
-        hook = new EventHook() {
-            @Override
-            public void event(ThreadContext context, RubyEvent event, String file, int line, String name, IRubyObject type) {
-                if (!enabled || threadToTrace != context || context.isWithinTrace()) return;
-
-                int savedCallInfo = resetCallInfo(context);
-
-                synchronized (this) {
-                    inside = true;
-
-                    if (file == null) file = "(ruby)";
-                    if (type == null) type = context.fals;
-
-                    IRubyObject binding;
-                    if (event == RubyEvent.THREAD_BEGIN || event == RubyEvent.THREAD_END) {
-                        binding = context.nil;
-                    } else {
-                        binding = RubyBinding.newBinding(context.runtime, context.currentBinding());
-                    }
-
-                    context.preTrace();
-
-                    // FIXME: get return value
-                    update(event.getName(), file, line, name, type, context.getErrorInfo(), context.nil, binding);
-
-                    try {
-                        block.yieldSpecific(context, TracePoint.this);
-                    } finally {
-                        update(null, null, line, null, context.nil, context.nil, context.nil, context.nil);
-                        context.postTrace();
-                        inside = false;
-                        context.callInfo = savedCallInfo;
-                    }
-                }
-            }
-
-            @Override
-            public void eventHandler(ThreadContext context, String eventName, String file, int line, String name, IRubyObject type) {
-                event(context, RubyEvent.fromName(eventName), file, line, name, type);
-            }
-
-            @Override
-            public boolean isInterestedInEvent(RubyEvent event) {
-                return eventSet.contains(event);
-            }
-
-            @Override
-            public EnumSet<RubyEvent> eventSet() {
-                return eventSet;
-            }
-        };
+        hook = new TracePointEventHook(eventSet, block);
                 
         return context.nil;
+    }
+
+    private class TracePointEventHook extends EventHook {
+        protected ThreadContext threadToTrace;
+        private final Block block;
+        private final EnumSet<RubyEvent> eventSet;
+
+        public TracePointEventHook(EnumSet<RubyEvent> eventSet, Block block) {
+            this.block = block;
+            this.eventSet = eventSet;
+        }
+
+        @Override
+        public void event(ThreadContext context, RubyEvent event, String file, int line, String name, IRubyObject type) {
+            if (!enabled || (threadToTrace != null && threadToTrace != context) || context.isWithinTrace()) return;
+
+            int savedCallInfo = resetCallInfo(context);
+
+            synchronized (this) {
+                inside = true;
+
+                if (file == null) file = "(ruby)";
+                if (type == null) type = context.fals;
+
+                IRubyObject binding;
+                if (event == RubyEvent.THREAD_BEGIN || event == RubyEvent.THREAD_END) {
+                    binding = context.nil;
+                } else {
+                    binding = RubyBinding.newBinding(context.runtime, context.currentBinding());
+                }
+
+                context.preTrace();
+
+                // FIXME: get return value
+                update(event.getName(), file, line, name, type, context.getErrorInfo(), context.nil, binding);
+
+                try {
+                    block.yieldSpecific(context, TracePoint.this);
+                } finally {
+                    update(null, null, line, null, context.nil, context.nil, context.nil, context.nil);
+                    context.postTrace();
+                    inside = false;
+                    context.callInfo = savedCallInfo;
+                }
+            }
+        }
+
+        @Override
+        public void eventHandler(ThreadContext context, String eventName, String file, int line, String name, IRubyObject type) {
+            event(context, RubyEvent.fromName(eventName), file, line, name, type);
+        }
+
+        @Override
+        public boolean isInterestedInEvent(RubyEvent event) {
+            return eventSet.contains(event);
+        }
+
+        @Override
+        public EnumSet<RubyEvent> eventSet() {
+            return eventSet;
+        }
     }
     
     @JRubyMethod
@@ -149,12 +160,48 @@ public class TracePoint extends RubyObject {
     
     @JRubyMethod
     public IRubyObject disable(ThreadContext context, Block block) {
-        return doToggle(context, block, false);
+        return doToggle(context, null, block, false);
+    }
+
+    @JRubyMethod
+    public IRubyObject enable(ThreadContext context, Block block) {
+        return doToggle(context, null, block, true);
     }
     
     @JRubyMethod
-    public IRubyObject enable(ThreadContext context, Block block) {
-        return doToggle(context, block, true);
+    public IRubyObject enable(ThreadContext context, IRubyObject target, Block block) {
+        // TODO: implement target
+        if (!target.isNil()) {
+            context.runtime.getWarnings().warning("target argument to TracePoint.enable is unsupported");
+        }
+
+        return doToggle(context, null, block, true);
+    }
+
+    @JRubyMethod
+    public IRubyObject enable(ThreadContext context, IRubyObject target, IRubyObject targetLine, Block block) {
+        // TODO: implement target, target_line
+        if (!target.isNil() || !targetLine.isNil()) {
+            context.runtime.getWarnings().warning("target and target_line arguments to TracePoint.enable are unsupported");
+        }
+
+        return doToggle(context, null, block, true);
+    }
+
+    @JRubyMethod
+    public IRubyObject enable(ThreadContext context, IRubyObject target, IRubyObject targetLine, IRubyObject _targetThread, Block block) {
+        // TODO: implement target, target_line
+        if (!target.isNil() || !targetLine.isNil()) {
+            context.runtime.getWarnings().warning("target and target_line arguments to TracePoint.enable are unsupported");
+        }
+
+        RubyThread targetThread = null;
+        if (_targetThread != asSymbol(context, "default")) {
+            if (!(_targetThread instanceof RubyThread th)) throw argumentError(context, "target must be a Thread");
+            targetThread = th;
+        }
+
+        return doToggle(context, targetThread, block, true);
     }
     
     @JRubyMethod(name = "enabled?")
@@ -244,32 +291,36 @@ public class TracePoint extends RubyObject {
         this.binding = binding;
     }
 
-    private synchronized IRubyObject doToggle(ThreadContext context, Block block, boolean toggle) {
+    private synchronized IRubyObject doToggle(ThreadContext context, RubyThread _targetThread, Block block, boolean toggle) {
         if (block.isGiven()) {
             boolean old = enabled;
             try {
-                updateEnabled(context, toggle);
+                updateEnabled(context, _targetThread, toggle);
                 
                 return block.yieldSpecific(context);
             } finally {
-                updateEnabled(context, old);
+                updateEnabled(context, _targetThread, old);
             }
         }
         
         IRubyObject old = asBoolean(context, enabled);
-        updateEnabled(context, toggle);
+        updateEnabled(context, _targetThread, toggle);
         
         return old;
     }
 
-    public void updateEnabled(ThreadContext context, boolean toggle) {
+    public void updateEnabled(ThreadContext context, RubyThread targetThread, boolean toggle) {
         if (toggle == enabled) return; // don't re-add or re-remove hook
         
         enabled = toggle;
         
         if (toggle) {
+            if (targetThread != null && !targetThread.isNil()) {
+                hook.threadToTrace = targetThread.getContext();
+            }
             context.traceEvents.addEventHook(context, hook);
         } else {
+            hook.threadToTrace = null;
             context.traceEvents.removeEventHook(hook);
         }
     }
@@ -282,7 +333,7 @@ public class TracePoint extends RubyObject {
         return context.sites.TracePoint;
     }
     
-    private EventHook hook;
+    private TracePointEventHook hook;
     private volatile boolean enabled = false;
     private String eventName;
     private String file;
