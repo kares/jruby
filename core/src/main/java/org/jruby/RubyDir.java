@@ -234,6 +234,9 @@ public class RubyDir extends RubyObject implements Closeable {
     private static void globOptions(ThreadContext context, IRubyObject[] args, String[] keys, GlobOptions options) {
         Ruby runtime = context.runtime;
 
+        // just clear callInfo for now; future PR will handle it appropriately
+        ThreadContext.resetCallInfo(context);
+
         if (args.length > 1) {
             IRubyObject tmp = TypeConverter.checkHashType(runtime, args[args.length - 1]);
             boolean processFlags = keys == BASE_FLAGS_KEYWORDS;
