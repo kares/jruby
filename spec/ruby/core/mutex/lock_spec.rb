@@ -73,7 +73,7 @@ describe "Mutex#lock" do
         end.resume
 
         Fiber.new do
-          ->() do
+          -> do
             lock.synchronize {}
           end.should_not raise_error(ThreadError)
         end.resume
@@ -85,5 +85,8 @@ describe "Mutex#lock" do
   ensure
     t1.kill rescue nil
     t2.kill rescue nil
+
+    t1.join
+    t2.join
   end
 end
