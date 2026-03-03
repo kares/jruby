@@ -61,7 +61,7 @@ public class JavaSites {
 
     public static class BasicObjectSites {
         public final CallSite respond_to = new FunctionalCachingCallSite("respond_to?");
-        public final CallSite respond_to_missing = new FunctionalCachingCallSite("respond_to_missing?");
+        public final CachingCallSite respond_to_missing = new FunctionalCachingCallSite("respond_to_missing?");
         public final CallSite initialize_dup = new FunctionalCachingCallSite("initialize_dup");
         public final CallSite initialize_clone = new FunctionalCachingCallSite("initialize_clone");
         public final CallSite to_s = new FunctionalCachingCallSite("to_s");
