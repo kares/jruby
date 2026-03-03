@@ -21,7 +21,7 @@ echo $JRUBY_VERSION > VERSION
 set -x
 
 mvn
-git add VERSION core/pom.xml lib/pom.xml  pom.xml shaded/pom.xml
+git add VERSION core/pom.xml lib/pom.xml  pom.xml shaded/pom.xml bin/.jruby.release
 git commit -m "Version $JRUBY_VERSION updated for release"
 cd ..
 rm -rf release
