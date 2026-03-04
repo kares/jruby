@@ -128,16 +128,17 @@ public class TimeArgs {
                 if (secondObj instanceof RubyRational subSecond) {
                     if (subSecond.isNegativeNumber(context)) throw argumentError(context, "argument out of range");
 
-                    var numerator = subSecond.getNumerator().asLong(context);
-                    var denominator = subSecond.getDenominator().asLong(context);
-                    if (numerator >= denominator) {
-                        secondsInRational = (int) (numerator / denominator);
-                        numerator = numerator % denominator;
+                    var numerator = subSecond.getNumerator().asBigInteger(context);
+                    var denominator = subSecond.getDenominator().asBigInteger(context);
+                    long subSeconds;
+                    if (numerator.compareTo(denominator) >= 0) {
+                        secondsInRational = numerator.divide(denominator).intValue();
+                        numerator = numerator.mod(denominator);
                     }
 
-                    long subSeconds = BigInteger.valueOf(numerator)
+                    subSeconds = numerator
                             .multiply(RubyTime.TIME_SCALE_BI)
-                            .divide(BigInteger.valueOf(denominator))
+                            .divide(denominator)
                             .longValue();
 
                     millis = subSeconds / 1_000_000;
