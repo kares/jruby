@@ -2265,9 +2265,22 @@ public class RubyBasicObject implements Cloneable, IRubyObject, Serializable, Co
 
         if (getMetaClass().respondsToMethod(name.idString(), !includePrivate, context.getCurrentStaticScope())) return context.tru;
 
-        Ruby runtime = context.runtime;
-        IRubyObject result = sites(context).respond_to_missing.call(context, this, this, name, runtime.newBoolean(includePrivate));
-        return context.runtime.newBoolean(result.isTrue());
+        IRubyObject respondToMissing = basicObjectRespondToMissing(context, getMetaClass(), this, name, includePrivate);
+        if (respondToMissing == UNDEF) return context.fals;
+        return asBoolean(context, respondToMissing.isTrue());
+    }
+
+    // MRI: basic_obj_respond_to_missing, sort of
+    private IRubyObject basicObjectRespondToMissing(ThreadContext context, RubyClass klass, IRubyObject obj,
+                                 IRubyObject mid, boolean includePrivate)
+    {
+        CacheEntry entry = sites(context).respond_to_missing.retrieveCache(this);
+
+        if (!entry.method.isUndefined()) {
+            return entry.method.call(context, this, klass, "respond_to_missing?", mid, asBoolean(context, includePrivate));
+        }
+
+        return UNDEF;
     }
 
     /**

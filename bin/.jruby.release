@@ -1,3 +1,7 @@
+<<<<<<< HEAD
 JRUBY_VERSION=10.1.0.0-SNAPSHOT
+=======
+JRUBY_VERSION=10.1.0.0-SNAPSHOT
+>>>>>>> origin/jruby-10.0
 JRUBY_MAIN=org.jruby.main.Main
 JRUBY_MINIMUM_JAVA_VERSION=21
