@@ -83,14 +83,14 @@ project 'JRuby Core' do
                                    'org.ow2.asm:*',
                                    'com.dylibso:*',
                                    'org.jruby:jruby-prism',
-                                   'org.jruby:chicory-prism'],
+                                   'org.ruby_lang:prism-ruby-parser-wasm'],
                         excludes: 'javax.annotation:javax.annotation-api'
                       },
                       relocations: [
                         { pattern: 'org.objectweb', shadedPattern: 'org.jruby.org.objectweb' },
                         { pattern: 'me.qmx.jitescript', shadedPattern: 'org.jruby.me.qmx.jitescript' },
                         { pattern: 'com.dylibso.chicory', shadedPattern: 'org.jruby.internal.com.dylibso.chicory'},
-                        { pattern: 'org.prism', shadedPattern: 'org.jruby.internal.prism'}
+                        { pattern: 'org.ruby_lang', shadedPattern: 'org.jruby.internal.org.ruby_lang'}
                       ],
                       transformers: [{ :@implementation => 'org.apache.maven.plugins.shade.resource.ManifestResourceTransformer',
                                        :mainClass => 'org.jruby.main.Main',

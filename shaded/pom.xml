@@ -147,7 +147,7 @@ DO NOT MODIFY - GENERATED CODE
                       <include>org.ow2.asm:*</include>
                       <include>com.dylibso:*</include>
                       <include>org.jruby:jruby-prism</include>
-                      <include>org.jruby:chicory-prism</include>
+                      <include>org.ruby_lang:prism-ruby-parser-wasm</include>
                     </includes>
                     <excludes>javax.annotation:javax.annotation-api</excludes>
                   </artifactSet>
@@ -165,8 +165,8 @@ DO NOT MODIFY - GENERATED CODE
                       <shadedPattern>org.jruby.internal.com.dylibso.chicory</shadedPattern>
                     </relocation>
                     <relocation>
-                      <pattern>org.prism</pattern>
-                      <shadedPattern>org.jruby.internal.prism</shadedPattern>
+                      <pattern>org.ruby_lang</pattern>
+                      <shadedPattern>org.jruby.internal.org.ruby_lang</shadedPattern>
                     </relocation>
                   </relocations>
                   <transformers>
@@ -219,7 +219,7 @@ DO NOT MODIFY - GENERATED CODE
                       <include>org.ow2.asm:*</include>
                       <include>com.dylibso:*</include>
                       <include>org.jruby:jruby-prism</include>
-                      <include>org.jruby:chicory-prism</include>
+                      <include>org.ruby_lang:prism-ruby-parser-wasm</include>
                     </includes>
                     <excludes>javax.annotation:javax.annotation-api</excludes>
                   </artifactSet>
@@ -237,8 +237,8 @@ DO NOT MODIFY - GENERATED CODE
                       <shadedPattern>org.jruby.internal.com.dylibso.chicory</shadedPattern>
                     </relocation>
                     <relocation>
-                      <pattern>org.prism</pattern>
-                      <shadedPattern>org.jruby.internal.prism</shadedPattern>
+                      <pattern>org.ruby_lang</pattern>
+                      <shadedPattern>org.jruby.internal.org.ruby_lang</shadedPattern>
                     </relocation>
                   </relocations>
                   <transformers>
@@ -291,7 +291,7 @@ DO NOT MODIFY - GENERATED CODE
                       <include>org.ow2.asm:*</include>
                       <include>com.dylibso:*</include>
                       <include>org.jruby:jruby-prism</include>
-                      <include>org.jruby:chicory-prism</include>
+                      <include>org.ruby_lang:prism-ruby-parser-wasm</include>
                     </includes>
                     <excludes>javax.annotation:javax.annotation-api</excludes>
                   </artifactSet>
@@ -309,8 +309,8 @@ DO NOT MODIFY - GENERATED CODE
                       <shadedPattern>org.jruby.internal.com.dylibso.chicory</shadedPattern>
                     </relocation>
                     <relocation>
-                      <pattern>org.prism</pattern>
-                      <shadedPattern>org.jruby.internal.prism</shadedPattern>
+                      <pattern>org.ruby_lang</pattern>
+                      <shadedPattern>org.jruby.internal.org.ruby_lang</shadedPattern>
                     </relocation>
                   </relocations>
                   <transformers>
@@ -363,7 +363,7 @@ DO NOT MODIFY - GENERATED CODE
                       <include>org.ow2.asm:*</include>
                       <include>com.dylibso:*</include>
                       <include>org.jruby:jruby-prism</include>
-                      <include>org.jruby:chicory-prism</include>
+                      <include>org.ruby_lang:prism-ruby-parser-wasm</include>
                     </includes>
                     <excludes>javax.annotation:javax.annotation-api</excludes>
                   </artifactSet>
@@ -381,8 +381,8 @@ DO NOT MODIFY - GENERATED CODE
                       <shadedPattern>org.jruby.internal.com.dylibso.chicory</shadedPattern>
                     </relocation>
                     <relocation>
-                      <pattern>org.prism</pattern>
-                      <shadedPattern>org.jruby.internal.prism</shadedPattern>
+                      <pattern>org.ruby_lang</pattern>
+                      <shadedPattern>org.jruby.internal.org.ruby_lang</shadedPattern>
                     </relocation>
                   </relocations>
                   <transformers>
@@ -435,7 +435,7 @@ DO NOT MODIFY - GENERATED CODE
                       <include>org.ow2.asm:*</include>
                       <include>com.dylibso:*</include>
                       <include>org.jruby:jruby-prism</include>
-                      <include>org.jruby:chicory-prism</include>
+                      <include>org.ruby_lang:prism-ruby-parser-wasm</include>
                     </includes>
                     <excludes>javax.annotation:javax.annotation-api</excludes>
                   </artifactSet>
@@ -453,8 +453,8 @@ DO NOT MODIFY - GENERATED CODE
                       <shadedPattern>org.jruby.internal.com.dylibso.chicory</shadedPattern>
                     </relocation>
                     <relocation>
-                      <pattern>org.prism</pattern>
-                      <shadedPattern>org.jruby.internal.prism</shadedPattern>
+                      <pattern>org.ruby_lang</pattern>
+                      <shadedPattern>org.jruby.internal.org.ruby_lang</shadedPattern>
                     </relocation>
                   </relocations>
                   <transformers>
@@ -507,7 +507,7 @@ DO NOT MODIFY - GENERATED CODE
                       <include>org.ow2.asm:*</include>
                       <include>com.dylibso:*</include>
                       <include>org.jruby:jruby-prism</include>
-                      <include>org.jruby:chicory-prism</include>
+                      <include>org.ruby_lang:prism-ruby-parser-wasm</include>
                     </includes>
                     <excludes>javax.annotation:javax.annotation-api</excludes>
                   </artifactSet>
@@ -525,8 +525,8 @@ DO NOT MODIFY - GENERATED CODE
                       <shadedPattern>org.jruby.internal.com.dylibso.chicory</shadedPattern>
                     </relocation>
                     <relocation>
-                      <pattern>org.prism</pattern>
-                      <shadedPattern>org.jruby.internal.prism</shadedPattern>
+                      <pattern>org.ruby_lang</pattern>
+                      <shadedPattern>org.jruby.internal.org.ruby_lang</shadedPattern>
                     </relocation>
                   </relocations>
                   <transformers>
@@ -579,7 +579,7 @@ DO NOT MODIFY - GENERATED CODE
                       <include>org.ow2.asm:*</include>
                       <include>com.dylibso:*</include>
                       <include>org.jruby:jruby-prism</include>
-                      <include>org.jruby:chicory-prism</include>
+                      <include>org.ruby_lang:prism-ruby-parser-wasm</include>
                     </includes>
                     <excludes>javax.annotation:javax.annotation-api</excludes>
                   </artifactSet>
@@ -597,8 +597,8 @@ DO NOT MODIFY - GENERATED CODE
                       <shadedPattern>org.jruby.internal.com.dylibso.chicory</shadedPattern>
                     </relocation>
                     <relocation>
-                      <pattern>org.prism</pattern>
-                      <shadedPattern>org.jruby.internal.prism</shadedPattern>
+                      <pattern>org.ruby_lang</pattern>
+                      <shadedPattern>org.jruby.internal.org.ruby_lang</shadedPattern>
                     </relocation>
                   </relocations>
                   <transformers>
@@ -651,7 +651,7 @@ DO NOT MODIFY - GENERATED CODE
                       <include>org.ow2.asm:*</include>
                       <include>com.dylibso:*</include>
                       <include>org.jruby:jruby-prism</include>
-                      <include>org.jruby:chicory-prism</include>
+                      <include>org.ruby_lang:prism-ruby-parser-wasm</include>
                     </includes>
                     <excludes>javax.annotation:javax.annotation-api</excludes>
                   </artifactSet>
@@ -669,8 +669,8 @@ DO NOT MODIFY - GENERATED CODE
                       <shadedPattern>org.jruby.internal.com.dylibso.chicory</shadedPattern>
                     </relocation>
                     <relocation>
-                      <pattern>org.prism</pattern>
-                      <shadedPattern>org.jruby.internal.prism</shadedPattern>
+                      <pattern>org.ruby_lang</pattern>
+                      <shadedPattern>org.jruby.internal.org.ruby_lang</shadedPattern>
                     </relocation>
                   </relocations>
                   <transformers>
@@ -723,7 +723,7 @@ DO NOT MODIFY - GENERATED CODE
                       <include>org.ow2.asm:*</include>
                       <include>com.dylibso:*</include>
                       <include>org.jruby:jruby-prism</include>
-                      <include>org.jruby:chicory-prism</include>
+                      <include>org.ruby_lang:prism-ruby-parser-wasm</include>
                     </includes>
                     <excludes>javax.annotation:javax.annotation-api</excludes>
                   </artifactSet>
@@ -741,8 +741,8 @@ DO NOT MODIFY - GENERATED CODE
                       <shadedPattern>org.jruby.internal.com.dylibso.chicory</shadedPattern>
                     </relocation>
                     <relocation>
-                      <pattern>org.prism</pattern>
-                      <shadedPattern>org.jruby.internal.prism</shadedPattern>
+                      <pattern>org.ruby_lang</pattern>
+                      <shadedPattern>org.jruby.internal.org.ruby_lang</shadedPattern>
                     </relocation>
                   </relocations>
                   <transformers>
