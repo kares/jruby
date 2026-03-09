@@ -828,7 +828,7 @@ public class RubyModule extends RubyObject {
         anonBase.append(metaClass.getRealClass().rubyName(context)).append(newString(context, ":0x"));
         anonBase.append(newString(context, Integer.toHexString(System.identityHashCode(this)))).append(newString(context, ">"));
 
-        return anonBase;
+        return (RubyString) anonBase.freeze(context);
     }
 
     private RubyString calculateRubyName(ThreadContext context) {
@@ -837,7 +837,7 @@ public class RubyModule extends RubyObject {
         if (getBaseName() == null) return calculateAnonymousRubyName(context); // no name...anonymous!
 
         if (usingTemporaryName()) { // temporary name
-            cachedRubyName = asSymbol(context, baseName).toRubyString(context);
+            cachedRubyName = (RubyString) asSymbol(context, baseName).toRubyString(context).freeze(context);
             return cachedRubyName;
         }
         
@@ -864,7 +864,7 @@ public class RubyModule extends RubyObject {
 
         RubyString fullName = buildPathString(context, parents);
 
-        if (cache) cachedRubyName = fullName;
+        if (cache) cachedRubyName = (RubyString) fullName.freeze(context);
 
         return fullName;
     }
@@ -1000,6 +1000,8 @@ public class RubyModule extends RubyObject {
 
     @JRubyMethod(required = 1)
     public IRubyObject set_temporary_name(ThreadContext context, IRubyObject arg) {
+        checkFrozen();
+
         if (baseName != null && IdUtil.isValidConstantName(baseName) && (parent == null || parent.baseName != null)) {
             throw runtimeError(context, "can't change permanent name");
         }
@@ -1475,12 +1477,14 @@ public class RubyModule extends RubyObject {
         IRubyObject realVal;
 
         try {
-            if(tp == Integer.class || tp == Integer.TYPE || tp == Short.class || tp == Short.TYPE || tp == Byte.class || tp == Byte.TYPE) {
+            if (tp == Integer.class || tp == Integer.TYPE || tp == Short.class || tp == Short.TYPE || tp == Byte.class || tp == Byte.TYPE) {
                 realVal = asFixnum(context, field.getInt(null));
-            } else if(tp == Boolean.class || tp == Boolean.TYPE) {
+            } else if (tp == Boolean.class || tp == Boolean.TYPE) {
                 realVal = asBoolean(context, field.getBoolean(null));
+            } else if (tp == String.class) {
+                realVal = newString(context, field.get(null).toString());
             } else {
-                realVal = context.nil;
+                throw new RuntimeException("Unsupported type for annotated constant: " + tp.getName());
             }
         } catch(Exception e) {
             realVal = context.nil;
@@ -1922,7 +1926,7 @@ public class RubyModule extends RubyObject {
     }
 
     private String frozenType() {
-        return isClass() ? "class" : "module";
+        return isClass() ? "Class" : "Module";
     }
 
     @Deprecated(since = "10.0.0.0")
@@ -3120,12 +3124,14 @@ public class RubyModule extends RubyObject {
         return clone;
     }
 
-    /** mri: rb_mod_init_copy
+    /**
+     * mri: rb_mod_init_copy
      *
+     * This no longer overrides {@link RubyBasicObject#initialize_copy(ThreadContext, IRubyObject)} to ensure a cloned
+     * class or module is internally initialized before calling any user `initialize_copy` that might be defined.
      */
-    @JRubyMethod(name = "initialize_copy", visibility = Visibility.PRIVATE)
-    public IRubyObject initialize_copy(ThreadContext context, IRubyObject original) {
-        if (this instanceof RubyClass klazz) checkSafeTypeToCopy(context, klazz);
+    public IRubyObject initializeCopiedModule(ThreadContext context, IRubyObject original) {
+        if (original instanceof RubyClass klazz) checkSafeTypeToCopy(context, klazz);
 
         super.initialize_copy(context, original);
 
@@ -3150,7 +3156,7 @@ public class RubyModule extends RubyObject {
         var BasicObject = basicObjectClass(context);
         if (original == BasicObject) throw typeError(context, "can't copy the root class");
         if (getSuperClass() == BasicObject) throw typeError(context, "already initialized class");
-        if (original.isSingleton()) throw typeError(context, "can't copy singleton class");
+        if (original instanceof MetaClass) throw typeError(context, "can't copy singleton class");
     }
 
     public void syncConstants(RubyModule other) {
@@ -3508,12 +3514,12 @@ public class RubyModule extends RubyObject {
             if (method.getDefinedClass() == this) {
                 if (!method.isNative()) {
                     Signature signature = method.getSignature();
-                    if (!signature.hasRest()) {
-                        warn(context, str(context.runtime, "Skipping set of ruby2_keywords flag for ", ids(context.runtime, name), " (method accepts keywords or method does not accept argument splat)"));
+                    if (!signature.hasRest() || signature.post() != 0) {
+                        warn(context, str(context.runtime, "Skipping set of ruby2_keywords flag for ", ids(context.runtime, name), " (method accepts keywords or post arguments or method does not accept argument splat)"));
                     } else if (!signature.hasKwargs()) {
                         method.setRuby2Keywords();
                     } else if (method instanceof AbstractIRMethod && ((AbstractIRMethod) method).getStaticScope().exists("...") == -1) {
-                        warn(context, str(context.runtime, "Skipping set of ruby2_keywords flag for ", ids(context.runtime, name), " (method accepts keywords or method does not accept argument splat)"));
+                        warn(context, str(context.runtime, "Skipping set of ruby2_keywords flag for ", ids(context.runtime, name), " (method accepts keywords or post arguments or method does not accept argument splat)"));
                     }
                 } else {
                     warn(context, str(context.runtime, "Skipping set of ruby2_keywords flag for ", ids(context.runtime, name), " (method not defined in Ruby)"));
@@ -3851,6 +3857,13 @@ public class RubyModule extends RubyObject {
 
         obj.singletonClass(context).include(context, this);
         return obj;
+    }
+
+    @JRubyAPI
+    public RubyModule extendObject(ThreadContext context, IRubyObject obj) {
+        extend_object(context, obj);
+
+        return this;
     }
 
     @Deprecated(since = "10.0.0.0")
@@ -4928,7 +4941,7 @@ public class RubyModule extends RubyObject {
 
     private RubyArray<?> constantsCommon(ThreadContext context, boolean replaceModule, boolean allConstants) {
         Collection<String> constantNames = constantsCommon(context.runtime, replaceModule, allConstants, false);
-        var array = RubyArray.newBlankArrayInternal(context.runtime, constantNames.size());
+        var array = RubyArrayNative.newBlankArrayInternal(context.runtime, constantNames.size());
 
         int i = 0;
         for (String name : constantNames) {
@@ -6354,7 +6367,7 @@ public class RubyModule extends RubyObject {
     @Override
     public final void checkFrozen() {
        if ( isFrozen() ) {
-           throw getRuntime().newFrozenError(isClass() ? "class" : "module", this);
+           throw getRuntime().newFrozenError(frozenType(), this);
        }
     }
 
@@ -6918,8 +6931,20 @@ public class RubyModule extends RubyObject {
             DynamicMethod dup = entry.getValue().dup();
             dup.setImplementationClass(selfModule);
 
-            // maybe insufficient if we have already compiled assuming no refinements
-            ((AbstractIRMethod) dup).getIRScope().setIsMaybeUsingRefinements();
+            AbstractIRMethod dupAir = (AbstractIRMethod) dup;
+            dupAir.getIRScope().setIsMaybeUsingRefinements();
+
+            RubyModule definedAt = selfModule.getRefinementStoreForWrite().definedAt;
+            if (definedAt != null) {
+                Map<RubyModule, RubyModule> refinements = definedAt.getRefinements();
+                if (!refinements.isEmpty()) {
+                    dupAir
+                      .getStaticScope()
+                      .getOverlayModuleForWrite(context)
+                      .getRefinementsForWrite()
+                      .putAll(refinements);
+                }
+            }
 
             selfModule.addMethod(context, entry.getKey(), dup);
         }

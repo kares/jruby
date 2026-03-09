@@ -1886,7 +1886,7 @@ CLASSDEF
       fail 'expected to raise'
     rescue NameError => e
       msg = e.message
-      assert msg.start_with?('no constructor for arguments (org.jruby.RubyArray) on Java::JavaLang::StringBuilder'), msg
+      assert msg.start_with?('no constructor for arguments (org.jruby.RubyArrayNative) on Java::JavaLang::StringBuilder'), msg
       assert msg.index('available overloads'), msg
       assert msg.index('  (int)'), msg
       assert msg.index('  (java.lang.String)'), msg
@@ -1898,7 +1898,7 @@ CLASSDEF
       fail 'expected to raise'
     rescue => e # NameError
       msg = e.message
-      assert msg.start_with?("no method 'valueOf' for arguments (org.jruby.RubyHash) on Java::JavaLang::Short"), msg
+      assert msg.match?(/^no method 'valueOf' for arguments \(org\.jruby\.RubyHash.*\) on Java::JavaLang::Short/), msg
       assert msg.index('available overloads'), msg
       assert msg.index('  (short)'), msg
       assert msg.index('  (java.lang.String)'), msg

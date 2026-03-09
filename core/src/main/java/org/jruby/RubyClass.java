@@ -718,6 +718,8 @@ public class RubyClass extends RubyModule {
     /**
      * Safely attempt to invoke the given method name on self, using respond_to? and method_missing as appropriate.
      *
+     * Return null if the method does not exist.
+     *
      * MRI: rb_check_funcall
      */
     public final IRubyObject finvokeChecked(ThreadContext context, IRubyObject self, String name) {
@@ -726,6 +728,8 @@ public class RubyClass extends RubyModule {
 
     /**
      * Safely attempt to invoke the given method name on self, using respond_to? and method_missing as appropriate.
+     *
+     * Return null if the method does not exist.
      *
      * MRI: rb_check_funcall
      */
@@ -736,6 +740,8 @@ public class RubyClass extends RubyModule {
     /**
      * Safely attempt to invoke the given method name on self, using respond_to? and method_missing as appropriate.
      *
+     * Return null if the method does not exist.
+     *
      * MRI: rb_check_funcall
      */
     public final IRubyObject finvokeChecked(ThreadContext context, IRubyObject self, String name, IRubyObject... args) {
@@ -744,6 +750,8 @@ public class RubyClass extends RubyModule {
 
     /**
      * Safely attempt to invoke the given method name on self, using respond_to? and method_missing as appropriate.
+     *
+     * Return null if the method does not exist.
      *
      * MRI: rb_check_funcall
      */
@@ -1091,16 +1099,11 @@ public class RubyClass extends RubyModule {
         }
     }
 
-    /** rb_class_init_copy
-     *
+    /**
+     * Class-specific logic for {@link RubyModule#initializeCopiedModule(ThreadContext, IRubyObject)}
      */
-    @JRubyMethod(name = "initialize_copy", visibility = PRIVATE)
-    public IRubyObject initialize_copy(ThreadContext context, IRubyObject original) {
-        checkNotInitialized(context);
-        if (original == basicObjectClass(context)) throw typeError(context, "can't copy the root class");
-        if (original instanceof MetaClass) throw typeError(context, "can't copy singleton class");
-
-        super.initialize_copy(context, original);
+    public IRubyObject initializeCopiedModule(ThreadContext context, IRubyObject original) {
+        super.initializeCopiedModule(context, original);
         RubyClass originalClazz = (RubyClass) original;
         allocator = originalClazz.allocator;
 
@@ -1144,7 +1147,7 @@ public class RubyClass extends RubyModule {
         return new SubclassArray(context.runtime, this.concreteSubclassesEstimate);
     }
 
-    private static class SubclassArray extends RubyArray<RubyClass> implements BiConsumer<ThreadContext, RubyClass> {
+    private static class SubclassArray extends RubyArrayNative<RubyClass> implements BiConsumer<ThreadContext, RubyClass> {
         public SubclassArray(Ruby runtime, int length) {
             super(runtime, length);
         }

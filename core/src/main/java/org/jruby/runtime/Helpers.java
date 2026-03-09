@@ -827,27 +827,42 @@ public class Helpers {
         return getMetaClass(self).invokePublic(context, self, name, arg);
     }
 
-    // MRI: rb_check_funcall
+    /**
+     * Invoke the method requested if the given object respond_to? it, returning null if it is not defined.
+     * MRI: rb_check_funcall
+     */
     public static IRubyObject invokeChecked(ThreadContext context, IRubyObject self, String name) {
         return getMetaClass(self).finvokeChecked(context, self, name);
     }
 
-    // MRI: rb_check_funcall
+    /**
+     * Invoke the method requested if the given object respond_to? it, returning null if it is not defined.
+     * MRI: rb_check_funcall
+     */
     public static IRubyObject invokeChecked(ThreadContext context, IRubyObject self, JavaSites.CheckedSites sites) {
         return getMetaClass(self).finvokeChecked(context, self, sites);
     }
 
-    // MRI: rb_check_funcall
+    /**
+     * Invoke the method requested if the given object respond_to? it, returning null if it is not defined.
+     * MRI: rb_check_funcall
+     */
     public static IRubyObject invokeChecked(ThreadContext context, IRubyObject self, String name, IRubyObject... args) {
         return getMetaClass(self).finvokeChecked(context, self, name, args);
     }
 
-    // MRI: rb_check_funcall
+    /**
+     * Invoke the method requested if the given object respond_to? it, returning null if it is not defined.
+     * MRI: rb_check_funcall
+     */
     public static IRubyObject invokeChecked(ThreadContext context, IRubyObject self, JavaSites.CheckedSites sites, IRubyObject arg0) {
         return getMetaClass(self).finvokeChecked(context, self, sites, arg0);
     }
 
-    // MRI: rb_check_funcall
+    /**
+     * Invoke the method requested if the given object respond_to? it, returning null if it is not defined.
+     * MRI: rb_check_funcall
+     */
     public static IRubyObject invokeChecked(ThreadContext context, IRubyObject self, JavaSites.CheckedSites sites, IRubyObject... args) {
         return getMetaClass(self).finvokeChecked(context, self, sites, args);
     }
@@ -2008,7 +2023,7 @@ public class Helpers {
     @Deprecated(since = "9.2.0.0") // not used
     public static IRubyObject aValueSplat(IRubyObject value) {
         var context = ((RubyBasicObject) value).getCurrentContext();
-        if (!(value instanceof RubyArray array) || array.length().getValue() == 0) return context.nil;
+        if (!(value instanceof RubyArray array) || array.getLength() == 0) return context.nil;
 
         return array.getLength() == 1 ? array.first(context) : array;
     }
@@ -2627,7 +2642,12 @@ public class Helpers {
                 if (args[i] instanceof MultipleAsgnNode) {
                     descs.add(new ArgumentDescriptor(ArgumentType.anonreq));
                 } else {
-                    descs.add(new ArgumentDescriptor(ArgumentType.req, ((ArgumentNode) args[i]).getName()));
+                    ArgumentNode arg = (ArgumentNode) args[i];
+                    ArgumentDescriptor desc =
+                            arg.isImplicit() ?
+                                    new ArgumentDescriptor(ArgumentType.anonreq) :
+                                    new ArgumentDescriptor(ArgumentType.req, arg.getName());
+                    descs.add(desc);
                 }
             }
         }

@@ -100,6 +100,8 @@ public class RubyData {
             if (numMembers > 0) {
                 throw keywordError(context, "missing", members);
             }
+
+            selfObj.setFrozen(true);
             return;
         }
 
@@ -123,7 +125,7 @@ public class RubyData {
             String keyString = toSymbol(context, k).idString();
             VariableAccessor variableAccessor = variableAccessors.get(keyString);
             if (variableAccessor != null) {
-                selfObj.setInternalVariable(keyString, v);
+                variableAccessor.set(self, v);
             } else {
                 RubyArray unknownKeywords = unknownKeywordsPtr[0];
                 if (unknownKeywords == null) {
@@ -443,7 +445,7 @@ public class RubyData {
         if (selfObj == otherObj) return context.tru;
         RubyClass metaClass = otherObj.getMetaClass();
         if (!metaClass.isKindOfModule(context.runtime.getData())) return context.fals;
-        if (metaClass != selfObj.getMetaClass()) return context.fals;
+        if (metaClass.getRealClass() != selfObj.getMetaClass().getRealClass()) return context.fals;
 //        if (RSTRUCT_LEN(s) != RSTRUCT_LEN(s2)) {
 //            rb_bug("inconsistent struct"); /* should never happen */
 //        }

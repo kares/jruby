@@ -2,6 +2,16 @@ require_relative '../../spec_helper'
 require_relative 'fixtures/classes'
 
 describe "Data#initialize" do
+  context "with no members" do
+    ruby_bug "#21819", ""..."4.0.1" do
+      it "is frozen" do
+        data = Data.define
+
+        data.new.should.frozen?
+      end
+    end
+  end
+
   it "accepts positional arguments" do
     data = DataSpecs::Measure.new(42, "km")
 
@@ -122,16 +132,16 @@ describe "Data#initialize" do
       ScratchPad.recorded.should == [:initialize, [], {amount: 42, unit: "m"}]
     end
 
-      it "accepts positional arguments with empty keyword arguments" do
-        data = DataSpecs::SingleWithOverriddenName.new(42, **{})
+    it "accepts positional arguments with empty keyword arguments" do
+      data = DataSpecs::SingleWithOverriddenName.new(42, **{})
 
-        data.value.should == 42
+      data.value.should == 42
 
-        data = DataSpecs::MeasureWithOverriddenName.new(42, "km", **{})
+      data = DataSpecs::MeasureWithOverriddenName.new(42, "km", **{})
 
-        data.amount.should == 42
-        data.unit.should == "km"
-      end
+      data.amount.should == 42
+      data.unit.should == "km"
+    end
 
     # See https://github.com/ruby/psych/pull/765
     it "can be deserialized by calling Data.instance_method(:initialize)" do

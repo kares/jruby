@@ -2279,6 +2279,7 @@ public class RubyIO extends RubyObject implements IOEncodable, Closeable, Flusha
             fptr.encs = orig.encs;
             fptr.setProcess(orig.getProcess());
             fptr.setLineNumber(orig.getLineNumber());
+            fptr.setTimeout(orig.getTimeout());
             if (orig.getPath() != null) fptr.setPath(orig.getPath());
             fptr.setFinalizer(orig.getFinalizer());
             // TODO: not using pipe_finalize yet
@@ -4129,18 +4130,11 @@ public class RubyIO extends RubyObject implements IOEncodable, Closeable, Flusha
                 read = argv[0];
         }
         final Long timeout;
-        if (_timeout.isNil()) {
+        if (_timeout.isNil() || Numeric.isPositiveInfinity(_timeout)) {
             timeout = null;
         }
         else {
-            try { // MRI calls to_f even if not respond_to? (or respond_to_missing?) :to_f
-                _timeout = sites(context).to_f.call(context, _timeout, _timeout);
-            }
-            catch (RaiseException e) {
-                TypeConverter.handleUncoercibleObject(context.runtime, _timeout, floatClass(context), true);
-                throw e; // won't happen
-            }
-            final double t = _timeout.convertToFloat().asDouble(context);
+            double t = RubyTime.convertTimeInterval(context, _timeout);
             if ( t < 0 ) throw argumentError(context, "negative timeout");
             timeout = (long) (t * 1000); // ms
         }
@@ -4372,15 +4366,6 @@ public class RubyIO extends RubyObject implements IOEncodable, Closeable, Flusha
     private static RubyIO ioOpenGeneric(ThreadContext context, IRubyObject recv, IRubyObject filename, int oflags, int fmode, IOEncodable convconfig, int perm) {
         if ((filename instanceof RubyString name) && name.isEmpty()) throw context.runtime.newErrnoENOENTError();
 
-        IRubyObject cmd;
-        if ((recv == ioClass(context)) && (cmd = PopenExecutor.checkPipeCommand(context, filename)) != context.nil) {
-            warnDeprecated(context, "IO process creation with a leading '|' is deprecated and will be removed in Ruby 4.0; use IO.popen instead");
-            if (PopenExecutor.nativePopenAvailable(context.runtime)) {
-                return (RubyIO) PopenExecutor.pipeOpen(context, cmd, OpenFile.ioOflagsModestr(context, oflags), fmode, convconfig);
-            } else {
-                throw argumentError(context, "pipe open is not supported without native subprocess logic");
-            }
-        }
         return (RubyIO) ((RubyFile) fileClass(context).allocate(context)).
                 fileOpenGeneric(context, filename, oflags, fmode, convconfig, perm);
     }
@@ -5316,6 +5301,22 @@ public class RubyIO extends RubyObject implements IOEncodable, Closeable, Flusha
     protected void setPath(String path) {
         if (openFile == null) return;
         openFile.setPath(path);
+    }
+
+    @JRubyMethod(name = "timeout")
+    public IRubyObject timeout_get(ThreadContext context) {
+        return getOpenFileInitialized().getTimeout();
+    }
+
+    @JRubyMethod(name = "timeout=")
+    public IRubyObject timeout_set(ThreadContext context, IRubyObject timeout) {
+        if (timeout.isTrue()) {
+            RubyTime.convertTimeInterval(context, timeout);
+        }
+
+        getOpenFileInitialized().setTimeout(timeout);
+
+        return this;
     }
 
     /**

@@ -35,6 +35,7 @@ import java.nio.charset.CharsetEncoder;
 import java.nio.charset.CodingErrorAction;
 import java.nio.charset.StandardCharsets;
 
+import org.jcodings.Config;
 import org.jcodings.Encoding;
 import org.jcodings.EncodingDB.Entry;
 import org.jcodings.specific.ASCIIEncoding;
@@ -44,6 +45,7 @@ import org.jcodings.specific.UTF8Encoding;
 import org.jcodings.util.CaseInsensitiveBytesHash;
 import org.jcodings.util.Hash.HashEntryIterator;
 import org.jruby.anno.JRubyClass;
+import org.jruby.anno.JRubyConstant;
 import org.jruby.anno.JRubyMethod;
 import org.jruby.compiler.Constantizable;
 import org.jruby.runtime.ClassIndex;
@@ -77,12 +79,16 @@ public class RubyEncoding extends RubyObject implements Constantizable {
     public static final ByteList INTERNAL = new ByteList(encodeISO("internal"), false);
     public static final ByteList BINARY_ASCII_NAME = new ByteList(encodeISO("BINARY (ASCII-8BIT)"), false);
 
+    @JRubyConstant("UNICODE_VERSION")
+    public static final String UNICODE_VERSION = Config.UNICODE_VERSION_STRING;
+
     public static RubyClass createEncodingClass(ThreadContext context, RubyClass Object) {
         return defineClass(context, "Encoding", Object, NOT_ALLOCATABLE_ALLOCATOR).
                 reifiedClass(RubyEncoding.class).
                 kindOf(new RubyModule.JavaClassKindOf(RubyEncoding.class)).
                 classIndex(ClassIndex.ENCODING).
                 defineMethods(context, RubyEncoding.class).
+                defineConstants(context, RubyEncoding.class).
                 tap(c -> c.singletonClass(context).undefMethods(context, "allocate"));
     }
 

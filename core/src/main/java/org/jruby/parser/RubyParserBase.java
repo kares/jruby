@@ -205,7 +205,7 @@ public abstract class RubyParserBase {
             args = new_args(lexer.getRubySourceline(), pre, null, null, null, null);
         } else if (itNode != null) {
             DVarNode dvar = (DVarNode) itNode;
-            Node arg = new ArgumentNode(dvar.getLine(), dvar.getName(), dvar.getDepth());
+            Node arg = new ArgumentNode(dvar.getLine(), dvar.getName(), dvar.getDepth(), true);
             args = new_args(lexer.getRubySourceline(), newArrayNode(arg.getLine(), arg), null, null, null, null);
         }
         return args;
@@ -397,7 +397,7 @@ public abstract class RubyParserBase {
             node = new LocalVarNode(lexer.tokline, slot, name);
         } else if (dyna_in_block() && id.equals("it")) {
             if (!hasArguments()) {
-                int existing = currentScope.isDefinedNotImplicit(id);
+                int existing = currentScope.isDefinedOrImplicit(id);
                 boolean newIt = false;
 
                 if (existing == -1) {
@@ -416,7 +416,7 @@ public abstract class RubyParserBase {
                 node = new DVarNode(lexer.tokline, slot, name);
                 if (newIt) set_it_id(node);
             } else {
-                slot = currentScope.isDefinedNotImplicit(id);
+                slot = currentScope.isDefinedOrImplicit(id);
                 // A special it cannot exist without being marked as a special it.
                 if (it_id() != null) compile_error("`it` is not allowed when an ordinary parameter is defined");
 

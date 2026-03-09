@@ -112,7 +112,7 @@ public final class ThreadContext {
      *
      * Usage: Builtins.checkIntegerPlus(context) reads context.builtinBits[0]
      */
-    public final short[] builtinBits;
+    public final int[] builtinBits;
 
     // Thread#set_trace_func for specific threads events.  We need this because successive
     // Thread.set_trace_funcs will end up replacing the current one (as opposed to add_trace_func).
@@ -1435,6 +1435,11 @@ public final class ThreadContext {
 
     public interface RecursiveFunctionEx<T> {
         IRubyObject call(ThreadContext context, T state, IRubyObject obj, boolean recur);
+    }
+
+    // MRI: rb_exec_recursive
+    public <T> IRubyObject execRecursive(RecursiveFunctionEx<T> func, T state, IRubyObject obj, String name) {
+        return safeRecurse(func, state, obj, name, false);
     }
 
     public <T> IRubyObject safeRecurse(RecursiveFunctionEx<T> func, T state, IRubyObject obj, String name, boolean outer) {
