@@ -83,7 +83,7 @@ project 'JRuby Core' do
                                    'org.ow2.asm:*',
                                    'com.dylibso:*',
                                    'org.jruby:jruby-prism',
-                                   'org.ruby_lang:prism-ruby-parser-wasm'],
+                                   'org.ruby_lang:prism-parser-wasm'],
                         excludes: 'javax.annotation:javax.annotation-api'
                       },
                       relocations: [

@@ -147,7 +147,7 @@ DO NOT MODIFY - GENERATED CODE
                       <include>org.ow2.asm:*</include>
                       <include>com.dylibso:*</include>
                       <include>org.jruby:jruby-prism</include>
-                      <include>org.ruby_lang:prism-ruby-parser-wasm</include>
+                      <include>org.ruby_lang:prism-parser-wasm</include>
                     </includes>
                     <excludes>javax.annotation:javax.annotation-api</excludes>
                   </artifactSet>
@@ -219,7 +219,7 @@ DO NOT MODIFY - GENERATED CODE
                       <include>org.ow2.asm:*</include>
                       <include>com.dylibso:*</include>
                       <include>org.jruby:jruby-prism</include>
-                      <include>org.ruby_lang:prism-ruby-parser-wasm</include>
+                      <include>org.ruby_lang:prism-parser-wasm</include>
                     </includes>
                     <excludes>javax.annotation:javax.annotation-api</excludes>
                   </artifactSet>
@@ -291,7 +291,7 @@ DO NOT MODIFY - GENERATED CODE
                       <include>org.ow2.asm:*</include>
                       <include>com.dylibso:*</include>
                       <include>org.jruby:jruby-prism</include>
-                      <include>org.ruby_lang:prism-ruby-parser-wasm</include>
+                      <include>org.ruby_lang:prism-parser-wasm</include>
                     </includes>
                     <excludes>javax.annotation:javax.annotation-api</excludes>
                   </artifactSet>
@@ -363,7 +363,7 @@ DO NOT MODIFY - GENERATED CODE
                       <include>org.ow2.asm:*</include>
                       <include>com.dylibso:*</include>
                       <include>org.jruby:jruby-prism</include>
-                      <include>org.ruby_lang:prism-ruby-parser-wasm</include>
+                      <include>org.ruby_lang:prism-parser-wasm</include>
                     </includes>
                     <excludes>javax.annotation:javax.annotation-api</excludes>
                   </artifactSet>
@@ -435,7 +435,7 @@ DO NOT MODIFY - GENERATED CODE
                       <include>org.ow2.asm:*</include>
                       <include>com.dylibso:*</include>
                       <include>org.jruby:jruby-prism</include>
-                      <include>org.ruby_lang:prism-ruby-parser-wasm</include>
+                      <include>org.ruby_lang:prism-parser-wasm</include>
                     </includes>
                     <excludes>javax.annotation:javax.annotation-api</excludes>
                   </artifactSet>
@@ -507,7 +507,7 @@ DO NOT MODIFY - GENERATED CODE
                       <include>org.ow2.asm:*</include>
                       <include>com.dylibso:*</include>
                       <include>org.jruby:jruby-prism</include>
-                      <include>org.ruby_lang:prism-ruby-parser-wasm</include>
+                      <include>org.ruby_lang:prism-parser-wasm</include>
                     </includes>
                     <excludes>javax.annotation:javax.annotation-api</excludes>
                   </artifactSet>
@@ -579,7 +579,7 @@ DO NOT MODIFY - GENERATED CODE
                       <include>org.ow2.asm:*</include>
                       <include>com.dylibso:*</include>
                       <include>org.jruby:jruby-prism</include>
-                      <include>org.ruby_lang:prism-ruby-parser-wasm</include>
+                      <include>org.ruby_lang:prism-parser-wasm</include>
                     </includes>
                     <excludes>javax.annotation:javax.annotation-api</excludes>
                   </artifactSet>
@@ -651,7 +651,7 @@ DO NOT MODIFY - GENERATED CODE
                       <include>org.ow2.asm:*</include>
                       <include>com.dylibso:*</include>
                       <include>org.jruby:jruby-prism</include>
-                      <include>org.ruby_lang:prism-ruby-parser-wasm</include>
+                      <include>org.ruby_lang:prism-parser-wasm</include>
                     </includes>
                     <excludes>javax.annotation:javax.annotation-api</excludes>
                   </artifactSet>
@@ -723,7 +723,7 @@ DO NOT MODIFY - GENERATED CODE
                       <include>org.ow2.asm:*</include>
                       <include>com.dylibso:*</include>
                       <include>org.jruby:jruby-prism</include>
-                      <include>org.ruby_lang:prism-ruby-parser-wasm</include>
+                      <include>org.ruby_lang:prism-parser-wasm</include>
                     </includes>
                     <excludes>javax.annotation:javax.annotation-api</excludes>
                   </artifactSet>
