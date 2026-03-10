@@ -1607,8 +1607,7 @@ public class RubyRegexp extends RubyObject implements ReOptions, EncodingCapable
 
     // MRI: reg_extract_args - This does not break the regexp into a String value since it will never used if the first
     // argument is a Regexp.  This also is true of MRI so I am not sure why they do the string part.
-    private static RegexpArgs extractRegexpArgs(ThreadContext context, IRubyObject[] args) {
-        int callInfo = ThreadContext.resetCallInfo(context);
+    private static RegexpArgs extractRegexpArgs(ThreadContext context, final int callInfo, IRubyObject[] args) {
         int length = args.length;
 
         IRubyObject timeout = null;
@@ -1631,9 +1630,10 @@ public class RubyRegexp extends RubyObject implements ReOptions, EncodingCapable
         return new RegexpArgs(string, opts, timeout);
     }
 
-    @JRubyMethod(name = "linear_time?", meta = true, required = 1, optional = 1)
+    @JRubyMethod(name = "linear_time?", meta = true, required = 1, optional = 1, keywords = true)
     public static IRubyObject linear_time_p(ThreadContext context, IRubyObject recv, IRubyObject[] args) {
-        RegexpArgs regexpArgs = extractRegexpArgs(context, args);
+        final int callInfo = ThreadContext.resetCallInfo(context);
+        RegexpArgs regexpArgs = extractRegexpArgs(context, callInfo, args);
         RubyRegexp regexp = args[0] instanceof RubyRegexp reg ?
                 reg : newRegexpFromStr(context.runtime, regexpArgs.string, regexpArgs.options);
 
