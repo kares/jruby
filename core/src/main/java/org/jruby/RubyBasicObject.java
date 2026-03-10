@@ -1757,6 +1757,7 @@ public class RubyBasicObject implements Cloneable, IRubyObject, Serializable, Co
 
     @JRubyMethod(name = "__send__", omit = true, keywords = true)
     public IRubyObject send(ThreadContext context, IRubyObject arg0, Block block) {
+        final int callInfo = ThreadContext.resetCallInfo(context);
         String name = RubySymbol.idStringFromObject(context, arg0);
 
         StaticScope staticScope = context.getCurrentStaticScope();
@@ -1765,27 +1766,30 @@ public class RubyBasicObject implements Cloneable, IRubyObject, Serializable, Co
     }
     @JRubyMethod(name = "__send__", omit = true, keywords = true)
     public IRubyObject send(ThreadContext context, IRubyObject arg0, IRubyObject arg1, Block block) {
+        final int callInfo = ThreadContext.resetCallInfo(context);
         String name = RubySymbol.idStringFromObject(context, arg0);
 
         StaticScope staticScope = context.getCurrentStaticScope();
 
-        arg1 = dupIfKeywordRestAtCallsite(context, arg1);
+        arg1 = dupIfKeywordRestAtCallsite(callInfo, arg1);
+        context.callInfo = callInfo;
         return getMetaClass().finvokeWithRefinements(context, this, staticScope, name, arg1, block);
     }
     @JRubyMethod(name = "__send__", omit = true, keywords = true)
     public IRubyObject send(ThreadContext context, IRubyObject arg0, IRubyObject arg1, IRubyObject arg2, Block block) {
+        final int callInfo = ThreadContext.resetCallInfo(context);
         String name = RubySymbol.idStringFromObject(context, arg0);
 
         StaticScope staticScope = context.getCurrentStaticScope();
 
-        arg2 = dupIfKeywordRestAtCallsite(context, arg2);
-
+        arg2 = dupIfKeywordRestAtCallsite(callInfo, arg2);
+        context.callInfo = callInfo;
         return getMetaClass().finvokeWithRefinements(context, this, staticScope, name, arg1, arg2, block);
     }
     @JRubyMethod(name = "__send__", required = 1, rest = true, checkArity = false, omit = true, keywords = true)
     public IRubyObject send(ThreadContext context, IRubyObject[] args, Block block) {
+        int callInfo = ThreadContext.resetCallInfo(context);
         int argc = Arity.checkArgumentCount(context, args, 1, -1);
-        int callInfo = context.callInfo;
 
         // FIXME: Likely all methods which can pass the last value to another ruby call must do this.
         // MRI: from vm_args.setup_parameters_complex()
@@ -1799,11 +1803,11 @@ public class RubyBasicObject implements Cloneable, IRubyObject, Serializable, Co
                     } else {
                         args[argc - 1] = ((RubyHash) last).dupFast(context);
                         ((RubyHash) args[argc - 1]).setRuby2KeywordHash(false);
-                        context.callInfo |= (CALL_KEYWORD | CALL_KEYWORD_REST);
+                        callInfo |= (CALL_KEYWORD | CALL_KEYWORD_REST);
                     }
                 }
             } else if (argc > 1) {
-              args[argc - 1] = dupIfKeywordRestAtCallsite(context, args[argc - 1]);
+                args[argc - 1] = dupIfKeywordRestAtCallsite(callInfo, args[argc - 1]);
             }
         }
         String name = RubySymbol.idStringFromObject(context, args[0]);
@@ -1812,6 +1816,7 @@ public class RubyBasicObject implements Cloneable, IRubyObject, Serializable, Co
 
         final int length = argc - 1;
         args = ( length == 0 ) ? IRubyObject.NULL_ARRAY : ArraySupport.newCopy(args, 1, length);
+        context.callInfo = callInfo;
         return getMetaClass().finvokeWithRefinements(context, this, staticScope, name, args, block);
     }
 

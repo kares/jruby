@@ -883,17 +883,23 @@ public class IRRuntimeHelpers {
     }
 
     /**
-     * Methods like Kernel#send if it receives a key-splatted value at a send site (send :foo, **h)
-     * it will dup h.
+     * Methods like Kernel#send if it receives a key-splatted value at a send site
+     * (send :foo, **arg) it will dup arg.
      */
     public static IRubyObject dupIfKeywordRestAtCallsite(ThreadContext context, IRubyObject arg) {
         int callInfo = context.callInfo;
 
         if ((callInfo & CALL_KEYWORD_EMPTY) == 0 && (callInfo & CALL_KEYWORD_REST) != 0) {
             arg = arg.dup();
-            context.callInfo = callInfo;
         }
 
+        return arg;
+    }
+
+    public static IRubyObject dupIfKeywordRestAtCallsite(final int callInfo, IRubyObject arg) {
+        if ((callInfo & CALL_KEYWORD_EMPTY) == 0 && (callInfo & CALL_KEYWORD_REST) != 0) {
+            arg = arg.dup();
+        }
         return arg;
     }
 

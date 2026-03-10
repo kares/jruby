@@ -59,7 +59,6 @@ import org.jruby.anno.JRubyMethod;
 import org.jruby.anno.JRubyModule;
 import org.jruby.api.Warn;
 import org.jruby.ast.util.ArgsUtil;
-import org.jruby.common.IRubyWarnings;
 import org.jruby.common.RubyWarnings;
 import org.jruby.exceptions.CatchThrow;
 import org.jruby.exceptions.MainExitException;
@@ -96,7 +95,6 @@ import org.jruby.util.func.ObjectIntIntFunction;
 import org.jruby.util.io.OpenFile;
 import org.jruby.util.io.PopenExecutor;
 
-import static org.jruby.RubyBasicObject.UNDEF;
 import static org.jruby.RubyEnumerator.SizeFn;
 import static org.jruby.RubyEnumerator.enumeratorizeWithSize;
 import static org.jruby.RubyFile.fileResource;
@@ -142,6 +140,7 @@ import static org.jruby.api.Warn.warnDeprecatedForRemovalAlternate;
 import static org.jruby.ir.runtime.IRRuntimeHelpers.dupIfKeywordRestAtCallsite;
 import static org.jruby.ir.runtime.IRRuntimeHelpers.receiveKeywords;
 import static org.jruby.runtime.ThreadContext.hasKeywords;
+import static org.jruby.runtime.ThreadContext.hasNonemptyKeywords;
 import static org.jruby.runtime.Visibility.PRIVATE;
 import static org.jruby.runtime.Visibility.PROTECTED;
 import static org.jruby.runtime.Visibility.PUBLIC;
@@ -328,6 +327,7 @@ public class RubyKernel {
         if (redirect) {
             if (keywords) context.callInfo = ThreadContext.CALL_KEYWORD;
             IRubyObject io = args[0].callMethod(context, "to_open", Arrays.copyOfRange(args, 1, args.length));
+            ThreadContext.resetCallInfo(context);
 
             RubyIO.ensureYieldClose(context, io, block);
             return io;
@@ -2073,9 +2073,9 @@ public class RubyKernel {
 
     @JRubyMethod(name = {"to_enum", "enum_for"}, rest = true, keywords = true)
     public static IRubyObject obj_to_enum(final ThreadContext context, IRubyObject self, IRubyObject[] args, final Block block) {
-        // to_enum is a bit strange in that it will propagate the arguments it passes to each element it calls.  We are determining
-        // whether we have received keywords so we can propagate this info.
-        int callInfo = context.callInfo;
+        // to_enum is a bit strange in that it will propagate the arguments it passes to each element it calls.
+        // We are determining whether we have received keywords so we can propagate this info.
+        final int callInfo = ThreadContext.resetCallInfo(context);
         String method = "each";
         SizeFn sizeFn = null;
 
@@ -2091,9 +2091,7 @@ public class RubyKernel {
             };
         }
 
-        boolean keywords = (callInfo & ThreadContext.CALL_KEYWORD) != 0 && (callInfo & ThreadContext.CALL_KEYWORD_EMPTY) == 0;
-
-        ThreadContext.resetCallInfo(context);
+        boolean keywords = hasNonemptyKeywords(callInfo);
         return enumeratorizeWithSize(context, self, method, args, sizeFn, keywords);
     }
 
@@ -2132,12 +2130,13 @@ public class RubyKernel {
 
     @JRubyMethod(rest = true, keywords = true, reads = SCOPE)
     public static IRubyObject public_send(ThreadContext context, IRubyObject recv, IRubyObject[] args, Block block) {
+        final int callInfo = ThreadContext.resetCallInfo(context);
         if (args.length == 0) throw argumentError(context, "no method name given");
 
         String name = RubySymbol.idStringFromObject(context, args[0]);
 
         if (args.length > 1) {
-            args[args.length - 1] = dupIfKeywordRestAtCallsite(context, args[args.length - 1]);
+            args[args.length - 1] = dupIfKeywordRestAtCallsite(callInfo, args[args.length - 1]);
         }
 
         final int length = args.length - 1;
@@ -2147,10 +2146,11 @@ public class RubyKernel {
         CacheEntry entry = klass.searchWithRefinements(name, context.getCurrentStaticScope());
         DynamicMethod method = entry.method;
 
+        context.callInfo = callInfo;
+
         if (method.isUndefined() || method.getVisibility() != PUBLIC) {
             return Helpers.callMethodMissing(context, recv, klass, method.getVisibility(), name, CallType.NORMAL, args, block);
         }
-
         return method.call(context, recv, entry.sourceModule, name, args, block);
     }
 
@@ -2396,8 +2396,9 @@ public class RubyKernel {
     }
     @JRubyMethod(name = "send", required = 1, rest = true, checkArity = false, omit = true, keywords = true)
     public static IRubyObject send(ThreadContext context, IRubyObject self, IRubyObject[] args, Block block) {
+        final int callInfo = ThreadContext.resetCallInfo(context); // in case we end up raising ArgumentError
         Arity.checkArgumentCount(context, args, 1, -1);
-
+        context.callInfo = callInfo;
         return ((RubyBasicObject)self).send(context, args, block);
     }
 
