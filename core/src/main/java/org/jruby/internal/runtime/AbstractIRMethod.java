@@ -157,11 +157,6 @@ public abstract class AbstractIRMethod extends DynamicMethod implements IRMethod
         return signature;
     }
 
-    @Deprecated(since = "9.3.0.0") @Override
-    public Arity getArity() {
-        return signature.arity();
-    }
-
     @Override
     public DynamicMethod dup() {
         return (DynamicMethod) clone();

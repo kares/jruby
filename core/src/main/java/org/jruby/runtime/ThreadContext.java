@@ -43,7 +43,6 @@ import org.jruby.Ruby;
 import org.jruby.RubyArray;
 import org.jruby.RubyBoolean;
 import org.jruby.RubyClass;
-import org.jruby.RubyContinuation;
 import org.jruby.RubyMatchData;
 import org.jruby.RubyProc;
 import org.jruby.exceptions.CatchThrow;
@@ -187,13 +186,6 @@ public final class ThreadContext {
     // (via IR instructions) for blocks.
     private Throwable savedExcInLambda;  // See handleBreakAndReturnsInLambda in IRRuntimeHelpers
 
-    /**
-     * This fields is no longer initialized, is null by default!
-     * @deprecated Use {@link #getSecureRandom()} instead.
-     */
-    @Deprecated(since = "9.1.0.0")
-    public transient SecureRandom secureRandom;
-
     private static boolean tryPreferredPRNG = true;
     private static boolean trySHA1PRNG = true;
 
@@ -202,38 +194,6 @@ public final class ThreadContext {
     public final JavaSites sites;
 
     private RubyMatchData matchData;
-
-    @SuppressWarnings("deprecation")
-    public SecureRandom getSecureRandom() {
-        SecureRandom secureRandom = this.secureRandom;
-
-        // Try preferred PRNG, which defaults to NativePRNGNonBlocking
-        if (secureRandom == null && tryPreferredPRNG) {
-            try {
-                secureRandom = SecureRandom.getInstance(Options.PREFERRED_PRNG.load());
-            } catch (Exception e) {
-                tryPreferredPRNG = false;
-            }
-        }
-
-        // Try SHA1PRNG
-        if (secureRandom == null && trySHA1PRNG) {
-            try {
-                secureRandom = SecureRandom.getInstance("SHA1PRNG");
-            } catch (Exception e) {
-                trySHA1PRNG = false;
-            }
-        }
-
-        // Just let JDK do whatever it does
-        if (secureRandom == null) {
-            secureRandom = new SecureRandom();
-        }
-
-        this.secureRandom = secureRandom;
-
-        return secureRandom;
-    }
 
     private Encoding[] encodingHolder;
 
@@ -449,11 +409,6 @@ public final class ThreadContext {
 
         System.arraycopy(catchStack, 0, newCatchStack, 0, catchStack.length);
         catchStack = newCatchStack;
-    }
-
-    @Deprecated(since = "9.2.6.0")
-    public void pushCatch(RubyContinuation.Continuation catchTarget) {
-        pushCatch((CatchThrow) catchTarget);
     }
 
     public void pushCatch(CatchThrow catchTarget) {
@@ -858,14 +813,6 @@ public final class ThreadContext {
 
     public void trace(RubyEvent event, String name, RubyModule implClass, String file, int line) {
         traceEvents.callEventHooks(this, event, file, line, name, implClass);
-    }
-
-    /**
-     * Used by the evaluator and the compiler to look up a constant by name
-     */
-    @Deprecated(since = "1.7.2")
-    public IRubyObject getConstant(String internedName) {
-        return getCurrentStaticScope().getConstant(this, internedName);
     }
 
     /**
@@ -1608,12 +1555,5 @@ public final class ThreadContext {
 
     public static boolean keywordsEmpty(int callInfo) {
         return (callInfo & CALL_KEYWORD_EMPTY) != 0;
-    }
-
-    @Deprecated(since = "9.3.0.0")
-    public IRubyObject setBackRef(IRubyObject match) {
-        if (match.isNil()) return clearBackRef();
-
-        return setBackRef((RubyMatchData) match);
     }
 }

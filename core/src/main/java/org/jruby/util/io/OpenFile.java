@@ -886,28 +886,6 @@ public class OpenFile implements Finalizable {
         }
     }
 
-    @Deprecated(since = "9.2.1.0") // no longer used
-    public static final Finalizer PIPE_FINALIZE = new Finalizer() {
-        @Override
-        public void finalize(Ruby runtime, OpenFile fptr, boolean noraise) {
-            if (!Platform.IS_WINDOWS) { // #if !defined(HAVE_FORK) && !defined(_WIN32)
-                int status = 0;
-                if (fptr.stdio_file != null) {
-                    // unsure how to do this
-//                    status = pclose(fptr->stdio_file);
-                    fptr.posix.close(fptr.stdio_file);
-                }
-                fptr.setFD(null);
-                fptr.stdio_file = null;
-                // no status from above, so can't really do this
-//                runtime.getCurrentContext().setLastExitStatus();
-            } else {
-                fptr.finalize(runtime.getCurrentContext(), noraise);
-            }
-//            pipe_del_fptr(fptr);
-        }
-    };
-
     public void finalize() {
         if (fd != null && isAutoclose()) finalize(runtime.getCurrentContext(), true);
     }
@@ -1885,16 +1863,6 @@ public class OpenFile implements Finalizable {
         }
     }
 
-    @Deprecated(since = "9.1.8.0")
-    public void incrementLineno(Ruby runtime) {
-        boolean locked = lock();
-        try {
-            lineno++;
-        } finally {
-            if (locked) unlock();
-        }
-    }
-
     // read_all, 2014-5-13
     public IRubyObject readAll(ThreadContext context, int siz, IRubyObject str) {
         Ruby runtime = context.runtime;
@@ -2772,50 +2740,6 @@ public class OpenFile implements Finalizable {
         }
     }
 
-    @Deprecated(since = "9.0.0.0")
-    public static int getFModeFromString(String modesString) throws InvalidValueException {
-        int fmode = 0;
-        int length = modesString.length();
-
-        if (length == 0) {
-            throw new InvalidValueException();
-        }
-
-        switch (modesString.charAt(0)) {
-            case 'r' :
-                fmode |= READABLE;
-                break;
-            case 'w' :
-                fmode |= WRITABLE | TRUNC | CREATE;
-                break;
-            case 'a' :
-                fmode |= WRITABLE | APPEND | CREATE;
-                break;
-            default :
-                throw new InvalidValueException();
-        }
-
-        ModifierLoop: for (int n = 1; n < length; n++) {
-            switch (modesString.charAt(n)) {
-                case 'b':
-                    fmode |= BINMODE;
-                    break;
-                case 't' :
-                    fmode |= TEXTMODE;
-                    break;
-                case '+':
-                    fmode |= READWRITE;
-                    break;
-                case ':':
-                    break ModifierLoop;
-                default:
-                    throw new InvalidValueException();
-            }
-        }
-
-        return fmode;
-    }
-
     public int getFileno() {
         return fd.bestFileno(true);
     }
@@ -3051,10 +2975,5 @@ public class OpenFile implements Finalizable {
 
     public void setTimeout(IRubyObject timeout) {
         this.timeout = timeout;
-    }
-
-    @Deprecated(since = "9.3.0.0")
-    public long binwrite(ThreadContext context, byte[] ptrBytes, int ptr, int len, boolean nosync) {
-        return binwriteInt(context, ptrBytes, ptr, len, nosync);
     }
 }

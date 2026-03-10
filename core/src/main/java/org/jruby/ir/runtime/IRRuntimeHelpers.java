@@ -411,6 +411,7 @@ public class IRRuntimeHelpers {
         return Helpers.wrapJavaException(runtime, throwable); // wrap as normal JI object
     }
 
+    @Deprecated(since = "10.0.3.0")
     @SuppressWarnings("deprecation")
     private static IRubyObject wrapWithNativeException(ThreadContext context, Throwable throwable, Ruby runtime) {
         // wrap Throwable in a NativeException object

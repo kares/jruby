@@ -660,9 +660,4 @@ public class RubyException extends RubyObject {
             backtrace.backtraceData = instanceConfig(context).getTraceType().getIntegratedBacktrace(context, javaTrace);
         }
     }
-
-    @Deprecated(since = "9.3.0.0")
-    public static IRubyObject newException(ThreadContext context, RubyClass exceptionClass, IRubyObject message) {
-        return newException(context, exceptionClass, message.convertToString());
-    }
 }

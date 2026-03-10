@@ -693,22 +693,6 @@ public class RubyDate extends RubyObject {
         return DateUtils._valid_ordinal_p(y, day, sg);
     }
 
-    @Deprecated(since = "9.2.0.0") // NOTE: should go away once no date.rb is using it
-    @JRubyMethod(name = "_valid_ordinal?", meta = true, required = 2, optional = 1, checkArity = false, visibility = Visibility.PRIVATE)
-    public static IRubyObject _valid_ordinal_p(ThreadContext context, IRubyObject self, IRubyObject[] args) {
-        int argc = Arity.checkArgumentCount(context, args, 2, 3);
-
-        final long sg = argc > 2 ? val2sg(context, args[2]) : GREGORIAN;
-        final Long jd = validOrdinalImpl(context, args[0], args[1], sg);
-        return jd == null ? context.nil : asFixnum(context, jd);
-    }
-
-    @Deprecated(since = "9.2.0.0") // NOTE: should go away once no date.rb is using it
-    @JRubyMethod(name = "_valid_ordinal?", required = 2, optional = 1, checkArity = false, visibility = Visibility.PRIVATE)
-    public IRubyObject _valid_ordinal_p(ThreadContext context, IRubyObject[] args) {
-        return RubyDate._valid_ordinal_p(context, null, args);
-    }
-
     @JRubyMethod(name = "commercial", meta = true, optional = 4, checkArity = false)
     public static RubyDate commercial(ThreadContext context, IRubyObject self, IRubyObject[] args) {
         // commercial(y=-4712, w=1, d=1, sg=ITALY)
@@ -742,30 +726,6 @@ public class RubyDate extends RubyObject {
         return DateUtils._valid_commercial_p(y, w, d, sg);
     }
 
-    @Deprecated(since = "9.2.0.0") // NOTE: should go away once no date.rb is using it
-    @JRubyMethod(name = "_valid_commercial?", meta = true, required = 3, optional = 1, checkArity = false, visibility = Visibility.PRIVATE)
-    public static IRubyObject _valid_commercial_p(ThreadContext context, IRubyObject self, IRubyObject[] args) {
-        int argc = Arity.checkArgumentCount(context, args, 3, 4);
-
-        final long sg = argc > 3 ? val2sg(context, args[3]) : GREGORIAN;
-        final Long jd = validCommercialImpl(context, args[0], args[1], args[2], sg);
-        return jd == null ? context.nil : asFixnum(context, jd);
-    }
-
-    @Deprecated(since = "9.2.0.0") // NOTE: should go away once no date.rb is using it
-    @JRubyMethod(name = "_valid_weeknum?", meta = true, required = 4, optional = 1, checkArity = false, visibility = Visibility.PRIVATE)
-    public static IRubyObject _valid_weeknum_p(ThreadContext context, IRubyObject self, IRubyObject[] args) {
-        int argc = Arity.checkArgumentCount(context, args, 4, 5);
-
-        final long sg = argc > 4 ? val2sg(context, args[4]) : GREGORIAN;
-        final int y = toInt(context, args[0]);
-        final int w = toInt(context, args[1]);
-        final int d = toInt(context, args[2]);
-        final int f = toInt(context, args[3]);
-        final Long jd = DateUtils._valid_weeknum_p(y, w, d, f, sg);
-        return jd == null ? context.nil : asFixnum(context, jd);
-    }
-
     /**
      # Create a new Date object representing today.
      #
@@ -796,12 +756,6 @@ public class RubyDate extends RubyObject {
         final long sg = argc > 3 ? val2sg(context, args[3]) : GREGORIAN;
         final Long jd = validCivilImpl(context, args[0], args[1], args[2], sg);
         return jd == null ? context.nil : asFixnum(context, jd);
-    }
-
-    @Deprecated(since = "9.2.0.0") // NOTE: should go away once no date.rb is using it
-    @JRubyMethod(name = "_valid_civil?", required = 3, optional = 1, checkArity = false, visibility = Visibility.PRIVATE)
-    public IRubyObject _valid_civil_p(ThreadContext context, IRubyObject[] args) {
-        return RubyDate._valid_civil_p(context, null, args);
     }
 
     public DateTime getDateTime() { return dt; }
@@ -1685,15 +1639,6 @@ public class RubyDate extends RubyObject {
         string = TypeConverter.checkStringType(context.runtime, string);
 
         return new RubyDateParser().parse(context, format, (RubyString) string);
-    }
-
-    // @Deprecated(since = "9.2.0.0")
-    public static IRubyObject _strptime(ThreadContext context, IRubyObject self, IRubyObject[] args) {
-        return switch (args.length) {
-            case 1 -> _strptime(context, self, args[0]);
-            case 2 -> _strptime(context, self, args[0], args[1]);
-            default -> throw argumentError(context, args.length, 1);
-        };
     }
 
     @JRubyMethod(name = "zone_to_diff", meta = true, visibility = Visibility.PRIVATE)

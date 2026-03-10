@@ -685,31 +685,10 @@ public class RubyEncoding extends RubyObject implements Constantizable {
         return encodingService(context).getDefaultInternal();
     }
 
-    @Deprecated(since = "9.0.0.0")
-    public static IRubyObject getDefaultInternal(IRubyObject recv) {
-        return getDefaultInternal(recv.getRuntime().getCurrentContext(), recv);
-    }
-
     @JRubyMethod(name = "default_internal=", meta = true)
     public static IRubyObject setDefaultInternal(ThreadContext context, IRubyObject recv, IRubyObject encoding) {
         if (context.runtime.isVerbose()) context.runtime.getWarnings().warning("setting Encoding.default_internal");
         EncodingUtils.rbEncSetDefaultInternal(context, encoding);
         return encoding;
-    }
-
-    /**
-     * @deprecated use {@link #decodeRaw(byte[], int, int)}
-     */
-    @Deprecated(since = "9.3.0.0")
-    public static String decodeISO(byte[] bytes, int start, int length) {
-        return decodeRaw(bytes, start, length);
-    }
-
-    /**
-     * @deprecated use {@link #decodeRaw(ByteList)}
-     */
-    @Deprecated(since = "9.3.0.0")
-    public static String decodeISO(ByteList byteList) {
-        return decodeRaw(byteList);
     }
 }

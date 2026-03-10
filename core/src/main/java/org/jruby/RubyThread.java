@@ -235,8 +235,6 @@ public class RubyThread extends RubyObject implements ExecutionContext {
     /** Short circuit to avoid-re-scanning for interrupts */
     private volatile boolean pendingInterruptQueueChecked = false;
 
-    private volatile BlockingTask currentBlockingTask;
-
     private volatile Selector currentSelector;
 
     private volatile RubyThread fiberCurrentThread;
@@ -1723,12 +1721,6 @@ public class RubyThread extends RubyObject implements ExecutionContext {
         return exitingException;
     }
 
-    @Deprecated(since = "9.0.0.0")
-    public interface BlockingTask {
-        public void run() throws InterruptedException;
-        public void wakeup();
-    }
-
     public interface Unblocker<Data> {
         public void wakeup(RubyThread thread, Data self);
     }
@@ -1736,32 +1728,6 @@ public class RubyThread extends RubyObject implements ExecutionContext {
     public interface Task<Data, Return> extends Unblocker<Data> {
         public Return run(ThreadContext context, Data data) throws InterruptedException;
         public void wakeup(RubyThread thread, Data data);
-    }
-
-    public static final class SleepTask implements BlockingTask {
-        private final Object object;
-        private final long millis;
-        private final int nanos;
-
-        public SleepTask(Object object, long millis, int nanos) {
-            this.object = object;
-            this.millis = millis;
-            this.nanos = nanos;
-        }
-
-        @Override
-        public void run() throws InterruptedException {
-            synchronized (object) {
-                object.wait(millis, nanos);
-            }
-        }
-
-        @Override
-        public void wakeup() {
-            synchronized (object) {
-                object.notify();
-            }
-        }
     }
 
     /**
@@ -1796,20 +1762,6 @@ public class RubyThread extends RubyObject implements ExecutionContext {
         @Override
         public void wakeup(RubyThread thread, Object data) {
             semaphore.release();
-        }
-    }
-
-    @Deprecated(since = "9.0.0.0")
-    public void executeBlockingTask(BlockingTask task) throws InterruptedException {
-        try {
-            this.currentBlockingTask = task;
-            enterSleep();
-            pollThreadEvents();
-            task.run();
-        } finally {
-            exitSleep();
-            currentBlockingTask = null;
-            pollThreadEvents();
         }
     }
 
@@ -2399,14 +2351,6 @@ public class RubyThread extends RubyObject implements ExecutionContext {
             task.wakeup(this, unblockArg);
         }
 
-        // deprecated
-        {
-            BlockingTask t = currentBlockingTask;
-            if (t != null) {
-                t.wakeup();
-            }
-        }
-
         // If this thread is sleeping or stopped, wake it
         notify();
     }
@@ -2452,31 +2396,9 @@ public class RubyThread extends RubyObject implements ExecutionContext {
         enterSleep();
     }
 
-    @Deprecated(since = "9.3.0.0")
-    public void beforeBlockingCall() {
-        beforeBlockingCall(metaClass.runtime.getCurrentContext());
-    }
-
     public void afterBlockingCall() {
         exitSleep();
         pollThreadEvents();
-    }
-
-    public boolean wait_timeout(IRubyObject o, Double timeout) throws InterruptedException {
-        if ( timeout != null ) {
-            long delay_ns = (long)(timeout.doubleValue() * 1000000000.0);
-            long start_ns = System.nanoTime();
-            if (delay_ns > 0) {
-                long delay_ms = delay_ns / 1000000;
-                int delay_ns_remainder = (int)( delay_ns % 1000000 );
-                executeBlockingTask(new SleepTask(o, delay_ms, delay_ns_remainder));
-            }
-            long end_ns = System.nanoTime();
-            return ( end_ns - start_ns ) <= delay_ns;
-        } else {
-            executeBlockingTask(new SleepTask(o, 0, 0));
-            return true;
-        }
     }
 
     public RubyThreadGroup getThreadGroup() {

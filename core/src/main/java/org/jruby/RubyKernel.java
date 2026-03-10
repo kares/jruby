@@ -1025,10 +1025,6 @@ public class RubyKernel {
         return str.op_format(context, arg);
     }
 
-    @Deprecated(since = "9.2.5.0")
-    public static IRubyObject sprintf(IRubyObject recv, IRubyObject[] args) {
-        return sprintf(((RubyBasicObject) recv).getCurrentContext(), recv, args);
-    }
     public static IRubyObject raise(ThreadContext context, IRubyObject self, IRubyObject arg0) {
         // semi extract_raise_opts :
         if (arg0 instanceof RubyHash opt && !opt.isEmpty() &&
@@ -1671,11 +1667,6 @@ public class RubyKernel {
         return context.runtime.newProc(Block.Type.LAMBDA, block);
     }
 
-    @Deprecated(since = "9.1.3.0")
-    public static RubyProc proc_1_9(ThreadContext context, IRubyObject recv, Block block) {
-        return proc(context, recv, block);
-    }
-
     @JRubyMethod(name = "loop", module = true, visibility = PRIVATE)
     public static IRubyObject loop(ThreadContext context, IRubyObject recv, Block block) {
         if ( ! block.isGiven() ) {
@@ -2228,16 +2219,6 @@ public class RubyKernel {
         return sites(context).initialize_copy.call(context, self, self, original);
     }
 
-    @Deprecated(since = "9.2.0.0")
-    public static RubyBoolean respond_to_p(IRubyObject self, IRubyObject mname) {
-        return ((RubyBasicObject) self).respond_to_p(mname);
-    }
-
-    @Deprecated(since = "9.2.0.0")
-    public static RubyBoolean respond_to_p(IRubyObject self, IRubyObject mname, IRubyObject includePrivate) {
-        return ((RubyBasicObject) self).respond_to_p(mname, includePrivate);
-    }
-
     @JRubyMethod(name = "respond_to?")
     public static IRubyObject respond_to_p(ThreadContext context, IRubyObject self, IRubyObject name) {
         return ((RubyBasicObject) self).respond_to_p(context, name, false);
@@ -2524,68 +2505,11 @@ public class RubyKernel {
         return context.sites.Kernel;
     }
 
-    @Deprecated(since = "9.1.0.0")
-    public static IRubyObject methodMissing(ThreadContext context, IRubyObject recv, String name, Visibility lastVis, CallType lastCallType, IRubyObject[] args, Block block) {
-        return methodMissing(context, recv, name, lastVis, lastCallType, args);
-    }
-
-    @Deprecated(since = "9.1.16.0")
-    private static IRubyObject caller(ThreadContext context, IRubyObject recv, IRubyObject[] args, Block block) {
-        switch (args.length) {
-            case 0:
-                return caller(context, recv);
-            case 1:
-                return caller(context, recv, args[0]);
-            case 2:
-                return caller(context, recv, args[0], args[1]);
-            default:
-                Arity.checkArgumentCount(context, args, 0, 2);
-                return null; // not reached
-        }
-    }
-
-    @Deprecated(since = "9.1.16.0")
-    public static IRubyObject caller_locations(ThreadContext context, IRubyObject recv, IRubyObject[] args) {
-        switch (args.length) {
-            case 0:
-                return caller_locations(context, recv);
-            case 1:
-                return caller_locations(context, recv, args[0]);
-            case 2:
-                return caller_locations(context, recv, args[0], args[1]);
-            default:
-                Arity.checkArgumentCount(context, args, 0, 2);
-                return null; // not reached
-        }
-    }
-
-    @Deprecated(since = "9.2.7.0")
-    public static IRubyObject require(IRubyObject recv, IRubyObject name, Block block) {
-        return require(((RubyBasicObject) recv).getCurrentContext(), recv, name, block);
-    }
-
     @Deprecated(since = "10.0.0.0")
     public static IRubyObject op_match(ThreadContext context, IRubyObject self, IRubyObject arg) {
         Warn.warn(context, "deprecated Object#=~ is called on " + ((RubyBasicObject) self).type() +
                 "; it always returns nil");
         return ((RubyBasicObject) self).op_match(context, arg);
-    }
-
-    @Deprecated(since = "9.3.0.0")
-    public static IRubyObject autoload(final IRubyObject recv, IRubyObject symbol, IRubyObject file) {
-        return autoload(((RubyBasicObject) recv).getCurrentContext(), recv, symbol, file);
-    }
-
-    @Deprecated(since = "9.3.0.0")
-    public static IRubyObject rand(ThreadContext context, IRubyObject recv, IRubyObject[] args) {
-        switch (args.length) {
-            case 0:
-                return RubyRandom.randFloat(context);
-            case 1:
-                return RubyRandom.randKernel(context, recv, args[0]);
-            default:
-                throw argumentError(context, args.length, 0, 1);
-        }
     }
 
     @Deprecated(since = "9.4.0.0")

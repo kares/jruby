@@ -234,7 +234,7 @@ public class RubyModule extends RubyObject {
     }
 
     public static void finishCreateModuleClass(ThreadContext context, RubyClass Module) {
-        Module.defineMethods(context, RubyModule.class, ModuleKernelMethods.class);
+        Module.defineMethods(context, RubyModule.class);
     }
 
     public void checkValidBindTargetFrom(ThreadContext context, RubyModule originModule, boolean fromBind) throws RaiseException {
@@ -710,11 +710,6 @@ public class RubyModule extends RubyObject {
      * @return the actual module of an included/prepended module.
      */
     public RubyModule getOrigin() {
-        return this;
-    }
-
-    @Deprecated(since = "9.3.0.0")
-    public RubyModule getNonIncludedClass() {
         return this;
     }
 
@@ -1257,24 +1252,6 @@ public class RubyModule extends RubyObject {
         return ary;
     }
 
-    /**
-     * Create a wrapper to use for including the specified module into this one.
-     *
-     * Ruby C equivalent = "include_class_new"
-     *
-     * @return The module wrapper
-     */
-    @Deprecated(since = "1.1.5")
-    public IncludedModuleWrapper newIncludeClass(RubyClass superClazz) {
-        var context = getCurrentContext();
-        IncludedModuleWrapper includedModule = new IncludedModuleWrapper(context.runtime, superClazz, this);
-
-        // include its parent (and in turn that module's parents)
-        if (getSuperClass() != null) includedModule.includeModule(context, getSuperClass());
-
-        return includedModule;
-    }
-
     @Deprecated(since = "10.0.0.0")
     public RubyModule getModule(String name) {
         return getModule(getCurrentContext(), name);
@@ -1308,11 +1285,6 @@ public class RubyModule extends RubyObject {
     @JRubyAPI
     public RubyClass getClass(ThreadContext context, String name) {
         return (RubyClass) getConstantAt(context, name);
-    }
-
-    @Deprecated(since = "1.7.0")
-    public RubyClass fastGetClass(String internedName) {
-        return getClass(getCurrentContext(), internedName);
     }
 
     @Deprecated(since = "10.0.0.0")
@@ -1367,12 +1339,6 @@ public class RubyModule extends RubyObject {
             invalidateCacheDescendants(context);
             invalidateConstantCacheForModuleInclusion(context, module);
         }
-    }
-
-    @Deprecated(since = "9.2.8.0")
-    public void prependModule(IRubyObject arg) {
-        assert arg != null;
-        prependModule(castAsModule(getCurrentContext(), arg));
     }
 
     @Deprecated(since = "10.0.0.0")
@@ -1564,11 +1530,6 @@ public class RubyModule extends RubyObject {
             }
         }
 
-        @Deprecated(since = "9.1.0.0") // no-longer used
-        public Map<String, List<JavaMethodDescriptor>> getAllAnnotatedMethods() {
-            return null; // return allAnnotatedMethods;
-        }
-
         public final Map<String, List<JavaMethodDescriptor>> getAnnotatedMethods() {
             return annotatedMethods == null ? Collections.EMPTY_MAP : annotatedMethods;
         }
@@ -1683,7 +1644,6 @@ public class RubyModule extends RubyObject {
     @JRubyAPI
     public <T extends RubyModule> T classIndex(ClassIndex classIndex) {
         this.classIndex = classIndex;
-        this.index = classIndex.ordinal();
         return (T) this;
     }
 
@@ -2141,11 +2101,6 @@ public class RubyModule extends RubyObject {
         return methodEntry;
     }
 
-    @Deprecated(since = "1.7.0")
-    public final int getCacheToken() {
-        return generation;
-    }
-
     public final int getGeneration() {
         return generation;
     }
@@ -2334,18 +2289,6 @@ public class RubyModule extends RubyObject {
             // IncludedModuleWrapper.
             DynamicMethod method = module.searchMethodCommon(id);
             if (method != null) return method.isNull() ? null : cacheEntryFactory.newCacheEntry(id, method, module, token);
-        }
-        return null;
-    }
-
-    /**
-     * Searches for a method up until the superclass, but include modules.
-     */
-    @Deprecated(since = "9.3.11.0")
-    public DynamicMethod searchMethodLateral(String id) {
-        for (RubyModule module = this; (module == this || (module instanceof IncludedModuleWrapper)); module = module.getSuperClass()) {
-            DynamicMethod method = module.searchMethodCommon(id);
-            if (method != null) return method.isNull() ? null : method;
         }
         return null;
     }
@@ -2894,11 +2837,6 @@ public class RubyModule extends RubyObject {
         return Helpers.respondsToMethod(searchMethod(name), checkVisibility);
     }
 
-    @Deprecated(since = "9.1.7.0")
-    public boolean isMethodBound(String name, boolean checkVisibility, boolean checkRespondTo) {
-        return checkRespondTo ? respondsToMethod(name, checkVisibility): isMethodBound(name, checkVisibility);
-    }
-
     @Deprecated(since = "10.0.0.0")
     public final IRubyObject newMethod(IRubyObject receiver, String methodName, boolean bound, Visibility visibility) {
         return newMethod(getCurrentContext(), receiver, methodName, null, bound, visibility, false, true);
@@ -3063,15 +3001,6 @@ public class RubyModule extends RubyObject {
         Helpers.addInstanceMethod(this, name, newMethod, visibility, context);
 
         return name;
-    }
-
-    @Deprecated(since = "1.1.2")
-    public IRubyObject define_method(ThreadContext context, IRubyObject[] args, Block block) {
-        return switch (args.length) {
-            case 1 -> define_method(context, args[0], block);
-            case 2 -> define_method(context, args[0], args[1], block);
-            default -> throw argumentError(context, "wrong number of arguments (" + args.length + " for 2)");
-        };
     }
 
     private DynamicMethod createProcMethod(Ruby runtime, String name, Visibility visibility, Block block) {
@@ -3550,11 +3479,6 @@ public class RubyModule extends RubyObject {
         return attr_reader(context, args);
     }
 
-    @Deprecated(since = "1.1.5")
-    public IRubyObject attr_reader(IRubyObject[] args) {
-        return attr_reader(getCurrentContext(), args);
-    }
-
     /** rb_mod_attr_reader
      *
      */
@@ -3594,11 +3518,6 @@ public class RubyModule extends RubyObject {
         return newArray(context, result);
     }
 
-
-    @Deprecated(since = "1.1.5")
-    public IRubyObject attr_accessor(IRubyObject[] args) {
-        return attr_accessor(getCurrentContext(), args);
-    }
 
     /** rb_mod_attr_accessor
      *  Note: this method should not be called from Java in most cases, since
@@ -5174,11 +5093,6 @@ public class RubyModule extends RubyObject {
         return highest.storeClassVariable(context, name, value);
     }
 
-    @Deprecated(since = "1.7.0")
-    public IRubyObject fastSetClassVar(final String internedName, final IRubyObject value) {
-        return setClassVar(getCurrentContext(), internedName, value);
-    }
-
     @Deprecated(since = "10.0.0.0")
     public IRubyObject getClassVar(String name) {
         return getClassVar(getCurrentContext(), name);
@@ -5250,11 +5164,6 @@ public class RubyModule extends RubyObject {
         return null;
     }
 
-    @Deprecated(since = "1.7.0")
-    public IRubyObject fastGetClassVar(String internedName) {
-        return getClassVar(getCurrentContext(), internedName);
-    }
-
     /**
      * Is class var defined?
      *
@@ -5271,11 +5180,6 @@ public class RubyModule extends RubyObject {
         } while ((module = module.getSuperClass()) != null);
 
         return false;
-    }
-
-    @Deprecated(since = "1.7.0")
-    public boolean fastIsClassVarDefined(String internedName) {
-        return isClassVarDefined(internedName);
     }
 
     @Deprecated(since = "10.0.0.0")
@@ -5338,11 +5242,6 @@ public class RubyModule extends RubyObject {
         return value == UNDEF ? resolveUndefConstant(context, name) : value;
     }
 
-    @Deprecated(since = "1.7.0")
-    public IRubyObject fastGetConstantAt(String internedName) {
-        return getConstantAt(getCurrentContext(), internedName);
-    }
-
     @Deprecated(since = "10.0.0.0")
     public IRubyObject getConstant(String name) {
         return getConstant(getCurrentContext(), name);
@@ -5398,16 +5297,6 @@ public class RubyModule extends RubyObject {
         return value != null ? value : callMethod(context, "const_missing", asSymbol(context, name));
     }
 
-    @Deprecated(since = "1.7.0")
-    public IRubyObject fastGetConstant(String internedName) {
-        return getConstant(getCurrentContext(), internedName);
-    }
-
-    @Deprecated(since = "1.7.0")
-    public IRubyObject fastGetConstant(String internedName, boolean inherit) {
-        return getConstant(getCurrentContext(), internedName, inherit);
-    }
-
     @Deprecated(since = "10.0.0.0")
     public IRubyObject getConstantNoConstMissing(String name) {
         return getConstantNoConstMissing(getCurrentContext(), name);
@@ -5448,11 +5337,6 @@ public class RubyModule extends RubyObject {
 
     public final IRubyObject getConstantNoConstMissingSkipAutoload(ThreadContext context, String name) {
         return getConstantSkipAutoload(context, name, true, true, true);
-    }
-
-    @Deprecated(since = "9.2.1.0")
-    public IRubyObject getConstantNoConstMissingSKipAutoload(String name) {
-        return getConstantSkipAutoload(getCurrentContext(), name, true, true, true);
     }
 
     // returns null for autoloads that have failed
@@ -5551,11 +5435,6 @@ public class RubyModule extends RubyObject {
         return autoloadModule != null ? failedAutoloadValue : null;
     }
 
-    @Deprecated(since = "1.7.0")
-    public IRubyObject fastGetConstantFrom(String internedName) {
-        return getConstantFrom(getCurrentContext(), internedName);
-    }
-
     @Deprecated(since = "10.0.0.0")
     public IRubyObject getConstantFromNoConstMissing(String name) {
         return getConstantFromNoConstMissing(getCurrentContext(), name);
@@ -5588,11 +5467,6 @@ public class RubyModule extends RubyObject {
         return null;
     }
 
-    @Deprecated(since = "1.7.0")
-    public IRubyObject fastGetConstantFromNoConstMissing(String internedName) {
-        return getConstantFromNoConstMissing(getCurrentContext(), internedName);
-    }
-
     @Deprecated(since = "10.0.0.0")
     public IRubyObject getConstantFromConstMissing(String name) {
         return getConstantFromConstMissing(getCurrentContext(), name);
@@ -5600,11 +5474,6 @@ public class RubyModule extends RubyObject {
 
     public IRubyObject getConstantFromConstMissing(ThreadContext context, String name) {
         return callMethod(context, "const_missing", context.runtime.fastNewSymbol(name));
-    }
-
-    @Deprecated(since = "1.7.0")
-    public IRubyObject fastGetConstantFromConstMissing(String internedName) {
-        return getConstantFromConstMissing(getCurrentContext(), internedName);
     }
 
     @Deprecated(since = "10.0.0.0")
@@ -6058,20 +5927,10 @@ public class RubyModule extends RubyObject {
         return getClassVariablesForRead().containsKey(name);
     }
 
-    @Deprecated(since = "1.7.0")
-    public boolean fastHasClassVariable(String internedName) {
-        return hasClassVariable(internedName);
-    }
-
     // runtime-free
     public IRubyObject fetchClassVariable(String name) {
         assert IdUtil.isClassVariable(name);
         return getClassVariablesForRead().get(name);
-    }
-
-    @Deprecated(since = "1.7.0")
-    public IRubyObject fastFetchClassVariable(String internedName) {
-        return fetchClassVariable(internedName);
     }
 
     @Deprecated(since = "10.0.0.0")
@@ -6084,11 +5943,6 @@ public class RubyModule extends RubyObject {
         checkAndRaiseIfFrozen(context);
         getClassVariables().put(name, value);
         return value;
-    }
-
-    @Deprecated(since = "1.7.0")
-    public IRubyObject fastStoreClassVariable(String internedName, IRubyObject value) {
-        return storeClassVariable(getCurrentContext(), internedName, value);
     }
 
     @Deprecated(since = "10.0.0.0")
@@ -6156,11 +6010,6 @@ public class RubyModule extends RubyObject {
         return constantTableContains(name);
     }
 
-    @Deprecated(since = "1.7.0")
-    public boolean fastHasConstant(String internedName) {
-        return hasConstant(internedName);
-    }
-
     @Deprecated(since = "10.0.0.0")
     public IRubyObject fetchConstant(String name) {
         return fetchConstant(getCurrentContext(), name);
@@ -6211,11 +6060,6 @@ public class RubyModule extends RubyObject {
         return entry;
     }
 
-    @Deprecated(since = "1.7.0")
-    public IRubyObject fastFetchConstant(String internedName) {
-        return fetchConstant(getCurrentContext(), internedName);
-    }
-
     @Deprecated(since = "10.0.0.0")
     public IRubyObject storeConstant(String name, IRubyObject value) {
         return storeConstant(getCurrentContext(), name, value);
@@ -6260,11 +6104,6 @@ public class RubyModule extends RubyObject {
         return constantTableStore(name, value, hidden, deprecated);
     }
 
-    @Deprecated(since = "1.7.0")
-    public IRubyObject fastStoreConstant(String internedName, IRubyObject value) {
-        return storeConstant(getCurrentContext(), internedName, value);
-    }
-
     @Deprecated(since = "10.0.0.0")
     public IRubyObject deleteConstant(String name) {
         return deleteConstant(getCurrentContext(), name);
@@ -6276,16 +6115,6 @@ public class RubyModule extends RubyObject {
 
         checkAndRaiseIfFrozen(context);
         return constantTableRemove(name);
-    }
-
-    @Deprecated(since = "1.1.5")
-    public List<Variable<IRubyObject>> getStoredConstantList() {
-        return null;
-    }
-
-    @Deprecated(since = "1.1.5")
-    public List<String> getStoredConstantNameList() {
-        return new ArrayList<>(getConstantMap().keySet());
     }
 
     /**
@@ -6596,11 +6425,6 @@ public class RubyModule extends RubyObject {
         }
     }
 
-    @Deprecated(since = "1.7.0")
-    public IRubyObject initialize(Block block) {
-        return initialize(getCurrentContext());
-    }
-
     public KindOf kindOf = KindOf.DEFAULT_KIND_OF;
 
     public final int id;
@@ -6679,12 +6503,6 @@ public class RubyModule extends RubyObject {
         public ConstantEntry dup() {
             return new ConstantEntry(value, hidden, deprecated);
         }
-    }
-
-    @Deprecated(since = "9.3.0.0")
-    public interface AutoloadMethod {
-        void load(Ruby runtime);
-        RubyString getFile();
     }
 
     /**
@@ -6989,64 +6807,6 @@ public class RubyModule extends RubyObject {
 
     // superClass may be null.
     protected RubyClass superClass;
-
-    /**
-     * The index of this class in the ClassIndex. Only non-zero for native JRuby
-     * classes that have a corresponding entry in ClassIndex.
-     *
-     * @see ClassIndex
-     * @deprecated use RubyModule#getClassIndex()
-     */
-    @Deprecated(since = "9.0.0.0")
-    public int index;
-
-    @Deprecated(since = "9.0.0.0")
-    public static final Set<String> SCOPE_CAPTURING_METHODS = new HashSet<String>(Arrays.asList(
-            "eval",
-            "module_eval",
-            "class_eval",
-            "instance_eval",
-            "module_exec",
-            "class_exec",
-            "instance_exec",
-            "binding",
-            "local_variables"
-    ));
-
-    @Deprecated(since = "9.3.0.0")
-    public boolean fastIsConstantDefined(String internedName){
-        return isConstantDefined(getCurrentContext(), internedName);
-    }
-
-    @Deprecated(since = "9.3.0.0")
-    public static class ModuleKernelMethods {
-        @Deprecated(since = "9.3.0.0")
-        public static IRubyObject autoload(ThreadContext context, IRubyObject self, IRubyObject symbol, IRubyObject file) {
-            return ((RubyModule) self).autoload(context, symbol, file);
-        }
-
-        @Deprecated(since = "9.3.0.0")
-        public static IRubyObject autoload_p(ThreadContext context, IRubyObject self, IRubyObject symbol) {
-            return ((RubyModule) self).autoload_p(context, symbol);
-        }
-    }
-
-    @Deprecated(since = "9.3.1.0")
-    public synchronized void defineAliases(List<String> aliases, String oldId) {
-        var context = getCurrentContext();
-        testFrozen("module");
-
-        CacheEntry entry = deepMethodSearch(context, oldId);
-        DynamicMethod method = entry.method;
-
-        for (String name: aliases) {
-            checkAliasFrameAccesses(context, oldId, name, method);
-            putAlias(context, name, entry, oldId);
-        }
-
-        RubyModule methodLocation = getMethodLocation();
-        methodLocation.invalidateCacheDescendants(context);
-    }
 
     protected ClassIndex classIndex = ClassIndex.NO_INDEX;
 

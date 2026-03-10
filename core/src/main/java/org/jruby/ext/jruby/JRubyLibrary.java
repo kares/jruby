@@ -301,12 +301,6 @@ public class JRubyLibrary implements Library {
                 Block.NULL_BLOCK);
     }
 
-    @Deprecated(since = "9.2.1.0") // @JRubyMethod(meta = true, visibility = Visibility.PRIVATE)
-    public static IRubyObject load_string_ext(ThreadContext context, IRubyObject recv) {
-        CoreExt.loadStringExtensions(context);
-        return context.nil;
-    }
-
     @JRubyMethod(module = true)
     public static IRubyObject subclasses(ThreadContext context, IRubyObject recv, IRubyObject arg) {
         return subclasses(context, recv, arg instanceof RubyClass ? (RubyClass) arg : arg.getMetaClass(), false);
