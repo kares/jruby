@@ -1587,7 +1587,7 @@ public final class Ruby implements Constantizable {
     }
 
     private void loadBundler() {
-        loadService.loadFromClassLoader(getClassLoader(), "jruby/bundler/startup.rb", false);
+        loadService.loadFromClassLoader("jruby/bundler/startup.rb", false);
     }
 
     @SuppressWarnings("ReturnValueIgnored")
@@ -1781,7 +1781,7 @@ public final class Ruby implements Constantizable {
 
     private void initRubyKernel() {
         // load Ruby parts of core
-        loadService.loadFromClassLoader(getClassLoader(), "jruby/kernel.rb", false);
+        loadService.loadFromClassLoader("jruby/kernel.rb", false);
     }
 
     private void initRubyPreludes() {
@@ -1789,7 +1789,7 @@ public final class Ruby implements Constantizable {
         if (RubyInstanceConfig.DEBUG_PARSER) return;
 
         // load Ruby parts of core
-        loadService.loadFromClassLoader(getClassLoader(), "jruby/preludes.rb", false);
+        loadService.loadFromClassLoader("jruby/preludes.rb", false);
     }
 
     public IRManager getIRManager() {
@@ -2630,7 +2630,7 @@ public final class Ruby implements Constantizable {
     }
 
     public static ClassLoader getClassLoader() {
-        // we try to getService the classloader that loaded JRuby, falling back on System
+        // we try to get the classloader that loaded JRuby, falling back on System
         ClassLoader loader = Ruby.class.getClassLoader();
         if (loader == null) {
             loader = ClassLoader.getSystemClassLoader();

@@ -186,6 +186,7 @@ public class LoadService {
     protected final Map<String, JarFile> jarFiles = new HashMap<>(0);
 
     protected final Ruby runtime;
+    protected final ClassLoader systemClassLoader;
     protected LibrarySearcher librarySearcher;
 
     protected String mainScript;
@@ -193,6 +194,7 @@ public class LoadService {
 
     public LoadService(Ruby runtime) {
         this.runtime = runtime;
+        this.systemClassLoader = Ruby.getClassLoader();
         if (RubyInstanceConfig.DEBUG_LOAD_TIMINGS) {
             loadTimer = new TracingLoadTimer();
         } else {
@@ -381,6 +383,10 @@ public class LoadService {
             runtime.setCurrentLine(currentLine);
             loadTimer.endLoad(file, startTime);
         }
+    }
+
+    public void loadFromClassLoader(String file, boolean wrap) {
+        loadFromClassLoader(systemClassLoader, file, wrap);
     }
 
     public void loadFromClassLoader(ClassLoader classLoader, String file, boolean wrap) {
