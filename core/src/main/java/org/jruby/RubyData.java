@@ -84,13 +84,13 @@ public class RubyData {
 
     @JRubyMethod(keywords = true, rest = true)
     public static void initialize(ThreadContext context, IRubyObject self, IRubyObject[] args) {
+        ThreadContext.resetCallInfo(context); // we don't directly use callInfo here
+
         RubyBasicObject selfObj = (RubyBasicObject) self;
+
         selfObj.checkFrozen();
         RubyArray<RubySymbol> members = getStructMembers(self);
         int numMembers = members.size();
-
-        // we don't directly use callInfo here
-        ThreadContext.clearCallInfo(context);
 
         if (args.length == 0) {
             if (numMembers > 0) {
