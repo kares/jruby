@@ -480,24 +480,24 @@ public class RubyStruct extends RubyObject {
         if (length > values.length) throw argumentError(context, "struct size differs (" + length +" for " + values.length + ")");
     }
 
-    private void checkForKeywords(ThreadContext context, boolean keywordInit) {
-        if (hasKeywords(ThreadContext.resetCallInfo(context)) && !keywordInit) {
+    private void checkForKeywords(ThreadContext context, int callInfo, boolean keywordInit) {
+        if (hasKeywords(callInfo) && !keywordInit) {
             warn(context, "Passing only keyword arguments to Struct#initialize will behave differently from Ruby 3.2. Please use a Hash literal like .new({k: v}) instead of .new(k: v).");
         }
     }
 
     @JRubyMethod(rest = true, visibility = PRIVATE, keywords = true)
     public IRubyObject initialize(ThreadContext context, IRubyObject[] args) {
+        final int callInfo = ThreadContext.resetCallInfo(context);
         IRubyObject keywordInit = RubyStruct.getInternalVariable(context, classOf(), KEYWORD_INIT_VAR);
-        checkForKeywords(context, !keywordInit.isNil());
-        ThreadContext.resetCallInfo(context);
+        checkForKeywords(context, callInfo, !keywordInit.isNil());
         modify(context);
         checkSize(context, args.length);
 
         if (keywordInit.isTrue()) {
             if (args.length != 1) throw argumentError(context, args.length, 0);
 
-            return initialize(context, args[0]);
+            return initialize(context, args[0], callInfo);
         } else {
             System.arraycopy(args, 0, values, 0, args.length);
             Helpers.fillNil(context, values, args.length, values.length);
@@ -530,9 +530,13 @@ public class RubyStruct extends RubyObject {
         return initializeInternal(context, 0, nil, nil, nil);
     }
 
-    @JRubyMethod(visibility = PRIVATE)
+    @JRubyMethod(visibility = PRIVATE, keywords = true)
     public IRubyObject initialize(ThreadContext context, IRubyObject arg0) {
-        boolean keywords = hasNonemptyKeywords(ThreadContext.resetCallInfo(context));
+        return initialize(context, arg0, ThreadContext.resetCallInfo(context));
+    }
+
+    private IRubyObject initialize(ThreadContext context, IRubyObject arg0, final int callInfo) {
+        final boolean keywords = hasNonemptyKeywords(callInfo);
 
         if (keywords && arg0 instanceof RubyHash hash) {
             return setupStructValuesFromHash(context, hash);
