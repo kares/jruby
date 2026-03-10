@@ -812,7 +812,7 @@ public class RubyHash extends RubyObject implements Map {
         return this;
     }
 
-    @JRubyMethod(visibility = PRIVATE)
+    @JRubyMethod(visibility = PRIVATE, keywords = true)
     public IRubyObject initialize(ThreadContext context, IRubyObject _default, final Block block) {
         boolean keywords = hasKeywords(ThreadContext.resetCallInfo(context));
         modify();
