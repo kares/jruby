@@ -63,7 +63,7 @@ import static org.jruby.api.Warn.warn;
 import static org.jruby.runtime.Block.Type.LAMBDA;
 import static org.jruby.runtime.Block.Type.PROC;
 import static org.jruby.runtime.ObjectAllocator.NOT_ALLOCATABLE_ALLOCATOR;
-import static org.jruby.runtime.ThreadContext.resetCallInfo;
+import static org.jruby.runtime.ThreadContext.hasKeywords;
 import static org.jruby.util.RubyStringBuilder.types;
 
 @JRubyClass(name="Proc")
@@ -461,16 +461,15 @@ public class RubyProc extends RubyObject implements DataType {
 
     @JRubyMethod(keywords = true)
     public IRubyObject parameters(ThreadContext context, IRubyObject opts) {
-        int callInfo = resetCallInfo(context);
-        boolean isLambda = isLambda();
+        final int callInfo = ThreadContext.resetCallInfo(context);
 
         IRubyObject lambdaOpt = ArgsUtil.extractKeywordArg(context, (RubyHash) opts, "lambda");
-
+        boolean isLambda;
         // ignore option if nil
         if (!lambdaOpt.isNil()) {
-            isLambda = (callInfo & ThreadContext.CALL_KEYWORD) != 0 ?
-                    lambdaOpt.isTrue() :
-                    isLambda();
+            isLambda = hasKeywords(callInfo) ? lambdaOpt.isTrue() : isLambda();
+        } else {
+            isLambda = isLambda();
         }
 
         return parametersCommon(context, isLambda);

@@ -40,11 +40,7 @@ import static org.jruby.ir.runtime.IRRuntimeHelpers.setCallInfo;
 import static org.jruby.runtime.Arity.checkArgumentCount;
 import static org.jruby.runtime.Helpers.invokedynamic;
 import static org.jruby.runtime.ThreadContext.CALL_KEYWORD;
-import static org.jruby.runtime.ThreadContext.CALL_KEYWORD_EMPTY;
-import static org.jruby.runtime.ThreadContext.clearCallInfo;
-import static org.jruby.runtime.ThreadContext.hasKeywords;
 import static org.jruby.runtime.ThreadContext.hasNonemptyKeywords;
-import static org.jruby.runtime.ThreadContext.resetCallInfo;
 import static org.jruby.runtime.invokedynamic.MethodNames.HASH;
 import static org.jruby.util.RubyStringBuilder.str;
 
@@ -293,10 +289,9 @@ public class RubyData {
 
         @JRubyMethod(name = {"new", "[]"}, keywords = true)
         public static IRubyObject rbNew(ThreadContext context, IRubyObject self) {
+            ThreadContext.resetCallInfo(context);
+
             RubyClass klass = (RubyClass) self;
-
-            clearCallInfo(context);
-
             IRubyObject dataObject = klass.getAllocator().allocate(context.runtime, klass);
 
             dataObject.getMetaClass().getBaseCallSite(RubyClass.CS_IDX_INITIALIZE)
@@ -307,10 +302,10 @@ public class RubyData {
 
         @JRubyMethod(name = {"new", "[]"}, keywords = true)
         public static IRubyObject rbNew(ThreadContext context, IRubyObject self, IRubyObject hashOrElt) {
-            RubyClass klass = (RubyClass) self;
+            int callInfo = ThreadContext.resetCallInfo(context);
 
+            RubyClass klass = (RubyClass) self;
             RubyHash init;
-            int callInfo = resetCallInfo(context);
             if (hasNonemptyKeywords(callInfo)) {
                 if (!(hashOrElt instanceof RubyHash)) {
                     throw argumentError(context, 1, 0, 0);

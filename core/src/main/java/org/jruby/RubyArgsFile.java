@@ -78,8 +78,7 @@ import static org.jruby.api.Create.newString;
 import static org.jruby.api.Define.defineClass;
 import static org.jruby.api.Error.argumentError;
 import static org.jruby.api.Warn.warn;
-import static org.jruby.runtime.ThreadContext.CALL_KEYWORD;
-import static org.jruby.runtime.ThreadContext.resetCallInfo;
+import static org.jruby.runtime.ThreadContext.hasKeywords;
 import static org.jruby.runtime.Visibility.PRIVATE;
 
 public class RubyArgsFile extends RubyObject {
@@ -390,8 +389,7 @@ public class RubyArgsFile extends RubyObject {
 
     // MRI: argf_getline
     private static IRubyObject argf_getline(ThreadContext context, IRubyObject recv, IRubyObject[] args) {
-        int callInfo = resetCallInfo(context);
-        boolean keywords = (callInfo & CALL_KEYWORD) != 0;
+        final int callInfo = ThreadContext.resetCallInfo(context);
         IRubyObject line;
         ArgsFileData data = ArgsFileData.getArgsFileData(context.runtime);
 
@@ -401,14 +399,13 @@ public class RubyArgsFile extends RubyObject {
             RubyIO currentFile = (RubyIO) data.currentFile;
 
             if (isGenericInput(context, data)) {
-                // restore callInfo for kwargs
-                context.callInfo = callInfo;
+                context.callInfo = callInfo; // restore callInfo for kwargs
                 line = data.currentFile.callMethod(context, "gets", args);
             } else {
                 if (args.length == 0 && context.runtime.getRecordSeparatorVar().get() == globalVariables(context).getDefaultSeparator()) {
                     line = (currentFile).gets(context);
                 } else {
-                    line = Getline.getlineCall(context, GETLINE, currentFile, currentFile.getReadEncoding(), keywords, args);
+                    line = Getline.getlineCall(context, GETLINE, currentFile, currentFile.getReadEncoding(), hasKeywords(callInfo), args);
                 }
 
                 if (line.isNil() && data.next_p != Stream) {

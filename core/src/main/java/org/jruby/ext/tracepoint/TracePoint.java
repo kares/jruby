@@ -25,7 +25,6 @@ import static org.jruby.api.Create.newString;
 import static org.jruby.api.Define.defineClass;
 import static org.jruby.api.Error.argumentError;
 import static org.jruby.api.Error.runtimeError;
-import static org.jruby.runtime.ThreadContext.resetCallInfo;
 import static org.jruby.util.RubyStringBuilder.str;
 
 public class TracePoint extends RubyObject {
@@ -97,7 +96,7 @@ public class TracePoint extends RubyObject {
         public void event(ThreadContext context, RubyEvent event, String file, int line, String name, IRubyObject type) {
             if (!enabled || (threadToTrace != null && threadToTrace != context) || context.isWithinTrace()) return;
 
-            int savedCallInfo = resetCallInfo(context);
+            int savedCallInfo = ThreadContext.resetCallInfo(context);
 
             synchronized (this) {
                 inside = true;
