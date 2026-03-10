@@ -238,6 +238,7 @@ public class RubyStruct extends RubyObject {
      */
     @JRubyMethod(name = "new", rest = true, checkArity = false, meta = true, keywords = true)
     public static RubyClass newInstance(ThreadContext context, IRubyObject recv, IRubyObject[] args, Block block) {
+        ThreadContext.resetCallInfo(context);
         int argc = Arity.checkArgumentCount(context, args, 0, -1);
 
         String name = null;
@@ -299,8 +300,7 @@ public class RubyStruct extends RubyObject {
         }
 
         // set reified class to RubyStruct, for Java subclasses to use
-        newStruct.reifiedClass(RubyStruct.class).
-                classIndex(ClassIndex.STRUCT);
+        newStruct.reifiedClass(RubyStruct.class).classIndex(ClassIndex.STRUCT);
         newStruct.setInternalVariable(SIZE_VAR, member.length(context));
         newStruct.setInternalVariable(MEMBER_VAR, member);
         newStruct.setInternalVariable(KEYWORD_INIT_VAR, keywordInitValue);
