@@ -2630,7 +2630,7 @@ public final class Ruby implements Constantizable {
     }
 
     public static ClassLoader getClassLoader() {
-        // we try to getService the classloader that loaded JRuby, falling back on System
+        // we try to get the classloader that loaded JRuby, falling back on System
         ClassLoader loader = Ruby.class.getClassLoader();
         if (loader == null) {
             loader = ClassLoader.getSystemClassLoader();
