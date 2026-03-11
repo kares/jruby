@@ -292,6 +292,34 @@ public class RaiseException extends JumpException {
         return newTrace;
     }
 
+    // Deprecated but still used by the overload below
+    @Deprecated(since = "9.2.0.0")
+    public RaiseException(Ruby runtime, RubyClass exceptionClass, String msg) {
+        this(runtime, exceptionClass, msg, null);
+    }
+
+    // Deprecated but still used by jruby-openssl in org.jruby.ext.openssl.Utils.newError
+    @Deprecated(since = "9.2.0.0")
+    public RaiseException(Ruby runtime, RubyClass exceptionClass, String msg, boolean unused) {
+        this(runtime, exceptionClass, msg, null);
+    }
+
+    // Deprecated but still used by the overload below
+    @Deprecated(since = "9.2.0.0")
+    public RaiseException(Ruby runtime, RubyClass exceptionClass, String msg, IRubyObject backtrace) {
+        super(msg == null ? msg = "No message available" : msg);
+        final ThreadContext context = runtime.getCurrentContext();
+        providedMessage = '(' + exceptionClass.getName(context) + ") " + msg;
+        setException(RubyException.newException(context, exceptionClass, RubyString.newUnicodeString(runtime, msg)));
+        preRaise(context, backtrace, true);
+    }
+
+    // Deprecated but still used by jruby-openssl in org.jruby.ext.openssl.Utils.newErrorWithoutTrace
+    @Deprecated(since = "9.2.0.0")
+    public RaiseException(Ruby runtime, RubyClass exceptionClass, String msg, IRubyObject backtrace, boolean unused) {
+        this(runtime, exceptionClass, msg, backtrace);
+    }
+
     private boolean requiresBacktrace(ThreadContext context) {
         // We can only omit backtraces of descendents of Standard error for 'foo rescue nil'
         return context.exceptionRequiresBacktrace || !(exception instanceof RubyStandardError);
