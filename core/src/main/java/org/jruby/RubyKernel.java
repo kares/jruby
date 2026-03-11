@@ -142,6 +142,7 @@ import static org.jruby.api.Warn.warnDeprecatedForRemovalAlternate;
 import static org.jruby.ir.runtime.IRRuntimeHelpers.dupIfKeywordRestAtCallsite;
 import static org.jruby.ir.runtime.IRRuntimeHelpers.receiveKeywords;
 import static org.jruby.runtime.ThreadContext.hasKeywords;
+import static org.jruby.runtime.ThreadContext.hasNonemptyKeywords;
 import static org.jruby.runtime.Visibility.PRIVATE;
 import static org.jruby.runtime.Visibility.PROTECTED;
 import static org.jruby.runtime.Visibility.PUBLIC;
@@ -328,6 +329,7 @@ public class RubyKernel {
         if (redirect) {
             if (keywords) context.callInfo = ThreadContext.CALL_KEYWORD;
             IRubyObject io = args[0].callMethod(context, "to_open", Arrays.copyOfRange(args, 1, args.length));
+            ThreadContext.resetCallInfo(context);
 
             RubyIO.ensureYieldClose(context, io, block);
             return io;
@@ -2091,9 +2093,7 @@ public class RubyKernel {
             };
         }
 
-        boolean keywords = (callInfo & ThreadContext.CALL_KEYWORD) != 0 && (callInfo & ThreadContext.CALL_KEYWORD_EMPTY) == 0;
-
-        ThreadContext.resetCallInfo(context);
+        boolean keywords = hasNonemptyKeywords(ThreadContext.resetCallInfo(context));
         return enumeratorizeWithSize(context, self, method, args, sizeFn, keywords);
     }
 
