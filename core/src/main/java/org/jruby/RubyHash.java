@@ -1208,4 +1208,11 @@ public class RubyHash extends RubyObject implements Map {
     protected boolean get(int flag) {
         return getDelegate().get(flag);
     }
+
+    // Still used by jruby-openssl
+    @Deprecated(since = "9.1.3.0")
+    public final void visitAll(Visitor visitor) {
+        // use -1 to disable concurrency checks
+        visitLimited(getRuntime().getCurrentContext(), visitor, -1, null);
+    }
 }
