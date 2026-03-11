@@ -4186,7 +4186,6 @@ public class RubyModule extends RubyObject {
             writes = {LASTLINE, BACKREF, VISIBILITY, BLOCK, SELF, METHODNAME, LINE, CLASS, FILENAME, SCOPE},
             keywords = true)
     public IRubyObject module_eval(ThreadContext context, Block block) {
-        ThreadContext.resetCallInfo(context);
         return specificEval(context, this, block, EvalType.MODULE_EVAL);
     }
     @JRubyMethod(name = {"module_eval", "class_eval"},
@@ -4194,7 +4193,6 @@ public class RubyModule extends RubyObject {
             writes = {LASTLINE, BACKREF, VISIBILITY, BLOCK, SELF, METHODNAME, LINE, CLASS, FILENAME, SCOPE},
             keywords = true)
     public IRubyObject module_eval(ThreadContext context, IRubyObject arg0, Block block) {
-        ThreadContext.resetCallInfo(context);
         return specificEval(context, this, arg0, block, EvalType.MODULE_EVAL);
     }
     @JRubyMethod(name = {"module_eval", "class_eval"},
@@ -4202,7 +4200,6 @@ public class RubyModule extends RubyObject {
             writes = {LASTLINE, BACKREF, VISIBILITY, BLOCK, SELF, METHODNAME, LINE, CLASS, FILENAME, SCOPE},
             keywords = true)
     public IRubyObject module_eval(ThreadContext context, IRubyObject arg0, IRubyObject arg1, Block block) {
-        ThreadContext.resetCallInfo(context);
         return specificEval(context, this, arg0, arg1, block, EvalType.MODULE_EVAL);
     }
     @JRubyMethod(name = {"module_eval", "class_eval"},
@@ -4210,7 +4207,6 @@ public class RubyModule extends RubyObject {
             writes = {LASTLINE, BACKREF, VISIBILITY, BLOCK, SELF, METHODNAME, LINE, CLASS, FILENAME, SCOPE},
             keywords = true)
     public IRubyObject module_eval(ThreadContext context, IRubyObject arg0, IRubyObject arg1, IRubyObject arg2, Block block) {
-        ThreadContext.resetCallInfo(context);
         return specificEval(context, this, arg0, arg1, arg2, block, EvalType.MODULE_EVAL);
     }
 
@@ -4235,7 +4231,6 @@ public class RubyModule extends RubyObject {
             writes = {LASTLINE, BACKREF, VISIBILITY, BLOCK, SELF, METHODNAME, LINE, CLASS, FILENAME, SCOPE},
             keywords = true)
     public IRubyObject module_exec(ThreadContext context, Block block) {
-        ThreadContext.resetCallInfo(context);
         if (block.isGiven()) {
             return yieldUnder(context, this, IRubyObject.NULL_ARRAY, block.cloneBlockAndFrame(), EvalType.MODULE_EVAL);
         } else {
@@ -4248,7 +4243,6 @@ public class RubyModule extends RubyObject {
             writes = {LASTLINE, BACKREF, VISIBILITY, BLOCK, SELF, METHODNAME, LINE, CLASS, FILENAME, SCOPE},
             keywords = true)
     public IRubyObject module_exec(ThreadContext context, IRubyObject[] args, Block block) {
-        ThreadContext.resetCallInfo(context);
         if (block.isGiven()) {
             return yieldUnder(context, this, args, block.cloneBlockAndFrame(), EvalType.MODULE_EVAL);
         } else {
