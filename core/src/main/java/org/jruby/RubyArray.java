@@ -419,11 +419,6 @@ public abstract class RubyArray<T extends IRubyObject> extends RubyObject implem
         return tmp != context.nil ? (RubyArray) tmp : RubyArray.newArray(context.runtime, obj);
     }
 
-    @Deprecated(since = "9.2.5.0")
-    public static RubyArray aryToAry(IRubyObject obj) {
-        return aryToAry(obj.getRuntime().getCurrentContext(), obj);
-    }
-
     @Deprecated(since = "10.0.0.0")
     public IRubyObject insert(IRubyObject arg) {
         return insert(getCurrentContext(), arg);
@@ -493,7 +488,7 @@ public abstract class RubyArray<T extends IRubyObject> extends RubyObject implem
     @JRubyMethod(name = "<<")
     public abstract RubyArray append(ThreadContext context, IRubyObject item);
 
-    @Deprecated // not-used
+    @Deprecated(since = "10.0.3.0") // not-used
     public RubyArray<?> push_m(IRubyObject[] items) {
         return push(items);
     }
@@ -570,11 +565,6 @@ public abstract class RubyArray<T extends IRubyObject> extends RubyObject implem
                 yield null;
             }
         };
-    }
-
-    @Deprecated(since = "9.4.0.0")
-    public IRubyObject aref(IRubyObject arg0) {
-        return aref(getCurrentContext(), arg0);
     }
 
     @JRubyMethod(name = {"[]", "slice"})
@@ -755,11 +745,6 @@ public abstract class RubyArray<T extends IRubyObject> extends RubyObject implem
     @Deprecated(since = "10.0.0.0")
     public IRubyObject to_ary() {
         return this;
-    }
-
-    @Deprecated(since = "9.3.0.0")
-    public IRubyObject to_h(ThreadContext context) {
-        return to_h(context, Block.NULL_BLOCK);
     }
 
     @JRubyMethod(name = "to_ary")
@@ -1429,59 +1414,6 @@ public abstract class RubyArray<T extends IRubyObject> extends RubyObject implem
 
     private static JavaSites.ArraySites sites(ThreadContext context) {
         return context.sites.Array;
-    }
-
-    /**
-     * Increases the capacity of this <code>Array</code>, if necessary.
-     * @param minCapacity the desired minimum capacity of the internal array
-     */
-    @Deprecated(since = "9.1.3.0")
-    public void ensureCapacity(int minCapacity) {
-        throw getRuntime().newNotImplementedError("RubyArray#ensure_capacity has been removed");
-    }
-
-    @Deprecated(since = "9.2.10.0")
-    @Override
-    public RubyArray to_a() {
-        throw getRuntime().newNotImplementedError("RubyArray#to_a has been removed");
-    }
-
-    @Deprecated(since = "9.2.15.0")
-    public IRubyObject shuffle(ThreadContext context, IRubyObject[] args) {
-        switch (args.length) {
-            case 0:
-                return shuffle(context);
-            case 1:
-                return shuffle(context, args[0]);
-            default:
-                throw argumentError(context, args.length, 0, 0);
-        }
-    }
-
-    @Deprecated(since = "9.2.15.0")
-    public IRubyObject shuffle_bang(ThreadContext context, IRubyObject[] args) {
-        switch (args.length) {
-            case 0:
-                return shuffle_bang(context, context.nil);
-            case 1:
-                return shuffle_bang(context, args[0]);
-            default:
-                throw argumentError(context, args.length, 0, 0);
-        }
-    }
-
-    @Deprecated(since = "9.2.15.0")
-    public IRubyObject sample(ThreadContext context, IRubyObject[] args) {
-        switch (args.length) {
-            case 0:
-                return sample(context);
-            case 1:
-                return sample(context, args[0]);
-            case 2:
-                return sample(context, args[0], args[1]);
-            default:
-                throw argumentError(context, args.length, 0, 1);
-        }
     }
 
     /**

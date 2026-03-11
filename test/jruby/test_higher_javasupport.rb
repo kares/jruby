@@ -859,15 +859,6 @@ class TestHigherJavasupport < Test::Unit::TestCase
     assert_nothing_raised { Collections::EMPTY_LIST.each {|element| } }
   end
 
-  def test_already_loaded_proxies_should_still_see_extend_proxy
-    JavaUtilities.extend_proxy('java.util.List') do
-      def foo
-        true
-      end
-    end
-    assert_equal(true, Foo::ArrayList.new.foo)
-  end
-
   def test_same_proxy_does_not_raise
     # JString already included and it is the same proxy, so do not throw an error
     # (e.g. intent of java_import already satisfied)

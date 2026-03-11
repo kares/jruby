@@ -713,11 +713,6 @@ public class RubySocket extends RubyBasicSocket {
         return SocketType.forChannel(channel).getLocalSocketAddress(channel);
     }
 
-    @Deprecated(since = "1.7.0")
-    public static RuntimeException sockerr(Ruby runtime, String msg) {
-        return SocketUtils.sockerr(runtime, msg);
-    }
-
     private static final Pattern ALREADY_BOUND_PATTERN = Pattern.compile("[Aa]lready.*bound");
     private static final Pattern ADDR_NOT_AVAIL_PATTERN = Pattern.compile("assign.*address");
     //private static final Pattern PERM_DENIED_PATTERN = Pattern.compile("[Pp]ermission.*denied");

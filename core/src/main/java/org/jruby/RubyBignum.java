@@ -1133,11 +1133,6 @@ public class RubyBignum extends RubyInteger implements SimpleHash {
         return asFloat(context, asDouble(context));
     }
 
-    @Deprecated(since = "9.2.0.0")
-    public IRubyObject abs() {
-        return abs(getCurrentContext());
-    }
-
     /** rb_big_abs
      *
      */

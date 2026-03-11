@@ -2457,11 +2457,6 @@ public class EncodingUtils {
         }
     }
 
-    @Deprecated(since = "9.2.0.0")
-    public static Encoding ioStripBOM(RubyIO io) {
-        return ioStripBOM(io.getRuntime().getCurrentContext(), io);
-    }
-
     @Deprecated(since = "9.4.6.0")
     public static Encoding strTranscode0(ThreadContext context, int argc, IRubyObject[] args, IRubyObject[] self_p, int ecflags, IRubyObject ecopts) {
         Encoding[] enc_p = {null};

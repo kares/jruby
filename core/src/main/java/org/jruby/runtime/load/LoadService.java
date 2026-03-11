@@ -160,18 +160,6 @@ public class LoadService {
         public EnumSet<LibrarySearcher.Suffix> getSuffixSet() {
             return suffixes;
         }
-
-        @Deprecated(since = "9.3.0.0")
-        public String[] getSuffixes() {
-            return suffixes.stream()
-                    .map((suffix) -> suffix.name())
-                    .toArray(String[]::new);
-        }
-
-        @Deprecated(since = "9.3.0.0")
-        public static final String[] sourceSuffixes = LibrarySearcher.Suffix.SOURCES.stream().map((suffix) -> suffix.name()).toArray(String[]::new);
-        @Deprecated(since = "9.3.0.0")
-        public static final String[] extensionSuffixes = LibrarySearcher.Suffix.EXTENSIONS.stream().map((suffix) -> suffix.name()).toArray(String[]::new);
     }
 
     @Deprecated(since = "10.0.3.0")

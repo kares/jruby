@@ -92,17 +92,6 @@ public class TestRaiseException extends Base {
         assertEquals( 0, ex.getException().getBacktraceElements().length );
     }
 
-    public void testFromLegacyOnlyPreRaisesOnce() {
-        final int count = context.runtime.getExceptionCount();
-
-        final IRubyObject ex = runtimeErrorClass(context).newInstance(context, Block.NULL_BLOCK);
-        RaiseException.from((RubyException) ex, RubyArray.newArrayLight(context.runtime));
-
-        assertEquals( count + 1, context.runtime.getExceptionCount() );
-
-        assertEquals( 0, ((RubyException) ex).getBacktraceElements().length );
-    }
-
     public void testFromJavaGeneratedBacktrace() {
         final int count = context.runtime.getBacktraceCount();
 

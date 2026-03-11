@@ -160,11 +160,6 @@ public class RubyArgsFile extends RubyObject {
             this.currentFile = runtime.getNil();
         }
 
-        @Deprecated(since = "9.1.8.0")
-        public void setCurrentLineNumber(Ruby runtime, int linenumber) {
-            runtime.setCurrentLine(linenumber);
-        }
-
         // ARGF.class.new
         void setArgs(RubyArray argv) {
             inited = false;
@@ -239,11 +234,6 @@ public class RubyArgsFile extends RubyObject {
             return (ArgsFileData) runtime.getArgsFile().dataGetStruct();
         }
 
-        @Deprecated(since = "9.1.8.0")
-        public static ArgsFileData getDataFrom(IRubyObject recv) {
-            return getArgsFileData(((RubyBasicObject) recv).getCurrentContext().runtime);
-        }
-
         private void createNewFile(File file) {
             try {
                 file.createNewFile();
@@ -300,11 +290,6 @@ public class RubyArgsFile extends RubyObject {
         public boolean isCurrentFile(RubyIO io) {
             return currentFile == io;
         }
-    }
-
-    @Deprecated(since = "9.1.8.0")
-    public static void setCurrentLineNumber(IRubyObject recv, int newLineNumber) {
-        ((RubyBasicObject) recv).getCurrentContext().runtime.setCurrentLine(newLineNumber);
     }
 
     @JRubyMethod

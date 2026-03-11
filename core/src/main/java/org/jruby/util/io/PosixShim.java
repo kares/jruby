@@ -494,16 +494,6 @@ public class PosixShim {
         return open(cwd, path, flags.getFlags(), perm);
     }
 
-    @Deprecated(since = "9.0.0.0") // special case is already handled with JRubyFile.createResource
-    public Channel open(String cwd, String path, ModeFlags flags, int perm, ClassLoader classLoader) {
-        if (path.startsWith("classpath:/") && classLoader != null) {
-            path = path.substring("classpath:/".length());
-            return Channels.newChannel(classLoader.getResourceAsStream(path));
-        }
-
-        return open(cwd, path, flags, perm);
-    }
-
     /**
      * Joy of POSIX, only way to get the umask is to set the umask,
      * then set it back. That's unsafe in a threaded program. We

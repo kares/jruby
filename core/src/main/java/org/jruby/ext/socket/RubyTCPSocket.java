@@ -237,14 +237,4 @@ public class RubyTCPSocket extends RubyIPSocket {
             throw SocketUtils.sockerr(context.runtime, "gethostbyname: name or service not known");
         }
     }
-
-    @Deprecated(since = "1.7.0")
-    public static IRubyObject open(IRubyObject recv, IRubyObject[] args, Block block) {
-        return open(((RubyBasicObject) recv).getCurrentContext(), recv, args, block);
-    }
-
-    @Deprecated(since = "1.7.0")
-    public static IRubyObject gethostbyname(IRubyObject recv, IRubyObject hostname) {
-        return gethostbyname(((RubyBasicObject) recv).getCurrentContext(), recv, hostname);
-    }
 }

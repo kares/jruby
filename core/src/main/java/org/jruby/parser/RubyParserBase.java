@@ -1716,11 +1716,6 @@ public abstract class RubyParserBase {
         return RubyLexer.isIdentifierChar(name.charAt(0));
     }
 
-    @Deprecated(since = "9.2.0.0")
-    public boolean is_local_id(String name) {
-        return RubyLexer.isIdentifierChar(name.charAt(0));
-    }
-
     // 1.9
     public ListNode list_append(Node list, Node item) {
         if (list == null) return new ArrayNode(item.getLine(), item);
@@ -2000,11 +1995,6 @@ public abstract class RubyParserBase {
     }
 
     public static final ByteList INTERNAL_ID = new ByteList(new byte[] {}, USASCIIEncoding.INSTANCE);
-
-    @Deprecated(since = "9.2.0.0")
-    public String internalId() {
-        return INTERNAL_ID.toString();
-    }
 
     protected void begin_definition(String name) {
         LexContext ctxt = getLexContext();

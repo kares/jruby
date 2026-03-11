@@ -257,16 +257,6 @@ public class RubyRegexp extends RubyObject implements ReOptions, EncodingCapable
         }
     }
 
-    @Deprecated(since = "9.2.0.0") // not-used
-    public static int matcherSearch(Ruby runtime, Matcher matcher, int start, int range, int option) {
-        return matcherSearch(runtime.getCurrentContext(), matcher, start, range, option);
-    }
-
-    @Deprecated(since = "9.2.0.0") // not-used
-    public static int matcherMatch(Ruby runtime, Matcher matcher, int start, int range, int option) {
-        return matcherMatch(runtime.getCurrentContext(), matcher, start, range, option);
-    }
-
     @Override
     public ClassIndex getNativeClassIndex() {
         return ClassIndex.REGEXP;
@@ -477,11 +467,6 @@ public class RubyRegexp extends RubyObject implements ReOptions, EncodingCapable
         RegexpSupport.preprocess(runtime, bytes, bytes.getEncoding(), new Encoding[]{null}, RegexpSupport.ErrorMode.RAISE);
     }
 
-    @Deprecated(since = "9.2.10.0") // not used
-    public static RubyString preprocessDRegexp(Ruby runtime, RubyString[] strings, int embeddedOptions) {
-        return preprocessDRegexp(runtime, strings, RegexpOptions.fromEmbeddedOptions(embeddedOptions));
-    }
-
     // rb_reg_preprocess_dregexp
     public static RubyString preprocessDRegexp(Ruby runtime, IRubyObject[] strings, RegexpOptions options) {
         return preprocessDRegexp(runtime.getCurrentContext(), options, strings);
@@ -507,42 +492,12 @@ public class RubyRegexp extends RubyObject implements ReOptions, EncodingCapable
         return processElementIntoResult(context, null, arg0, options, null, context.encodingHolder());
     }
 
-    @Deprecated(since = "9.2.10.0") // not used
-    public static RubyString preprocessDRegexp(Ruby runtime, IRubyObject arg0, RegexpOptions options) {
-        var context = runtime.getCurrentContext();
-        return processElementIntoResult(context, null, arg0, options, null, context.encodingHolder());
-    }
-
     public static RubyString preprocessDRegexp(ThreadContext context, RegexpOptions options, IRubyObject arg0, IRubyObject arg1) {
-        return processElementIntoResult(context, null, arg0, arg1, options, null, context.encodingHolder());
-    }
-
-    @Deprecated(since = "9.2.10.0")
-    public static RubyString preprocessDRegexp(Ruby runtime, IRubyObject arg0, IRubyObject arg1, RegexpOptions options) {
-        var context = runtime.getCurrentContext();
         return processElementIntoResult(context, null, arg0, arg1, options, null, context.encodingHolder());
     }
 
     public static RubyString preprocessDRegexp(ThreadContext context, RegexpOptions options, IRubyObject arg0, IRubyObject arg1, IRubyObject arg2) {
         return processElementIntoResult(context, null, arg0, arg1, arg2, options, null, context.encodingHolder());
-    }
-
-    @Deprecated(since = "9.2.10.0")
-    public static RubyString preprocessDRegexp(Ruby runtime, IRubyObject arg0, IRubyObject arg1, IRubyObject arg2, RegexpOptions options) {
-        var context = runtime.getCurrentContext();
-        return processElementIntoResult(context, null, arg0, arg1, arg2, options, null, context.encodingHolder());
-    }
-
-    @Deprecated(since = "9.2.10.0")
-    public static RubyString preprocessDRegexp(Ruby runtime, IRubyObject arg0, IRubyObject arg1, IRubyObject arg2, IRubyObject arg3, RegexpOptions options) {
-        var context = runtime.getCurrentContext();
-        return processElementIntoResult(context, null, arg0, arg1, arg2, arg3, options, null, context.encodingHolder());
-    }
-
-    @Deprecated(since = "9.2.10.0")
-    public static RubyString preprocessDRegexp(Ruby runtime, IRubyObject arg0, IRubyObject arg1, IRubyObject arg2, IRubyObject arg3, IRubyObject arg4, RegexpOptions options) {
-        var context = runtime.getCurrentContext();
-        return processElementIntoResult(context, null, arg0, arg1, arg2, arg3, arg4, options, null, context.encodingHolder());
     }
 
     private static RubyString processElementIntoResult(
@@ -1322,11 +1277,6 @@ public class RubyRegexp extends RubyObject implements ReOptions, EncodingCapable
         }
     }
 
-    @Deprecated(since = "9.3.0.0")
-    public final RubyBoolean startWithP(ThreadContext context, RubyString str) {
-        return startsWith(context, str) ? context.tru : context.fals;
-    }
-
     /**
      * Search the given string with this Regexp.
      *
@@ -1940,22 +1890,6 @@ public class RubyRegexp extends RubyObject implements ReOptions, EncodingCapable
         if (regexp.getOptions(context).isFixed()) options |= RE_FIXED;
 
         output.writeByte(out, options);
-    }
-
-    @Deprecated(since = "9.3.0.0")
-    public final int search(ThreadContext context, RubyString str, int pos, boolean reverse, IRubyObject[] holder) {
-        int result = searchString(context, str, pos, reverse);
-        if (holder != null) {
-            holder[0] = context.getLocalMatchOrNil();
-        } else {
-            context.setBackRef(context.getLocalMatchOrNil());
-        }
-        return result;
-    }
-
-    @Deprecated(since = "9.3.0.0")
-    public static IRubyObject getBackRef(ThreadContext context) {
-        return context.getBackRef();
     }
 
     @Deprecated(since = "10.0.0.0")

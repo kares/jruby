@@ -235,6 +235,8 @@ public class RubyThread extends RubyObject implements ExecutionContext {
     /** Short circuit to avoid-re-scanning for interrupts */
     private volatile boolean pendingInterruptQueueChecked = false;
 
+    /* Still used by jruby-openssl for its blocking logic */
+    @Deprecated
     private volatile BlockingTask currentBlockingTask;
 
     private volatile Selector currentSelector;
@@ -1723,6 +1725,7 @@ public class RubyThread extends RubyObject implements ExecutionContext {
         return exitingException;
     }
 
+    /* Still used by jruby-openssl for its blocking logic */
     @Deprecated(since = "9.0.0.0")
     public interface BlockingTask {
         public void run() throws InterruptedException;
@@ -1738,24 +1741,23 @@ public class RubyThread extends RubyObject implements ExecutionContext {
         public void wakeup(RubyThread thread, Data data);
     }
 
+    // Deprecated but still used by wait_timeout below
+    @Deprecated(since = "10.1.0.0")
     public static final class SleepTask implements BlockingTask {
         private final Object object;
         private final long millis;
         private final int nanos;
-
         public SleepTask(Object object, long millis, int nanos) {
             this.object = object;
             this.millis = millis;
             this.nanos = nanos;
         }
-
         @Override
         public void run() throws InterruptedException {
             synchronized (object) {
                 object.wait(millis, nanos);
             }
         }
-
         @Override
         public void wakeup() {
             synchronized (object) {
@@ -2452,16 +2454,13 @@ public class RubyThread extends RubyObject implements ExecutionContext {
         enterSleep();
     }
 
-    @Deprecated(since = "9.3.0.0")
-    public void beforeBlockingCall() {
-        beforeBlockingCall(metaClass.runtime.getCurrentContext());
-    }
-
     public void afterBlockingCall() {
         exitSleep();
         pollThreadEvents();
     }
 
+    // Deprecated but still used by concurrent_ruby
+    @Deprecated(since = "10.1.0.0")
     public boolean wait_timeout(IRubyObject o, Double timeout) throws InterruptedException {
         if ( timeout != null ) {
             long delay_ns = (long)(timeout.doubleValue() * 1000000000.0);

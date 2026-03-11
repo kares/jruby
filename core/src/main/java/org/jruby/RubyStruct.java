@@ -762,11 +762,6 @@ public class RubyStruct extends RubyObject {
         return newArray(context, values);
     }
 
-    @Deprecated(since = "9.3.0.0")
-    public RubyHash to_h(ThreadContext context) {
-        return to_h(context, Block.NULL_BLOCK);
-    }
-
     @JRubyMethod
     public RubyHash to_h(ThreadContext context, Block block) {
         RubyHash hash = newHash(context);
@@ -1170,12 +1165,6 @@ public class RubyStruct extends RubyObject {
 
     private static StructSites sites(ThreadContext context) {
         return context.sites.Struct;
-    }
-
-    @Deprecated(since = "9.4-")
-    @Override
-    public RubyArray to_a() {
-        return to_a(getCurrentContext());
     }
 
 }
