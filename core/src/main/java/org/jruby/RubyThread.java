@@ -1741,6 +1741,31 @@ public class RubyThread extends RubyObject implements ExecutionContext {
         public void wakeup(RubyThread thread, Data data);
     }
 
+    // Deprecated but still used by wait_timeout below
+    @Deprecated(since = "10.1.0.0")
+    public static final class SleepTask implements BlockingTask {
+        private final Object object;
+        private final long millis;
+        private final int nanos;
+        public SleepTask(Object object, long millis, int nanos) {
+            this.object = object;
+            this.millis = millis;
+            this.nanos = nanos;
+        }
+        @Override
+        public void run() throws InterruptedException {
+            synchronized (object) {
+                object.wait(millis, nanos);
+            }
+        }
+        @Override
+        public void wakeup() {
+            synchronized (object) {
+                object.notify();
+            }
+        }
+    }
+
     /**
      * A Task for sleeping.
      *
@@ -2432,6 +2457,25 @@ public class RubyThread extends RubyObject implements ExecutionContext {
     public void afterBlockingCall() {
         exitSleep();
         pollThreadEvents();
+    }
+
+    // Deprecated but still used by concurrent_ruby
+    @Deprecated(since = "10.1.0.0")
+    public boolean wait_timeout(IRubyObject o, Double timeout) throws InterruptedException {
+        if ( timeout != null ) {
+            long delay_ns = (long)(timeout.doubleValue() * 1000000000.0);
+            long start_ns = System.nanoTime();
+            if (delay_ns > 0) {
+                long delay_ms = delay_ns / 1000000;
+                int delay_ns_remainder = (int)( delay_ns % 1000000 );
+                executeBlockingTask(new SleepTask(o, delay_ms, delay_ns_remainder));
+            }
+            long end_ns = System.nanoTime();
+            return ( end_ns - start_ns ) <= delay_ns;
+        } else {
+            executeBlockingTask(new SleepTask(o, 0, 0));
+            return true;
+        }
     }
 
     public RubyThreadGroup getThreadGroup() {
