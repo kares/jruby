@@ -898,6 +898,18 @@ public final class StringSupport {
         return 0;
     }
 
+    // Deprecated but still used by StringIO
+    @Deprecated(since = "10.0.0.0")
+    public static int memchr(byte[] ptr, int start, final int find, int len) {
+        return Helpers.memchr(ptr, start, find, len);
+    }
+
+    // MRI: StringValueCStr, rb_string_value_cstr without trailing null addition
+    @Deprecated(since = "10.0.0.0")
+    public static RubyString checkEmbeddedNulls(Ruby runtime, IRubyObject ptr) {
+        return Check.checkEmbeddedNulls(runtime.getCurrentContext(), ptr);
+    }
+
     // MRI: str_null_check without trailing null check (JVM arrays do not null terminate)
     // This function returns Java Object Array, with index0 is RubyString and index1 is Boolean.
     // Boolean corresponds to int *w arg of str_null_check.
