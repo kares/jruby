@@ -235,6 +235,10 @@ public class RubyThread extends RubyObject implements ExecutionContext {
     /** Short circuit to avoid-re-scanning for interrupts */
     private volatile boolean pendingInterruptQueueChecked = false;
 
+    /* Still used by jruby-openssl for its blocking logic */
+    @Deprecated
+    private volatile BlockingTask currentBlockingTask;
+
     private volatile Selector currentSelector;
 
     private volatile RubyThread fiberCurrentThread;
@@ -1721,6 +1725,13 @@ public class RubyThread extends RubyObject implements ExecutionContext {
         return exitingException;
     }
 
+    /* Still used by jruby-openssl for its blocking logic */
+    @Deprecated(since = "9.0.0.0")
+    public interface BlockingTask {
+        public void run() throws InterruptedException;
+        public void wakeup();
+    }
+
     public interface Unblocker<Data> {
         public void wakeup(RubyThread thread, Data self);
     }
@@ -1762,6 +1773,20 @@ public class RubyThread extends RubyObject implements ExecutionContext {
         @Override
         public void wakeup(RubyThread thread, Object data) {
             semaphore.release();
+        }
+    }
+
+    @Deprecated(since = "9.0.0.0")
+    public void executeBlockingTask(BlockingTask task) throws InterruptedException {
+        try {
+            this.currentBlockingTask = task;
+            enterSleep();
+            pollThreadEvents();
+            task.run();
+        } finally {
+            exitSleep();
+            currentBlockingTask = null;
+            pollThreadEvents();
         }
     }
 
@@ -2349,6 +2374,14 @@ public class RubyThread extends RubyObject implements ExecutionContext {
         Unblocker task = this.unblockFunc;
         if (task != null) {
             task.wakeup(this, unblockArg);
+        }
+
+        // deprecated
+        {
+            BlockingTask t = currentBlockingTask;
+            if (t != null) {
+                t.wakeup();
+            }
         }
 
         // If this thread is sleeping or stopped, wake it
