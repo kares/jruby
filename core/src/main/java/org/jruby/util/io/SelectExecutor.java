@@ -186,7 +186,7 @@ public class SelectExecutor {
                         (unselectableWriteFDs != null && unselectableWriteFDs.contains(fptr.fd()))) {
 
                     // ensure any pending connections get finished
-                    if (writeKeyList.get(i).isConnectable()) {
+                    if (writeKeyList != null && writeKeyList.get(i).isConnectable()) {
                         if (fptr.fd().ch instanceof SocketChannel sock) {
                             sock.finishConnect();
                         }
