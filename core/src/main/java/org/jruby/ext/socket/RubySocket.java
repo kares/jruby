@@ -522,7 +522,9 @@ public class RubySocket extends RubyBasicSocket {
                         if (channel instanceof SocketChannel) {
                             SocketChannel socket = (SocketChannel) channel;
 
-                            if (socket.isConnectionPending()) {
+                            if (socket.isConnected()) {
+                                return true;
+                            } else if (socket.isConnectionPending()) {
                                 // connection initiated but not finished
                                 result = socket.finishConnect();
                             } else {
