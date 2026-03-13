@@ -239,7 +239,7 @@ public class RubyData {
     @JRubyMethod(keywords = true, optional = 1, checkArity = false)
     public static IRubyObject with(ThreadContext context, IRubyObject self, IRubyObject[] args) {
         IRubyObject kwargs = IRRuntimeHelpers.receiveKeywords(context, args, false, true, false);
-        if (kwargs == UndefinedValue.UNDEFINED || kwargs.isNil()) {
+        if (!(kwargs instanceof RubyHash)) {
             checkArgumentCount(context, args.length, 0, 0);
             return self;
         }
@@ -249,7 +249,7 @@ public class RubyData {
         RubyHash kwargsHash = (RubyHash) kwargs;
         RubyHash h = to_h(context, self, Block.NULL_BLOCK);
         h.addAll(context, kwargsHash);
-        setCallInfo(context, CALL_KEYWORD);
+        context.callInfo = CALL_KEYWORD;
         return DataMethods.rbNew(context, self.getMetaClass(), h);
     }
 
@@ -277,7 +277,7 @@ public class RubyData {
 
             IRubyObject dataObject = klass.getAllocator().allocate(context.runtime, klass);
 
-            setCallInfo(context, ThreadContext.CALL_KEYWORD);
+            context.callInfo = ThreadContext.CALL_KEYWORD;
 
             // TODO: avoid initialize and hash overhead for known types
             dataObject.getMetaClass().getBaseCallSite(RubyClass.CS_IDX_INITIALIZE)
@@ -326,7 +326,7 @@ public class RubyData {
 
             IRubyObject dataObject = klass.getAllocator().allocate(context.runtime, klass);
 
-            setCallInfo(context, callInfo);
+            context.callInfo = callInfo;
 
             // TODO: avoid initialize and hash overhead for known types
             dataObject.getMetaClass().getBaseCallSite(RubyClass.CS_IDX_INITIALIZE)
