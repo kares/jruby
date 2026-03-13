@@ -398,10 +398,8 @@ public class RubyArgsFile extends RubyObject {
             RubyIO currentFile = (RubyIO) data.currentFile;
 
             if (isGenericInput(context, data)) {
-                final int prevCallInfo = context.callInfo;
                 context.callInfo = callInfo; // restore callInfo for kwargs
                 line = data.currentFile.callMethod(context, "gets", args);
-                context.callInfo = prevCallInfo;
             } else {
                 if (args.length == 0 && context.runtime.getRecordSeparatorVar().get() == globalVariables(context).getDefaultSeparator()) {
                     line = (currentFile).gets(context);
