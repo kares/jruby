@@ -548,15 +548,17 @@ public class RubyStruct extends RubyObject {
         return initializeInternal(context, 1, arg0, context.nil, context.nil);
     }
 
-    @JRubyMethod(visibility = PRIVATE)
+    @JRubyMethod(visibility = PRIVATE, keywords = true)
     public IRubyObject initialize(ThreadContext context, IRubyObject arg0, IRubyObject arg1) {
+        ThreadContext.resetCallInfo(context);
         IRubyObject keywordInit = RubyStruct.getInternalVariable(context, classOf(), KEYWORD_INIT_VAR);
         if (keywordInit.isTrue()) throw argumentError(context, 2, 0);
         return initializeInternal(context, 2, arg0, arg1, context.nil);
     }
 
-    @JRubyMethod(visibility = PRIVATE)
+    @JRubyMethod(visibility = PRIVATE, keywords = true)
     public IRubyObject initialize(ThreadContext context, IRubyObject arg0, IRubyObject arg1, IRubyObject arg2) {
+        ThreadContext.resetCallInfo(context);
         IRubyObject keywordInit = RubyStruct.getInternalVariable(context, classOf(), KEYWORD_INIT_VAR);
         if (keywordInit.isTrue()) throw argumentError(context, 3, 0);
         return initializeInternal(context, 3, arg0, arg1, arg2);
