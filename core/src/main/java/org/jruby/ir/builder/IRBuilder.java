@@ -8,7 +8,6 @@ import org.jruby.RubyInstanceConfig;
 import org.jruby.RubySymbol;
 import org.jruby.ast.IterNode;
 import org.jruby.ast.StrNode;
-import org.jruby.common.IRubyWarnings;
 import org.jruby.ext.coverage.CoverageData;
 import org.jruby.ir.IRClassBody;
 import org.jruby.ir.IRClosure;
@@ -167,8 +166,24 @@ public abstract class IRBuilder<U, V, W, X, Y, Z> {
         return manager.getBuilderFactory().topIRBuilder(manager, script, rootNode).buildRootInner(rootNode);
     }
 
+    protected int currentLine() {
+        return lastProcessedLineNum;
+    }
+
     // FIXME: consider mod_rescue, rescue, and pure ensure as separate entries
-    // Note: reference is only passed in via Prism on legacy this is desugared into AST.
+    /**
+     * @param body the main statements to be executed
+     * @param elseNode else path in a begin
+     * @param exceptions possible list of excpetions which will jump to rescueBody
+     * @param rescueBody the statements executed if the matching exception(s) occurs
+     * @param optRescue possible other rescue in the same begin
+     * @param isModifier foo rescue bar
+     * @param ensureNode ensure block
+     * @param reference variable for the rescue (NameError => name)
+     * @return return last operand of begin execution
+     *
+     * Note: reference is only passed in via Prism on legacy this is desugared into AST.
+     */
     protected Operand buildEnsureInternal(U body, U elseNode, U[] exceptions, U rescueBody, X optRescue, boolean isModifier,
                                 U ensureNode, boolean isRescue, U reference) {
         // Save $!
@@ -182,23 +197,28 @@ public abstract class IRBuilder<U, V, W, X, Y, Z> {
 
         // Push a new ensure block node onto the stack of ensure bodies being built
         // The body's instructions are stashed and emitted later.
-        EnsureBlockInfo ebi = new EnsureBlockInfo(scope, getCurrentLoop(), activeRescuers.peek());
+        EnsureBlockInfo ebi = new EnsureBlockInfo(scope, getCurrentLoop(), activeRescuers.peek(), currentLine() + 1);
 
         // Record $! save var if we had a non-empty rescue node.
         // $! will be restored from it where required.
         if (isRescue) ebi.savedGlobalException = savedGlobalException;
 
-        ensureBodyBuildStack.push(ebi);
-        Operand ensureRetVal = ensureNode == null ? nil() : build(ensureNode);
-        ensureBodyBuildStack.pop();
+        Operand ensureRetVal;
+        if (ensureNode != null) {
+            ensureBodyBuildStack.push(ebi);
+            ensureRetVal = build(ensureNode);
+            ensureBodyBuildStack.pop();
+        } else {
+            ensureRetVal = nil();
+        }
 
         // ------------ Build the protected region ------------
         activeEnsureBlockStack.push(ebi);
 
         // Start of protected region
-        addInstr(new LabelInstr(ebi.regionStart));
-        addInstr(new ExceptionRegionStartMarkerInstr(ebi.dummyRescueBlockLabel));
-        activeRescuers.push(ebi.dummyRescueBlockLabel);
+        addInstr(new LabelInstr(ebi.start));
+        addInstr(new ExceptionRegionStartMarkerInstr(ebi.ensureRescue));
+        activeRescuers.push(ebi.ensureRescue);
 
         // Generate IR for code being protected
         Variable ensureExprValue = temp();
@@ -230,11 +250,11 @@ public abstract class IRBuilder<U, V, W, X, Y, Z> {
         // ------------ Emit the ensure body alongwith dummy rescue block ------------
         // Now build the dummy rescue block that
         // catches all exceptions thrown by the body
-        addInstr(new LabelInstr(ebi.dummyRescueBlockLabel));
+        addInstr(new LabelInstr(ebi.ensureRescue));
         Variable exc = addResultInstr(new ReceiveJRubyExceptionInstr(temp()));
 
         // Now emit the ensure body's stashed instructions
-        if (ensureNode != null) ebi.emitBody(this);
+        if (ensureNode != null) ebi.emitEnsureBody(this);
 
         // 1. Ensure block has no explicit return => the result of the entire ensure expression is the result of the protected body.
         // 2. Ensure block has an explicit return => the result of the protected body is ignored.
@@ -2579,6 +2599,17 @@ public abstract class IRBuilder<U, V, W, X, Y, Z> {
 
     protected abstract Operand[] buildAttrAssignCallArgs(U args, Operand[] rhs, boolean containsAssignment);
 
+    /**
+     * @param bodyNode the main statements to be executed
+     * @param elseNode else path in a begin
+     * @param exceptions possible list of excpetions which will jump to rescueBody
+     * @param rescueBody the statements executed if the matching exception(s) occurs
+     * @param optRescue possible other rescue in the same begin
+     * @param isModifier foo rescue bar
+     * @param ensure ensure block
+     * @param reference variable for the rescue (NameError => name)
+     * @return return last operand of begin execution
+     */
     protected Operand buildRescueInternal(U bodyNode, U elseNode, U[] exceptions, U rescueBody,
                                         X optRescue, boolean isModifier, EnsureBlockInfo ensure, U reference) {
         boolean needsBacktrace = !canBacktraceBeRemoved(exceptions, rescueBody, optRescue, elseNode, isModifier);
