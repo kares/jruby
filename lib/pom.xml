@@ -1086,32 +1086,6 @@ DO NOT MODIFY - GENERATED CODE
     </dependency>
     <dependency>
       <groupId>rubygems</groupId>
-      <artifactId>ruby-maven</artifactId>
-      <version>3.9.3</version>
-      <type>gem</type>
-      <scope>provided</scope>
-      <exclusions>
-        <exclusion>
-          <groupId>rubygems</groupId>
-          <artifactId>jar-dependencies</artifactId>
-        </exclusion>
-      </exclusions>
-    </dependency>
-    <dependency>
-      <groupId>rubygems</groupId>
-      <artifactId>ruby-maven-libs</artifactId>
-      <version>3.9.9</version>
-      <type>gem</type>
-      <scope>provided</scope>
-      <exclusions>
-        <exclusion>
-          <groupId>rubygems</groupId>
-          <artifactId>jar-dependencies</artifactId>
-        </exclusion>
-      </exclusions>
-    </dependency>
-    <dependency>
-      <groupId>rubygems</groupId>
       <artifactId>rss</artifactId>
       <version>0.3.2</version>
       <type>gem</type>
@@ -1251,8 +1225,6 @@ DO NOT MODIFY - GENERATED CODE
           <include>specifications/resolv-replace-0.1.1*</include>
           <include>specifications/rexml-3.4.4*</include>
           <include>specifications/rinda-0.2.0*</include>
-          <include>specifications/ruby-maven-3.9.3*</include>
-          <include>specifications/ruby-maven-libs-3.9.9*</include>
           <include>specifications/rss-0.3.2*</include>
           <include>specifications/syslog-0.4.0*</include>
           <include>specifications/test-unit-3.7.5*</include>
@@ -1337,8 +1309,6 @@ DO NOT MODIFY - GENERATED CODE
           <include>gems/resolv-replace-0.1.1*/**/*</include>
           <include>gems/rexml-3.4.4*/**/*</include>
           <include>gems/rinda-0.2.0*/**/*</include>
-          <include>gems/ruby-maven-3.9.3*/**/*</include>
-          <include>gems/ruby-maven-libs-3.9.9*/**/*</include>
           <include>gems/rss-0.3.2*/**/*</include>
           <include>gems/syslog-0.4.0*/**/*</include>
           <include>gems/test-unit-3.7.5*/**/*</include>
@@ -1423,8 +1393,6 @@ DO NOT MODIFY - GENERATED CODE
           <include>cache/resolv-replace-0.1.1*</include>
           <include>cache/rexml-3.4.4*</include>
           <include>cache/rinda-0.2.0*</include>
-          <include>cache/ruby-maven-3.9.3*</include>
-          <include>cache/ruby-maven-libs-3.9.9*</include>
           <include>cache/rss-0.3.2*</include>
           <include>cache/syslog-0.4.0*</include>
           <include>cache/test-unit-3.7.5*</include>
@@ -1509,8 +1477,6 @@ DO NOT MODIFY - GENERATED CODE
           <include>extensions/universal-java/4.0.0/resolv-replace-0.1.1/*</include>
           <include>extensions/universal-java/4.0.0/rexml-3.4.4/*</include>
           <include>extensions/universal-java/4.0.0/rinda-0.2.0/*</include>
-          <include>extensions/universal-java/4.0.0/ruby-maven-3.9.3/*</include>
-          <include>extensions/universal-java/4.0.0/ruby-maven-libs-3.9.9/*</include>
           <include>extensions/universal-java/4.0.0/rss-0.3.2/*</include>
           <include>extensions/universal-java/4.0.0/syslog-0.4.0/*</include>
           <include>extensions/universal-java/4.0.0/test-unit-3.7.5/*</include>

@@ -141,8 +141,6 @@ bundled_gems = [
   ['resolv-replace', '0.1.1'],
   ['rexml', '3.4.4'],
   ['rinda', '0.2.0'],
-  ['ruby-maven', '3.9.3'],
-  ['ruby-maven-libs', '3.9.9'],
   ['rss', '0.3.2'],
   ['syslog', '0.4.0'],
   ['test-unit', '3.7.5']
