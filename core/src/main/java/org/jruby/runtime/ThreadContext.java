@@ -1541,6 +1541,7 @@ public final class ThreadContext {
      * Clear call info state (set to 0). This method is static to make it trivially
      * inlinable on most JVM JITs
      */
+    @JIT
     public static void clearCallInfo(ThreadContext context) {
         context.callInfo = 0;
     }
@@ -1550,7 +1551,7 @@ public final class ThreadContext {
     }
 
     public static boolean hasNonemptyKeywords(int callInfo) {
-        return (callInfo & CALL_KEYWORD) != 0 && !keywordsEmpty(callInfo);
+        return hasKeywords(callInfo) && !keywordsEmpty(callInfo);
     }
 
     public static boolean keywordsEmpty(int callInfo) {

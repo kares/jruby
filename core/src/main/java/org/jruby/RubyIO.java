@@ -135,7 +135,7 @@ import static org.jruby.api.Error.typeError;
 import static org.jruby.api.Warn.warn;
 import static org.jruby.api.Warn.warnDeprecated;
 import static org.jruby.api.Warn.warningDeprecated;
-import static org.jruby.runtime.ThreadContext.*;
+import static org.jruby.runtime.ThreadContext.hasKeywords;
 import static org.jruby.runtime.Visibility.*;
 import static org.jruby.util.RubyStringBuilder.str;
 import static org.jruby.util.RubyStringBuilder.types;
@@ -2679,21 +2679,21 @@ public class RubyIO extends RubyObject implements IOEncodable, Closeable, Flusha
     // rb_io_gets_m
     @JRubyMethod(name = "gets", writes = LASTLINE, keywords = true)
     public IRubyObject gets(ThreadContext context, IRubyObject arg) {
-        boolean keywords = (resetCallInfo(context) & CALL_KEYWORD) != 0;
+        boolean keywords = hasKeywords(ThreadContext.resetCallInfo(context));
         return Getline.getlineCall(context, GETLINE, this, getReadEncoding(context), arg, keywords);
     }
 
     // rb_io_gets_m
     @JRubyMethod(name = "gets", writes = LASTLINE, keywords = true)
     public IRubyObject gets(ThreadContext context, IRubyObject rs, IRubyObject limit_arg) {
-        boolean keywords = (resetCallInfo(context) & CALL_KEYWORD) != 0;
+        boolean keywords = hasKeywords(ThreadContext.resetCallInfo(context));
         return Getline.getlineCall(context, GETLINE, this, getReadEncoding(context), rs, limit_arg, keywords);
     }
 
     // rb_io_gets_m
     @JRubyMethod(name = "gets", writes = LASTLINE, keywords = true)
     public IRubyObject gets(ThreadContext context, IRubyObject rs, IRubyObject limit_arg, IRubyObject opt) {
-        boolean keywords = (resetCallInfo(context) & CALL_KEYWORD) != 0;
+        boolean keywords = hasKeywords(ThreadContext.resetCallInfo(context));
         return Getline.getlineCall(context, GETLINE, this, getReadEncoding(context), rs, limit_arg, opt, keywords);
     }
 
@@ -3890,7 +3890,7 @@ public class RubyIO extends RubyObject implements IOEncodable, Closeable, Flusha
 
     @JRubyMethod(keywords = true)
     public IRubyObject each(final ThreadContext context, IRubyObject arg0, final Block block) {
-        boolean keywords = (resetCallInfo(context) & CALL_KEYWORD) != 0;
+        boolean keywords = hasKeywords(ThreadContext.resetCallInfo(context));
         if (!block.isGiven()) return enumeratorize(context.runtime, this, "each");
 
         return Getline.getlineCall(context, GETLINE_YIELD, this, getReadEncoding(context), arg0, block, keywords);
@@ -3898,7 +3898,7 @@ public class RubyIO extends RubyObject implements IOEncodable, Closeable, Flusha
 
     @JRubyMethod(keywords = true)
     public IRubyObject each(final ThreadContext context, IRubyObject arg0, IRubyObject arg1, final Block block) {
-        boolean keywords = (resetCallInfo(context) & CALL_KEYWORD) != 0;
+        boolean keywords = hasKeywords(ThreadContext.resetCallInfo(context));
         if (!block.isGiven()) return enumeratorize(context.runtime, this, "each");
 
         return Getline.getlineCall(context, GETLINE_YIELD, this, getReadEncoding(context), arg0, arg1, block, keywords);
@@ -3906,7 +3906,7 @@ public class RubyIO extends RubyObject implements IOEncodable, Closeable, Flusha
 
     @JRubyMethod(keywords = true)
     public IRubyObject each(final ThreadContext context, IRubyObject arg0, IRubyObject arg1, IRubyObject arg2, final Block block) {
-        boolean keywords = (resetCallInfo(context) & CALL_KEYWORD) != 0;
+        boolean keywords = hasKeywords(ThreadContext.resetCallInfo(context));
         if (!block.isGiven()) return enumeratorize(context.runtime, this, "each");
 
         return Getline.getlineCall(context, GETLINE_YIELD, this, getReadEncoding(context), arg0, arg1, arg2, block, keywords);
@@ -3937,7 +3937,7 @@ public class RubyIO extends RubyObject implements IOEncodable, Closeable, Flusha
 
     @JRubyMethod(keywords = true)
     public IRubyObject each_line(final ThreadContext context, IRubyObject arg0, final Block block) {
-        boolean keywords = (resetCallInfo(context) & CALL_KEYWORD) != 0;
+        boolean keywords = hasKeywords(ThreadContext.resetCallInfo(context));
 
         if (!block.isGiven()) return enumeratorize(context.runtime, this, "each_line", arg0);
 
@@ -3946,7 +3946,7 @@ public class RubyIO extends RubyObject implements IOEncodable, Closeable, Flusha
 
     @JRubyMethod(keywords = true)
     public IRubyObject each_line(final ThreadContext context, IRubyObject arg0, IRubyObject arg1, final Block block) {
-        boolean keywords = (resetCallInfo(context) & CALL_KEYWORD) != 0;
+        boolean keywords = hasKeywords(ThreadContext.resetCallInfo(context));
 
         if (!block.isGiven()) return enumeratorize(context.runtime, this, "each_line", arg0, arg1);
 
@@ -3955,7 +3955,7 @@ public class RubyIO extends RubyObject implements IOEncodable, Closeable, Flusha
 
     @JRubyMethod(keywords = true)
     public IRubyObject each_line(final ThreadContext context, IRubyObject arg0, IRubyObject arg1, IRubyObject arg2, final Block block) {
-        boolean keywords = (resetCallInfo(context) & CALL_KEYWORD) != 0;
+        boolean keywords = hasKeywords(ThreadContext.resetCallInfo(context));
 
         if (!block.isGiven()) return enumeratorize(context.runtime, this, "each_line", arg0, arg1, arg2);
 
@@ -3992,19 +3992,19 @@ public class RubyIO extends RubyObject implements IOEncodable, Closeable, Flusha
 
     @JRubyMethod(name = "readlines", keywords = true)
     public RubyArray readlines(ThreadContext context, IRubyObject arg0) {
-        boolean keywords = (resetCallInfo(context) & CALL_KEYWORD) != 0;
+        boolean keywords = hasKeywords(ThreadContext.resetCallInfo(context));
         return Getline.getlineCall(context, GETLINE_ARY, this, getReadEncoding(context), arg0, keywords);
     }
 
     @JRubyMethod(name = "readlines", keywords = true)
     public RubyArray readlines(ThreadContext context, IRubyObject arg0, IRubyObject arg1) {
-        boolean keywords = (resetCallInfo(context) & CALL_KEYWORD) != 0;
+        boolean keywords = hasKeywords(ThreadContext.resetCallInfo(context));
         return Getline.getlineCall(context, GETLINE_ARY, this, getReadEncoding(context), arg0, arg1, keywords);
     }
 
     @JRubyMethod(name = "readlines", keywords = true)
     public RubyArray readlines(ThreadContext context, IRubyObject arg0, IRubyObject arg1, IRubyObject arg2) {
-        boolean keywords = (resetCallInfo(context) & CALL_KEYWORD) != 0;
+        boolean keywords = hasKeywords(ThreadContext.resetCallInfo(context));
         return Getline.getlineCall(context, GETLINE_ARY, this, getReadEncoding(context), arg0, arg1, arg2, keywords);
     }
 
@@ -4076,7 +4076,7 @@ public class RubyIO extends RubyObject implements IOEncodable, Closeable, Flusha
 
     @JRubyMethod(name = "foreach", required = 1, optional = 3, checkArity = false, meta = true, writes = LASTLINE, keywords = true)
     public static IRubyObject foreach(final ThreadContext context, IRubyObject recv, IRubyObject[] args, final Block block) {
-        boolean keywords = (resetCallInfo(context) & CALL_KEYWORD) != 0;
+        boolean keywords = hasKeywords(ThreadContext.resetCallInfo(context));
 
         Arity.checkArgumentCount(context, args.length - (keywords ? 1 : 0), 1, 4);
 

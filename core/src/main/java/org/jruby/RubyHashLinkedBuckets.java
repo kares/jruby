@@ -638,11 +638,11 @@ public class RubyHashLinkedBuckets extends RubyHash {
 
     @JRubyMethod(visibility = PRIVATE)
     public IRubyObject initialize(ThreadContext context, IRubyObject _default, final Block block) {
-        boolean keywords = hasKeywords(resetCallInfo(context));
+        boolean keywords = hasKeywords(ThreadContext.resetCallInfo(context));
         modify();
 
         if (keywords) {
-            IRubyObject[] opts = ArgsUtil.extractKeywordArgs(context, (RubyHashLinkedBuckets) _default, "capacity");
+            IRubyObject[] opts = ArgsUtil.extractKeywordArgs(context, (RubyHash) _default, "capacity");
             // This will allocFirst twice since it already happened before initialize was called.  I think this is ok?
             if (opts[0] instanceof RubyFixnum fixnum && fixnum.asInt(context) > 0) allocFirst(fixnum.asInt(context));
 
@@ -663,9 +663,9 @@ public class RubyHashLinkedBuckets extends RubyHash {
 
     @JRubyMethod(visibility = PRIVATE, keywords = true)
     public IRubyObject initialize(ThreadContext context, IRubyObject _default, IRubyObject hash, final Block block) {
-        if (!hasKeywords(resetCallInfo(context))) throw argumentError(context, 2, 0, 1);
+        if (!hasKeywords(ThreadContext.resetCallInfo(context))) throw argumentError(context, 2, 0, 1);
 
-        IRubyObject[] opts = ArgsUtil.extractKeywordArgs(context, (RubyHashLinkedBuckets) hash, "capacity");
+        IRubyObject[] opts = ArgsUtil.extractKeywordArgs(context, (RubyHash) hash, "capacity");
 
         // This will allocFirst twice since it already happened before initialize was called.  I think this is ok?
         if (opts[0] instanceof RubyFixnum fixnum && fixnum.asInt(context) > 0) allocFirst(fixnum.asInt(context));

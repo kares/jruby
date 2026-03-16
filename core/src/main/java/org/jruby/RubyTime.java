@@ -764,7 +764,7 @@ public class RubyTime extends RubyObject {
             pos = fillDigitsAfterChar(buf, pos, ':', offset % 60, 2, 10);
         }
 
-        return newString(context, new ByteList(buf, false));
+        return newString(context, new ByteList(buf, USASCIIEncoding.INSTANCE, false));
     }
 
     private static int fillDigits(byte[] buf, int begin, int number, int size, int divisor) {

@@ -96,7 +96,7 @@ import static org.jruby.api.Error.runtimeError;
 import static org.jruby.api.Error.typeError;
 import static org.jruby.api.Warn.warn;
 import static org.jruby.api.Warn.warning;
-import static org.jruby.runtime.ThreadContext.resetCallInfo;
+import static org.jruby.runtime.ThreadContext.hasKeywords;
 import static org.jruby.util.RubyStringBuilder.str;
 import static org.jruby.util.StringSupport.CR_7BIT;
 import static org.jruby.util.StringSupport.EMPTY_STRING_ARRAY;
@@ -896,7 +896,7 @@ public class RubyRegexp extends RubyObject implements ReOptions, EncodingCapable
 
     @JRubyMethod(name = "initialize", visibility = Visibility.PRIVATE, keywords = true)
     public IRubyObject initialize_m(ThreadContext context, IRubyObject arg0, IRubyObject arg1) {
-        boolean keywords = (resetCallInfo(context) & ThreadContext.CALL_KEYWORD) != 0;
+        boolean keywords = hasKeywords(ThreadContext.resetCallInfo(context));
 
         IRubyObject timeout;
         RegexpOptions regexpOptions;
@@ -923,7 +923,7 @@ public class RubyRegexp extends RubyObject implements ReOptions, EncodingCapable
 
     @JRubyMethod(name = "initialize", visibility = Visibility.PRIVATE, keywords = true)
     public IRubyObject initialize_m(ThreadContext context, IRubyObject arg0, IRubyObject arg1, IRubyObject arg2) {
-        boolean keywords = (resetCallInfo(context) & ThreadContext.CALL_KEYWORD) != 0;
+        boolean keywords = hasKeywords(ThreadContext.resetCallInfo(context));
 
         if (arg0 instanceof RubyRegexp && Options.PARSER_WARN_FLAGS_IGNORED.load()) {
             warn(context, "flags ignored");
@@ -1557,12 +1557,11 @@ public class RubyRegexp extends RubyObject implements ReOptions, EncodingCapable
 
     // MRI: reg_extract_args - This does not break the regexp into a String value since it will never used if the first
     // argument is a Regexp.  This also is true of MRI so I am not sure why they do the string part.
-    private static RegexpArgs extractRegexpArgs(ThreadContext context, IRubyObject[] args) {
-        int callInfo = resetCallInfo(context);
+    private static RegexpArgs extractRegexpArgs(ThreadContext context, final int callInfo, IRubyObject[] args) {
         int length = args.length;
 
         IRubyObject timeout = null;
-        if ((callInfo & ThreadContext.CALL_KEYWORD) != 0) {
+        if (hasKeywords(callInfo)) {
             length--;
             RubyHash opts = Convert.castAsHash(context, args[args.length - 1]);
             timeout = opts.fastARef(asSymbol(context, "timeout"));
@@ -1581,9 +1580,10 @@ public class RubyRegexp extends RubyObject implements ReOptions, EncodingCapable
         return new RegexpArgs(string, opts, timeout);
     }
 
-    @JRubyMethod(name = "linear_time?", meta = true, required = 1, optional = 1)
+    @JRubyMethod(name = "linear_time?", meta = true, required = 1, optional = 1, keywords = true)
     public static IRubyObject linear_time_p(ThreadContext context, IRubyObject recv, IRubyObject[] args) {
-        RegexpArgs regexpArgs = extractRegexpArgs(context, args);
+        final int callInfo = ThreadContext.resetCallInfo(context);
+        RegexpArgs regexpArgs = extractRegexpArgs(context, callInfo, args);
         RubyRegexp regexp = args[0] instanceof RubyRegexp reg ?
                 reg : newRegexpFromStr(context.runtime, regexpArgs.string, regexpArgs.options);
 

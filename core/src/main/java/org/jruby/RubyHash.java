@@ -63,6 +63,7 @@ import static org.jruby.api.Access.hashClass;
 import static org.jruby.api.Convert.asBoolean;
 import static org.jruby.api.Define.defineClass;
 import static org.jruby.api.Error.*;
+import static org.jruby.runtime.ThreadContext.hasKeywords;
 import static org.jruby.runtime.Visibility.PRIVATE;
 
 // Design overview:
@@ -455,7 +456,7 @@ public class RubyHash extends RubyObject implements Map {
         return getDelegate().initialize(context, block);
     }
 
-    @JRubyMethod(visibility = PRIVATE)
+    @JRubyMethod(visibility = PRIVATE, keywords = true)
     public IRubyObject initialize(ThreadContext context, IRubyObject _default, final Block block) {
         return getDelegate().initialize(context, _default, block);
     }
