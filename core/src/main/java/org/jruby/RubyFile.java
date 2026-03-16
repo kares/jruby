@@ -299,7 +299,7 @@ public class RubyFile extends RubyIO implements EncodingCapable {
     @JRubyMethod(name = "initialize", required = 1, optional = 3, checkArity = false, visibility = PRIVATE, keywords = true)
     public IRubyObject initialize(ThreadContext context, IRubyObject[] args, Block block) {
         // capture callInfo for delegating to IO#initialize
-        int callInfo = context.callInfo;
+        final int callInfo = context.callInfo;
         IRubyObject keywords = IRRuntimeHelpers.receiveKeywords(context, args, false, true, false);
         // Mild hack. We want to arity-mismatch if extra arg is not really a kwarg but not if it is one.
         int maxArgs = keywords instanceof RubyHash ? 4 : 3;
@@ -311,7 +311,7 @@ public class RubyFile extends RubyIO implements EncodingCapable {
             IRubyObject fd = TypeConverter.convertToTypeWithCheck(context, args[0], context.runtime.getFixnum(), sites(context).to_int_checked);
             if (!fd.isNil()) {
                 // restore callInfo for delegated call to IO#initialize
-                IRRuntimeHelpers.setCallInfo(context, callInfo);
+                context.callInfo = callInfo;
                 return switch (argc) {
                     case 1 -> super.initialize(context, fd, block);
                     case 2 -> super.initialize(context, fd, args[1], block);

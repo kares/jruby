@@ -52,6 +52,7 @@ import static org.jruby.api.Error.typeError;
 import static org.jruby.runtime.Helpers.arrayOf;
 import static org.jruby.runtime.ObjectAllocator.NOT_ALLOCATABLE_ALLOCATOR;
 import static org.jruby.runtime.ThreadContext.CALL_KEYWORD;
+import static org.jruby.runtime.ThreadContext.hasNonemptyKeywords;
 import static org.jruby.runtime.Visibility.PRIVATE;
 
 /**
@@ -209,10 +210,9 @@ public class RubyEnumerator extends RubyObject implements java.util.Iterator<Obj
     // and used internally to create enum from Enumerator::Lazy#eager
     @JRubyMethod(name = "__from", meta = true, required = 2, optional = 2, checkArity = false, visibility = PRIVATE, keywords = true)
     public static IRubyObject __from(ThreadContext context, IRubyObject klass, IRubyObject[] args) {
-        int argc = Arity.checkArgumentCount(context, args, 2, 4);
+        boolean keywords = hasNonemptyKeywords(ThreadContext.resetCallInfo(context));
 
-        boolean keywords = (context.callInfo & CALL_KEYWORD) != 0 && (context.callInfo & ThreadContext.CALL_KEYWORD_EMPTY) == 0;
-        ThreadContext.resetCallInfo(context);
+        int argc = Arity.checkArgumentCount(context, args, 2, 4);
 
         // Lazy.__from(enum, method, *args, size)
         IRubyObject object = args[0];

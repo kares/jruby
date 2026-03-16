@@ -703,7 +703,7 @@ public class IRRuntimeHelpers {
     // call on this path and pass in the live value of ruby2_keywords from the scope.
     @JIT
     public static IRubyObject receiveSpecificArityKeywords(ThreadContext context, IRubyObject last, boolean ruby2Keywords) {
-        int callInfo = resetCallInfo(context);
+        int callInfo = ThreadContext.resetCallInfo(context);
         if (last instanceof RubyHash hash) {
             KwargsAction kwargsAction = kwargsActionJIT(last, ruby2Keywords, callInfo);
             return switch (kwargsAction) {

@@ -92,7 +92,6 @@ import static org.jruby.api.Define.defineClass;
 import static org.jruby.api.Error.*;
 import static org.jruby.api.Warn.warn;
 import static org.jruby.runtime.ThreadContext.hasKeywords;
-import static org.jruby.runtime.ThreadContext.resetCallInfo;
 import static org.jruby.runtime.Visibility.PRIVATE;
 import static org.jruby.util.Inspector.*;
 
@@ -813,9 +812,9 @@ public class RubyHash extends RubyObject implements Map {
         return this;
     }
 
-    @JRubyMethod(visibility = PRIVATE)
+    @JRubyMethod(visibility = PRIVATE, keywords = true)
     public IRubyObject initialize(ThreadContext context, IRubyObject _default, final Block block) {
-        boolean keywords = hasKeywords(resetCallInfo(context));
+        boolean keywords = hasKeywords(ThreadContext.resetCallInfo(context));
         modify();
 
         if (keywords) {
@@ -840,7 +839,7 @@ public class RubyHash extends RubyObject implements Map {
 
     @JRubyMethod(visibility = PRIVATE, keywords = true)
     public IRubyObject initialize(ThreadContext context, IRubyObject _default, IRubyObject hash, final Block block) {
-        if (!hasKeywords(resetCallInfo(context))) throw argumentError(context, 2, 0, 1);
+        if (!hasKeywords(ThreadContext.resetCallInfo(context))) throw argumentError(context, 2, 0, 1);
 
         IRubyObject[] opts = ArgsUtil.extractKeywordArgs(context, (RubyHash) hash, "capacity");
 
