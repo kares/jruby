@@ -111,6 +111,7 @@ public class RubyRunnable implements ThreadedRunnable {
         // uber-ThreadKill catcher, since it should always just mean "be dead"
         try {
             // Push a frame for the toplevel of the thread
+            context.pushFrame();
 
             // Call the thread's code
             Block threadBlock = proc.getBlock();
