@@ -327,6 +327,11 @@ public class HandleMethod extends DynamicMethod implements MethodArgs2, Cloneabl
     }
 
     @Override
+    public DynamicMethod dupWithName(String name) {
+        return new HandleMethod(implementationClass, getVisibility(), name, signature.encode(), builtin, notImplemented, parameterDesc, min, max, maker0, maker1, maker2, maker3, maker4);
+    }
+
+    @Override
     public String[] getParameterList() {
         if (parameterDesc != null && parameterDesc.length() > 0) {
             return split(parameterDesc, ';').toArray(EMPTY_STRING_ARRAY);

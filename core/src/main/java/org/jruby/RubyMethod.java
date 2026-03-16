@@ -301,7 +301,7 @@ public class RubyMethod extends AbstractRubyMethod {
 
     @JRubyMethod
     public IRubyObject original_name(ThreadContext context) {
-        return method instanceof AliasMethod ? asSymbol(context, ((AliasMethod)method).getOldName()) : name(context);
+        return asSymbol(context, method instanceof AliasMethod alias ? alias.getOldName() : method.getName());
     }
 
     public IRubyObject getReceiver() {

@@ -49,6 +49,11 @@ public abstract class DelegatingDynamicMethod extends DynamicMethod {
         this.delegate = delegate;
     }
 
+    protected DelegatingDynamicMethod(DynamicMethod delegate, String name) {
+        super(delegate.getImplementationClass(), delegate.getVisibility(), name);
+        this.delegate = delegate;
+    }
+
     public DynamicMethod getDelegate() {
         return delegate;
     }

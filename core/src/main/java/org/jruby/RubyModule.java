@@ -6503,7 +6503,10 @@ public class RubyModule extends RubyObject {
                 singletonClass.addMethod(context, baseName, dynamicMethod);
             } else {
                 baseName = names[0];
-                for (String name : names) singletonClass.addMethod(context, name, dynamicMethod);
+                singletonClass.addMethod(context, baseName, dynamicMethod);
+                for (int i = 1; i < names.length; i++) {
+                    singletonClass.addMethod(context, names[i], dynamicMethod.dupWithName(names[i]));
+                }
             }
 
             if (aliases.length > 0) {
@@ -6516,7 +6519,10 @@ public class RubyModule extends RubyObject {
                 module.getMethodLocation().addMethod(context, baseName, dynamicMethod);
             } else {
                 baseName = names[0];
-                for (String name : names) module.getMethodLocation().addMethod(context, name, dynamicMethod);
+                module.getMethodLocation().addMethod(context, baseName, dynamicMethod);
+                for (int i = 1; i < names.length; i++) {
+                    module.getMethodLocation().addMethod(context, names[i], dynamicMethod.dupWithName(names[i]));
+                }
             }
 
             if (aliases.length > 0) {
@@ -6535,7 +6541,10 @@ public class RubyModule extends RubyObject {
                     singletonClass.addMethod(context, desc.name, moduleMethod);
                 } else {
                     baseName = names[0];
-                    for (String name : names) singletonClass.addMethod(context, name, moduleMethod);
+                    singletonClass.addMethod(context, baseName, moduleMethod);
+                    for (int i = 1; i < names.length; i++) {
+                        singletonClass.addMethod(context, names[i], moduleMethod.dupWithName(names[i]));
+                    }
                 }
 
                 if (aliases.length > 0) {

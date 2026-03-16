@@ -589,6 +589,32 @@ public abstract class DynamicMethod {
     }
 
     /**
+     * Creates a duplicate of this method with a different name.
+     * Used when a single method definition is registered under multiple names
+     * (e.g. @JRubyMethod(name = {"size", "length"})) so that each registered
+     * entry has the correct getName() for original_name semantics.
+     *
+     * Subclasses (e.g. HandleMethod) should override to produce a proper typed copy.
+     *
+     * @param name the name for the new copy
+     * @return a duplicate method with the given name
+     */
+    public DynamicMethod dupWithName(String name) {
+        if (name.equals(this.name)) return dup();
+        return new Renamed(this, name);
+    }
+
+    /** Thin delegating wrapper that presents an existing method under a different name. */
+    private static final class Renamed extends DelegatingDynamicMethod {
+        Renamed(DynamicMethod delegate, String name) {
+            super(delegate, name);
+        }
+
+        @Override public String getName() { return name; }
+        @Override public DynamicMethod dup() { return new Renamed(delegate.dup(), name); }
+    }
+
+    /**
      * Get the "handle" associated with this DynamicMethod.
      * 
      * @return the handle

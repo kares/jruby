@@ -529,7 +529,7 @@ public class AnnotationBinder extends AbstractProcessor {
         if (names.length > 0) {
             for (String name : names) {
                 if (!name.contentEquals(baseName)) {
-                    out.println("        " + classVar + ".putMethod(context, \"" + name + "\", " + methodVar + ");");
+                    out.println("        " + classVar + ".putMethod(context, \"" + name + "\", " + methodVar + ".dupWithName(\"" + name + "\"));");
                 }
             }
         }
