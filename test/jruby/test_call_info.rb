@@ -115,6 +115,26 @@ class TestCallInfo < Test::Unit::TestCase
     assert_equal [1, 2], [v.a, v.k]
   end
 
+  # ── Regexp#initialize keyword handling ───────────────────────────
+
+  def test_regexp_initialize_with_timeout_keyword
+    # 2-arg form: Regexp.new(source, timeout: val)
+    re = Regexp.new("abc", timeout: 1.0)
+    assert_match re, "abc"
+
+    v = KwargsReceiver.new(1, k: 2)
+    assert_equal [1, 2], [v.a, v.k]
+  end
+
+  def test_regexp_initialize_3arg_with_timeout_keyword
+    # 3-arg form: Regexp.new(source, flags, timeout: val)
+    re = Regexp.new("abc", Regexp::IGNORECASE, timeout: 1.0)
+    assert_match re, "ABC"
+
+    v = KwargsReceiver.new(1, k: 2)
+    assert_equal [1, 2], [v.a, v.k]
+  end
+
   # ── ARGF keyword handling ──────────────────────────────────────────
 
   def test_argf_readlines_chomp_keyword
@@ -208,6 +228,160 @@ class TestCallInfo < Test::Unit::TestCase
   def test_to_enum_without_keywords_does_not_leak
     enum = [1, 2, 3].to_enum(:each)
     enum.to_a
+
+    v = KwargsReceiver.new(1, k: 2)
+    assert_equal [1, 2], [v.a, v.k]
+  end
+
+  # ── Data class keyword handling ────────────────────────────────────
+
+  def test_data_new_with_keywords
+    d = Data.define(:x, :y)
+    instance = d.new(x: 1, y: 2)
+    assert_equal 1, instance.x
+    assert_equal 2, instance.y
+
+    v = KwargsReceiver.new(1, k: 2)
+    assert_equal [1, 2], [v.a, v.k]
+  end
+
+  def test_data_new_single_member_with_keyword
+    d = Data.define(:x)
+    instance = d.new(x: 42)
+    assert_equal 42, instance.x
+
+    v = KwargsReceiver.new(1, k: 2)
+    assert_equal [1, 2], [v.a, v.k]
+  end
+
+  def test_data_with_keyword
+    d = Data.define(:x, :y)
+    original = d.new(x: 1, y: 2)
+    updated = original.with(x: 10)
+    assert_equal 10, updated.x
+    assert_equal 2, updated.y
+
+    v = KwargsReceiver.new(1, k: 2)
+    assert_equal [1, 2], [v.a, v.k]
+  end
+
+  # ── Dir.glob / Dir[] keyword handling ──────────────────────────────
+
+  def test_dir_glob_with_sort_keyword
+    entries = Dir.glob("*", sort: true)
+    assert_kind_of Array, entries
+
+    v = KwargsReceiver.new(1, k: 2)
+    assert_equal [1, 2], [v.a, v.k]
+  end
+
+  def test_dir_aref_does_not_leak
+    Dir["*"]
+
+    v = KwargsReceiver.new(1, k: 2)
+    assert_equal [1, 2], [v.a, v.k]
+  end
+
+  # ── Proc#parameters keyword handling ───────────────────────────────
+
+  def test_proc_parameters_with_lambda_keyword
+    pr = Proc.new { |a, k:| }
+    params = pr.parameters(lambda: true)
+    assert_equal [[:req, :a], [:keyreq, :k]], params
+
+    v = KwargsReceiver.new(1, k: 2)
+    assert_equal [1, 2], [v.a, v.k]
+  end
+
+  def test_proc_parameters_without_keyword
+    pr = Proc.new { |a, k:| }
+    params = pr.parameters
+    assert_include params, [:opt, :a]
+    assert_include params, [:keyreq, :k]
+
+    v = KwargsReceiver.new(1, k: 2)
+    assert_equal [1, 2], [v.a, v.k]
+  end
+
+  # ── Warning.warn keyword handling ──────────────────────────────────
+
+  def test_warning_warn_with_category_keyword
+    # Warning.warn 2-arg form accepts category: keyword
+    assert_nothing_raised do
+      Warning.warn("test callinfo message\n", category: :deprecated)
+    end
+
+    v = KwargsReceiver.new(1, k: 2)
+    assert_equal [1, 2], [v.a, v.k]
+  end
+
+  # ── IO.foreach keyword handling ────────────────────────────────────
+
+  def test_io_foreach_chomp_keyword
+    tmpfile = Tempfile.new('test_call_info_foreach')
+    tmpfile.write("hello\nworld\n")
+    tmpfile.close
+
+    lines = []
+    IO.foreach(tmpfile.path, chomp: true) { |l| lines << l }
+    assert_equal ["hello", "world"], lines
+
+    v = KwargsReceiver.new(1, k: 2)
+    assert_equal [1, 2], [v.a, v.k]
+  ensure
+    tmpfile.unlink if tmpfile
+  end
+
+  # ── File#initialize keyword handling ────────────────────────────────
+
+  def test_file_open_with_mode_keyword
+    tmpfile = Tempfile.new('test_call_info_file')
+    tmpfile.write("file content")
+    tmpfile.close
+
+    f = File.open(tmpfile.path, mode: "r")
+    assert_equal "file content", f.read
+    f.close
+
+    v = KwargsReceiver.new(1, k: 2)
+    assert_equal [1, 2], [v.a, v.k]
+  ensure
+    tmpfile.unlink if tmpfile
+  end
+
+  def test_file_open_with_fd_and_mode_keyword
+    tmpfile = Tempfile.new('test_call_info_file_fd')
+    tmpfile.write("fd content")
+    tmpfile.close
+
+    # Open via path first, then reopen via fd to exercise the fd delegation path
+    original = File.open(tmpfile.path, "r")
+    fd_file = IO.new(original.fileno, mode: "r", autoclose: false)
+    assert_equal "fd content", fd_file.read
+    fd_file.close
+    original.close
+
+    v = KwargsReceiver.new(1, k: 2)
+    assert_equal [1, 2], [v.a, v.k]
+  ensure
+    tmpfile.unlink if tmpfile
+  end
+
+  # ── NoMatchingPatternKeyError keyword handling ─────────────────────
+
+  def test_no_matching_pattern_key_error_with_keywords
+    err = NoMatchingPatternKeyError.new("test", matchee: { a: 1 }, key: :b)
+    assert_equal "test", err.message
+    assert_equal({ a: 1 }, err.matchee)
+    assert_equal :b, err.key
+
+    v = KwargsReceiver.new(1, k: 2)
+    assert_equal [1, 2], [v.a, v.k]
+  end
+
+  def test_no_matching_pattern_key_error_without_keywords
+    err = NoMatchingPatternKeyError.new("test")
+    assert_equal "test", err.message
 
     v = KwargsReceiver.new(1, k: 2)
     assert_equal [1, 2], [v.a, v.k]
