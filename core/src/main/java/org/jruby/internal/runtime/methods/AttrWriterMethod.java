@@ -50,7 +50,7 @@ public class AttrWriterMethod extends JavaMethodOne {
     private VariableAccessor accessor = VariableAccessor.DUMMY_ACCESSOR;
 
     public AttrWriterMethod(RubyModule implementationClass, Visibility visibility, String variableName) {
-        super(implementationClass, visibility, variableName + "=");
+        super(implementationClass, visibility, AttrReaderMethod.stripIvarPrefix(variableName) + "=");
         this.variableName = variableName;
     }
 

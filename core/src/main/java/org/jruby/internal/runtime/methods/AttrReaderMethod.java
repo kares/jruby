@@ -45,17 +45,24 @@ import org.jruby.runtime.ivars.MethodData;
  * A method type for attribute writers (as created by attr_writer or attr_accessor).
  */
 public class AttrReaderMethod extends JavaMethodZero {
+    private final String variableName;
     private MethodData methodData;
     private VariableAccessor accessor = VariableAccessor.DUMMY_ACCESSOR;
 
     public AttrReaderMethod(RubyModule implementationClass, Visibility visibility, String variableName) {
-        super(implementationClass, visibility, variableName);
+        super(implementationClass, visibility, stripIvarPrefix(variableName));
+        this.variableName = variableName;
     }
 
     public AttrReaderMethod(RubyModule implementationClass, Visibility visibility, VariableAccessor accessor) {
-        super(implementationClass, visibility, accessor.getName());
+        super(implementationClass, visibility, stripIvarPrefix(accessor.getName()));
 
+        this.variableName = accessor.getName();
         this.accessor = accessor;
+    }
+
+    static String stripIvarPrefix(String name) {
+        return name.startsWith("@") ? name.substring(1) : name;
     }
 
     public IRubyObject call(ThreadContext context, IRubyObject self, RubyModule clazz, String name) {
@@ -63,31 +70,31 @@ public class AttrReaderMethod extends JavaMethodZero {
         IRubyObject variable = (IRubyObject) verifyAccessor(self.getMetaClass().getRealClass()).get(self);
         return variable == null ? context.nil : variable;
     }
-    
+
     public String getVariableName() {
-        return name;
+        return variableName;
     }
 
     private VariableAccessor verifyAccessor(RubyClass cls) {
         VariableAccessor localAccessor = accessor;
         if (localAccessor.getClassId() != cls.id) {
-            localAccessor = cls.getVariableAccessorForRead(name);
+            localAccessor = cls.getVariableAccessorForRead(variableName);
             accessor = localAccessor;
         }
         return localAccessor;
     }
-    
+
     @Override
     public MethodData getMethodData() {
         if (methodData == null){
-            methodData = new MethodData(name, "dummyfile", Collections.singletonList(name));
+            methodData = new MethodData(variableName, "dummyfile", Collections.singletonList(variableName));
         }
         return methodData;
     }
 
     @Override
     public Collection<String> getInstanceVariableNames() {
-        return Collections.singletonList(name);
+        return Collections.singletonList(variableName);
     }
 
     // Used by racc extension, needed for backward-compat with 1.7.
