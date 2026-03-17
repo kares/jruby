@@ -186,31 +186,19 @@ public abstract class IRBuilder<U, V, W, X, Y, Z> {
      */
     protected Operand buildEnsureInternal(U body, U elseNode, U[] exceptions, U rescueBody, X optRescue, boolean isModifier,
                                 U ensureNode, boolean isRescue, U reference) {
-        // Save $!
-        final Variable savedGlobalException = temp();
-        addInstr(new GetGlobalVariableInstr(savedGlobalException, symbol("$!")));
+        var savedGlobalException = addResultInstr(new GetGlobalVariableInstr(temp(), symbol("$!")));
 
-        // ------------ Build the body of the ensure block ------------
-        //
         // The ensure code is built first so that when the protected body is being built,
         // the ensure code can be cloned at break/next/return sites in the protected body.
-
-        // Push a new ensure block node onto the stack of ensure bodies being built
-        // The body's instructions are stashed and emitted later.
         EnsureBlockInfo ebi = new EnsureBlockInfo(scope, getCurrentLoop(), activeRescuers.peek(), currentLine() + 1);
 
-        // Record $! save var if we had a non-empty rescue node.
-        // $! will be restored from it where required.
+        /// // ENEBO: If this is ensure it won't save $! if it is empty ensure what does it need to do?  It needs a
+        // path to catch and rethrow
+        // Rescue will change $! but we need to restore $! later.
         if (isRescue) ebi.savedGlobalException = savedGlobalException;
 
-        Operand ensureRetVal;
-        if (ensureNode != null) {
-            ensureBodyBuildStack.push(ebi);
-            ensureRetVal = build(ensureNode);
-            ensureBodyBuildStack.pop();
-        } else {
-            ensureRetVal = nil();
-        }
+        // Record body of ensure and push to ensure body stack if there is an actual ensure body.
+        Operand ensureRetVal = processEnsureBody(ensureNode, ebi);
 
         // ------------ Build the protected region ------------
         activeEnsureBlockStack.push(ebi);
@@ -221,7 +209,6 @@ public abstract class IRBuilder<U, V, W, X, Y, Z> {
         activeRescuers.push(ebi.ensureRescue);
 
         // Generate IR for code being protected
-        Variable ensureExprValue = temp();
         Operand rv;
         if (isRescue) {
             rv = buildRescueInternal(body, elseNode, exceptions, rescueBody, optRescue, isModifier, ebi, reference);
@@ -237,6 +224,7 @@ public abstract class IRBuilder<U, V, W, X, Y, Z> {
         // (vs. returning from protected body)
         boolean isEnsureExpr = ensureNode != null && rv != U_NIL && !isRescue;
 
+        Variable ensureExprValue = temp();
         // Clone the ensure body and jump to the end
         if (isEnsureExpr) {
             addInstr(new CopyInstr(ensureExprValue, rv));
@@ -269,6 +257,18 @@ public abstract class IRBuilder<U, V, W, X, Y, Z> {
         addInstr(new LabelInstr(ebi.end));
 
         return isEnsureExpr ? ensureExprValue : rv;
+    }
+
+    private Operand processEnsureBody(U ensureNode, EnsureBlockInfo ebi) {
+        Operand ensureRetVal;
+        if (ensureNode != null) {
+            ensureBodyBuildStack.push(ebi);
+            ensureRetVal = build(ensureNode);
+            ensureBodyBuildStack.pop();
+        } else {
+            ensureRetVal = nil();
+        }
+        return ensureRetVal;
     }
 
     public InterpreterContext buildEvalRoot(ParseResult rootNode) {
@@ -2519,7 +2519,6 @@ public abstract class IRBuilder<U, V, W, X, Y, Z> {
     protected void buildRescueBodyInternal(U[] exceptions, U body, X consequent, Variable rv, Variable exc, Label endLabel,
                                  U reference) {
         // Compare and branch as necessary!
-        Label uncaughtLabel = getNewLabel("MISSED");
         Label caughtLabel = getNewLabel("RESCUE");
         if (exceptions == null || exceptions.length == 0) {
             outputExceptionCheck(getManager().getStandardError(), exc, caughtLabel);
@@ -2530,7 +2529,6 @@ public abstract class IRBuilder<U, V, W, X, Y, Z> {
         }
 
         // Uncaught exception -- build other rescue nodes or rethrow!
-        addInstr(new LabelInstr(uncaughtLabel));
         if (consequent != null) {
             buildRescueBodyInternal(exceptionNodesFor(consequent), bodyFor(consequent), optRescueFor(consequent), rv,
                     exc, endLabel, referenceFor(consequent));
@@ -2615,16 +2613,17 @@ public abstract class IRBuilder<U, V, W, X, Y, Z> {
         boolean needsBacktrace = !canBacktraceBeRemoved(exceptions, rescueBody, optRescue, elseNode, isModifier);
 
         // Labels marking start, else, end of the begin-rescue(-ensure)-end block
-        Label rBeginLabel = getNewLabel();
-        Label rEndLabel   = ensure.end;
-        Label rescueLabel = getNewLabel("RESC_TEST"); // Label marking start of the first rescue code.
+        int line = currentLine() + 1;
+        Label beginLabel = getNewLabel("BEGIN_@" + line);
+        Label endLabel   = ensure.end;
+        Label rescueTestLabel = getNewLabel("RESCUE_TEST_@" + line); // Label marking start of the first rescue code.
         ensure.needsBacktrace = needsBacktrace;
 
-        addInstr(new LabelInstr(rBeginLabel));
+        addInstr(new LabelInstr(beginLabel));
 
         // Placeholder rescue instruction that tells rest of the compiler passes the boundaries of the rescue block.
-        addInstr(new ExceptionRegionStartMarkerInstr(rescueLabel));
-        activeRescuers.push(rescueLabel);
+        addInstr(new ExceptionRegionStartMarkerInstr(rescueTestLabel));
+        activeRescuers.push(rescueTestLabel);
         addInstr(getManager().needsBacktrace(needsBacktrace));
 
         // Body
@@ -2659,7 +2658,7 @@ public abstract class IRBuilder<U, V, W, X, Y, Z> {
         //
         // The retry should jump to 1, not 2.
         // If we push the rescue block before building the body, we will jump to 2.
-        RescueBlockInfo rbi = new RescueBlockInfo(rBeginLabel, ensure.savedGlobalException);
+        RescueBlockInfo rbi = new RescueBlockInfo(beginLabel, ensure.savedGlobalException);
         activeRescueBlockStack.push(rbi);
 
         if (tmp != U_NIL) {
@@ -2669,7 +2668,7 @@ public abstract class IRBuilder<U, V, W, X, Y, Z> {
             // - If we dont have any ensure blocks, simply jump to the end of the rescue block
             // - If we do, execute the ensure code.
             ensure.cloneIntoHostScope(this);
-            addInstr(new JumpInstr(rEndLabel));
+            addInstr(new JumpInstr(endLabel));
         }   //else {
         // If the body had an explicit return, the return instruction IR build takes care of setting
         // up execution of all necessary ensure blocks. So, nothing to do here!
@@ -2681,7 +2680,7 @@ public abstract class IRBuilder<U, V, W, X, Y, Z> {
         //}
 
         // Start of rescue logic
-        addInstr(new LabelInstr(rescueLabel));
+        addInstr(new LabelInstr(rescueTestLabel));
 
         // This is optimized no backtrace path so we need to reenable backtraces since we are
         // exiting that region.
@@ -2691,7 +2690,7 @@ public abstract class IRBuilder<U, V, W, X, Y, Z> {
         Variable exc = addResultInstr(new ReceiveRubyExceptionInstr(temp()));
 
         // Build the actual rescue block(s)
-        buildRescueBodyInternal(exceptions, rescueBody, optRescue, rv, exc, rEndLabel, reference);
+        buildRescueBodyInternal(exceptions, rescueBody, optRescue, rv, exc, endLabel, reference);
 
         activeRescueBlockStack.pop();
         return rv;
