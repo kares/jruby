@@ -170,6 +170,8 @@ public abstract class IRBuilder<U, V, W, X, Y, Z> {
         return lastProcessedLineNum;
     }
 
+    // FIXME: When legacy parser goes away this should be totally rewritten as prism represents the whole structure as one node vs
+    //   legacy which has ensure as the parent to any rescue.
     // FIXME: consider mod_rescue, rescue, and pure ensure as separate entries
     /**
      * @param body the main statements to be executed
@@ -184,18 +186,17 @@ public abstract class IRBuilder<U, V, W, X, Y, Z> {
      *
      * Note: reference is only passed in via Prism on legacy this is desugared into AST.
      */
-    protected Operand buildEnsureInternal(U body, U elseNode, U[] exceptions, U rescueBody, X optRescue, boolean isModifier,
-                                U ensureNode, boolean isRescue, U reference) {
+    protected Operand buildEnsureInternal(U body, U elseNode, U[] exceptions, U rescueBody, X optRescue,
+                                          boolean isModifier, U ensureNode, boolean isRescue, U reference) {
         var savedGlobalException = addResultInstr(new GetGlobalVariableInstr(temp(), symbol("$!")));
 
         // The ensure code is built first so that when the protected body is being built,
         // the ensure code can be cloned at break/next/return sites in the protected body.
         EnsureBlockInfo ebi = new EnsureBlockInfo(scope, getCurrentLoop(), activeRescuers.peek(), currentLine() + 1);
 
-        /// // ENEBO: If this is ensure it won't save $! if it is empty ensure what does it need to do?  It needs a
-        // path to catch and rethrow
-        // Rescue will change $! but we need to restore $! later.
-        if (isRescue) ebi.savedGlobalException = savedGlobalException;
+        // Rescue will change $! but we need to restore $! later.  prism: ensure and isRescue means it is both (we
+        // call this method again below to rip those two things apart.
+        if (isRescue && ensureNode == null) ebi.savedGlobalException = savedGlobalException;
 
         // Record body of ensure and push to ensure body stack if there is an actual ensure body.
         Operand ensureRetVal = processEnsureBody(ensureNode, ebi);
@@ -211,7 +212,12 @@ public abstract class IRBuilder<U, V, W, X, Y, Z> {
         // Generate IR for code being protected
         Operand rv;
         if (isRescue) {
-            rv = buildRescueInternal(body, elseNode, exceptions, rescueBody, optRescue, isModifier, ebi, reference);
+            if (ensureNode != null) {
+                // both were passed in via Prism.  Let's pretend they are nested like legacy where ensures enclose the rescue.
+                rv = buildEnsureInternal(body, elseNode, exceptions, rescueBody, optRescue, isModifier, null, isRescue, reference);
+            } else {
+                rv = buildRescueInternal(body, elseNode, exceptions, rescueBody, optRescue, isModifier, ebi, reference);
+            }
         } else {
             rv = build(body);
         }
@@ -222,7 +228,7 @@ public abstract class IRBuilder<U, V, W, X, Y, Z> {
 
         // Is this a begin..(rescue..)?ensure..end node that actually computes a value?
         // (vs. returning from protected body)
-        boolean isEnsureExpr = ensureNode != null && rv != U_NIL && !isRescue;
+        boolean isEnsureExpr = ensureNode != null && rv != U_NIL;
 
         Variable ensureExprValue = temp();
         // Clone the ensure body and jump to the end
@@ -247,14 +253,11 @@ public abstract class IRBuilder<U, V, W, X, Y, Z> {
         // 1. Ensure block has no explicit return => the result of the entire ensure expression is the result of the protected body.
         // 2. Ensure block has an explicit return => the result of the protected body is ignored.
         // U_NIL => there was a return from within the ensure block!
+        // FIXME:  This U_NIL case is wrong in a few cases:  'ensure; return 1 if true; end' or weirder 'ensure; return 1; true; end'
         if (ensureRetVal == U_NIL) rv = U_NIL;
 
-        // Return (rethrow exception/end)
-        // rethrows the caught exception from the dummy ensure block
-        addInstr(new ThrowExceptionInstr(exc));
-
-        // End label for the exception region
-        addInstr(new LabelInstr(ebi.end));
+        addInstr(new ThrowExceptionInstr(exc));  // rethrows the caught exception from the dummy ensure block
+        addInstr(new LabelInstr(ebi.end));  // End label for the exception region
 
         return isEnsureExpr ? ensureExprValue : rv;
     }
