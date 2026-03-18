@@ -68,6 +68,7 @@ import java.net.URI;
 import java.net.URL;
 import java.nio.channels.Channels;
 import java.nio.channels.FileChannel;
+import java.nio.channels.SeekableByteChannel;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.*;
 import java.nio.file.attribute.FileTime;
@@ -235,6 +236,23 @@ public class RubyFile extends RubyIO implements EncodingCapable {
     public RubyFile(Ruby runtime, String path, InputStream in) {
         super(runtime, runtime.getFile(), Channels.newChannel(in));
         this.setPath(path);
+    }
+
+
+    private RubyFile(Ruby runtime, String path, SeekableByteChannel in) {
+        super(runtime, runtime.getFile(), in);
+        this.setPath(path);
+    }
+
+    /**
+     * Only used by parser (prism) so that we can get a File
+     * @param runtime the runtime
+     * @param path the path of DATA
+     * @param in the channel to use
+     * @return a Ruby file
+     */
+    public static RubyFile DATAFile(Ruby runtime, String path, SeekableByteChannel in) {
+        return new RubyFile(runtime, path, in);
     }
 
     public RubyFile(Ruby runtime, String path, FileChannel channel) {
