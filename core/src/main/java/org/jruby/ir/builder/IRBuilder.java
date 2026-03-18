@@ -1955,8 +1955,8 @@ public abstract class IRBuilder<U, V, W, X, Y, Z> {
         return copy(temp(), putConstant(left, result));
     }
 
-    protected Operand buildOpAsgnConstDecl(Y left, RubySymbol name, U right, RubySymbol operator) {
-        Operand parent = buildColon2ForConstAsgnDeclNode((U) left, temp(), false);
+    protected Operand buildOpAsgnConstDecl(U left, RubySymbol name, U right, RubySymbol operator) {
+        Operand parent = buildColon2ForConstAsgnDeclNode(left, temp(), false);
         Operand lhs = searchModuleForConst(temp(), parent, name);
         Operand rhs = build(right);
         Variable result = call(temp(), lhs, operator, rhs);
