@@ -11,36 +11,18 @@ exclude :test_client_cert_cb_ignore_error, "work in progress"
 exclude :test_connect_certificate_verify_failed_exception_message, "work in progress"
 exclude :test_connect_works_when_setting_dh_callback_to_nil, "work in progress"
 exclude :test_ctx_options_config, "work in progress"
-exclude :test_ctx_setup_invalid, 'works sufficiently - low priority'
 exclude :test_dup, "work in progress"
 exclude :test_ecdh_curves_tls12, "work in progress"
 exclude :test_ecdh_curves_tls13, "work in progress"
 exclude :test_exception_in_verify_callback_is_ignored, "work in progress"
 exclude :test_export_keying_material, "work in progress"
 exclude :test_finished_messages, 'hangs for a long time and then fails'
-exclude :test_freeze_calls_setup, "work in progress"
 exclude :test_get_ephemeral_key, "work in progress"
-exclude :test_getbyte, "work in progress"
 exclude :test_keylog_cb, "work in progress"
-exclude :test_npn_advertised_protocol_too_long, 'SSLContext#npn_protocols= not supported'
-exclude :test_npn_protocol_selection_ary, 'SSLContext#npn_protocols= not supported'
-exclude :test_npn_protocol_selection_cancel, 'SSLContext#npn_protocols= not supported'
-exclude :test_npn_protocol_selection_enum, 'SSLContext#npn_protocols= not supported'
-exclude :test_npn_selected_protocol_too_long, 'SSLContext#npn_protocols= not supported'
-exclude :test_options_defaults_to_OP_ALL_on, 'needs investigation'
-exclude :test_options_setting_nil_means_all, 'needs investigation'
 exclude :test_post_connect_check_with_anon_ciphers, 'needs investigation'
-exclude :test_read_nonblock_without_session, 'HANGS'
 exclude :test_readbyte, "work in progress"
-exclude :test_renegotiation_cb, 'SSLContext#renegotiation_cb= not supported'
 exclude :test_security_level, "work in progress"
-exclude :test_servername_cb, 'Errno::EOPNOTSUPP: Operation not supported - Socket.socketpair only supports streaming UNIX sockets'
-exclude :test_servername_cb_calls_setup_on_returned_ctx, 'Errno::EOPNOTSUPP: Operation not supported - Socket.socketpair only supports streaming UNIX sockets'
-exclude :test_servername_cb_can_return_nil, 'Errno::EOPNOTSUPP: Operation not supported - Socket.socketpair only supports streaming UNIX sockets'
-exclude :test_servername_cb_raises_an_exception_on_unknown_objects, 'Errno::EOPNOTSUPP: Operation not supported - Socket.socketpair only supports streaming UNIX sockets'
-exclude :test_servername_cb_sets_context_on_the_socket, 'Errno::EOPNOTSUPP: Operation not supported - Socket.socketpair only supports streaming UNIX sockets'
-exclude :test_socket_close_write, "work in progress"
-exclude :test_ssl_sysread_blocking_error, 'works except JRuby-OpenSSL does not raise TypeError on SSLSocket#sysread(4, exception: false)'
+exclude :test_servername_cb_raises_an_exception_on_unknown_objects, "work in progress"
 exclude :test_ssl_with_server_cert, "work in progress"
 exclude :test_sslctx_set_params, "work in progress"
 exclude :test_tlsext_hostname, "work in progress"
