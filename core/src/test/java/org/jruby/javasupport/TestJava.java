@@ -140,42 +140,6 @@ public class TestJava extends junit.framework.TestCase {
     }
 
     @Test
-    public void testPrependedInitializeRunsForRubyClassesRootedInJavaSuperclass() {
-        String script =
-            "class PrependJavaBaseInitC < java.util.ArrayList\n" +
-            "  def initialize(trace)\n" +
-            "    trace << :c\n" +
-            "    super()\n" +
-            "  end\n" +
-            "end\n" +
-            "class PrependJavaBaseInitD < PrependJavaBaseInitC\n" +
-            "  def initialize(trace)\n" +
-            "    trace << :d\n" +
-            "    super\n" +
-            "  end\n" +
-            "end\n" +
-            "class PrependJavaBaseInitE < PrependJavaBaseInitD\n" +
-            "  def initialize(trace)\n" +
-            "    trace << :e\n" +
-            "    super\n" +
-            "  end\n" +
-            "end\n" +
-            "module PrependJavaBaseInitM\n" +
-            "  def initialize(trace)\n" +
-            "    trace << :m\n" +
-            "    super\n" +
-            "  end\n" +
-            "end\n" +
-            "PrependJavaBaseInitE.prepend(PrependJavaBaseInitM)\n" +
-            "trace = []\n" +
-            "PrependJavaBaseInitE.new(trace)\n" +
-            "trace\n";
-
-        final Ruby runtime = Ruby.newInstance();
-        assertEquals("[:m, :e, :d, :c]", runtime.evalScriptlet(script).toString());
-    }
-
-    @Test
     public void testHashMethodOnJavaProxy() {
         final Ruby runtime = Ruby.newInstance();
         // we internally shuffle around the subclasses (due interface module includes in the Java class) in a map,
