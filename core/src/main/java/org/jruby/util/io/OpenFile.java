@@ -2547,37 +2547,39 @@ public class OpenFile implements Finalizable {
     }
 
     public Channel channel() {
-        assert(fd != null);
+        // MRI equivalent: rb_io_check_closed(fptr) + fptr->fd access in io.c
+        // when an IO was closed from another thread MRI raises IOError("closed stream") via io_fd_check_closed (io.c)
+        checkClosed();
         return fd.ch;
     }
 
     public ReadableByteChannel readChannel() {
-        assert(fd != null);
+        checkClosed();
         return fd.chRead;
     }
 
     public WritableByteChannel writeChannel() {
-        assert(fd != null);
+        checkClosed();
         return fd.chWrite;
     }
 
     public SeekableByteChannel seekChannel() {
-        assert(fd != null);
+        checkClosed();
         return fd.chSeek;
     }
 
     public SelectableChannel selectChannel() {
-        assert(fd != null);
+        checkClosed();
         return fd.chSelect;
     }
 
     public FileChannel fileChannel() {
-        assert(fd != null);
+        checkClosed();
         return fd.chFile;
     }
 
     public SocketChannel socketChannel() {
-        assert(fd != null);
+        checkClosed();
         return fd.chSock;
     }
 
