@@ -34,7 +34,7 @@ public final class SeekableByteChannelImpl extends AbstractInterruptibleChannel
 
     private int truncatedBy = 0;
 
-    SeekableByteChannelImpl(ByteArrayInputStream in) {
+    public SeekableByteChannelImpl(ByteArrayInputStream in) {
         this.in = in;
         this.mark = mark(in);
         this.count = count(in);
