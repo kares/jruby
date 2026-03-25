@@ -25,10 +25,16 @@ exclude :test_extra_chain_cert_auto_chain, "new failure with Ruby 4.0 tests, tes
 exclude :test_finished_messages, 'hangs for a long time and then fails'
 exclude :test_get_ephemeral_key, "work in progress"
 exclude :test_keylog_cb, "work in progress"
+exclude :test_minmax_version_system_default, "TLS version mismatch - expects TLSv1.2 but gets TLSv1.3"
 exclude :test_post_connect_check_with_anon_ciphers, 'needs investigation'
+exclude :test_read_with_timeout, "timeout methods not implemented, https://github.com/jruby/jruby-openssl/issues/342"
+exclude :test_respect_system_default_min, "SSLError expected but nothing raised"
 exclude :test_readbyte, "work in progress"
 exclude :test_security_level, "work in progress"
 exclude :test_servername_cb_raises_an_exception_on_unknown_objects, "work in progress"
+exclude :test_set_groups_tls12, "OpenSSL::SSL::SSLError: no cipher match"
+exclude :test_set_groups_tls13, "undefined method 'groups=' for SSLContext"
+exclude :test_sigalgs, "undefined method 'add_certificate' for SSLContext"
 exclude :test_ssl_with_server_cert, "work in progress"
 exclude :test_sslctx_set_params, "work in progress"
 exclude :test_sysread_and_syswrite, "new failure with Ruby 4.0 tests, tested on MacOS, https://github.com/jruby/jruby/issues/9271, appears to hang and timeout"

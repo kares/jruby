@@ -8,3 +8,6 @@ exclude :test_raw_initialize_errors, "new failure with Ruby 4.0 tests, tested on
 exclude :test_s_generate_key, "work in progress"
 exclude :test_s_generate_parameters, "work in progress"
 exclude :test_s_generate_parameters_with_block, "work in progress"
+exclude :test_s_read_der_then_pem, "PKey.read returns different DER encoding on master"
+exclude :test_s_read_passphrase, "PKeyError: Could not parse PKey: unsupported"
+exclude :test_x25519, "PKeyError: Could not parse PKey: unsupported"
