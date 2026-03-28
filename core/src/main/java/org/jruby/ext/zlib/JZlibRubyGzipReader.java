@@ -27,6 +27,8 @@
 
 package org.jruby.ext.zlib;
 
+import org.jcodings.Encoding;
+
 import com.jcraft.jzlib.GZIPException;
 import com.jcraft.jzlib.GZIPInputStream;
 import com.jcraft.jzlib.Inflater;
@@ -461,12 +463,9 @@ public class JZlibRubyGzipReader extends RubyGzipFile {
     @JRubyMethod(name = "readchar")
     public IRubyObject readchar(ThreadContext context) {
         try {
-            int value = bufferedStream.read();
-            if (value == -1) throw context.runtime.newEOFError();
-
-            position++;
-            
-            return asFixnum(context, value);
+            IRubyObject result = readOneChar(context);
+            if (result.isNil()) throw context.runtime.newEOFError();
+            return result;
         } catch (IOException ioe) {
             throw context.runtime.newIOErrorFromException(ioe);
         }
@@ -511,16 +510,37 @@ public class JZlibRubyGzipReader extends RubyGzipFile {
     @JRubyMethod(name = "getc")
     public IRubyObject getc(ThreadContext context) {
         try {
-            int value = bufferedStream.read();
-            if (value == -1) return context.nil;
-
-            position++;
-            // TODO: must handle encoding. Move encoding handling methods to util class from RubyIO and use it.
-            // TODO: StringIO needs a love, too.
-            return newString(context, String.valueOf((char) (value & 0xFF)));
+            return readOneChar(context);
         } catch (IOException ioe) {
             throw context.runtime.newIOErrorFromException(ioe);
         }
+    }
+
+    private IRubyObject readOneChar(ThreadContext context) throws IOException {
+        int first = bufferedStream.read();
+        if (first == -1) return context.nil;
+
+        Encoding enc = getReadEncoding(context);
+        int len = enc.length((byte) first);
+
+        if (len <= 1) {
+            position++;
+            return RubyString.newStringNoCopy(context.runtime, new byte[]{(byte) first}, 0, 1, enc);
+        }
+
+        byte[] bytes = new byte[len];
+        bytes[0] = (byte) first;
+        for (int i = 1; i < len; i++) {
+            int b = bufferedStream.read();
+            if (b == -1) {
+                // incomplete character at EOF — return what we have
+                position += i;
+                return RubyString.newStringNoCopy(context.runtime, bytes, 0, i, enc);
+            }
+            bytes[i] = (byte) b;
+        }
+        position += len;
+        return RubyString.newStringNoCopy(context.runtime, bytes, 0, len, enc);
     }
 
     private boolean isEof() throws IOException {
@@ -768,15 +788,11 @@ public class JZlibRubyGzipReader extends RubyGzipFile {
         if (!block.isGiven()) return RubyEnumerator.enumeratorize(runtime, this, "each_char");
 
         try {
-            int value = bufferedStream.read();
-            while(value != -1) {
-                position++;
-                // TODO: must handle encoding. Move encoding handling methods to util class from RubyIO and use it.
-                // TODO: StringIO needs a love, too.
-                block.yield(context, runtime.newString(String.valueOf((char) (value & 0xFF))));
-                value = bufferedStream.read();
+            IRubyObject c;
+            while (!(c = readOneChar(context)).isNil()) {
+                block.yield(context, c);
             }
-        } catch(IOException ioe) {
+        } catch (IOException ioe) {
             throw runtime.newIOErrorFromException(ioe);
         }
 
