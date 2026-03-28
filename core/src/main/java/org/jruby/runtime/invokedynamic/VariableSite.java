@@ -192,6 +192,7 @@ public class VariableSite extends MutableCallSite {
             fallback = fallback.bindTo(this);
             setTarget(fallback);
             fallback.invokeExact(self, value);
+            return;
         } else {
             if (Options.INVOKEDYNAMIC_LOG_BINDING.load()) {
                 if (direct) {
