@@ -2079,9 +2079,8 @@ public final class StringSupport {
             CodeRangeable tmp = str1;
             str1 = str2;
             str2 = tmp;
-            Encoding enc0 = enc1;
-            enc1 = enc2;
-            enc2 = enc0;
+            // Note: enc1/enc2 are NOT swapped — they retain the
+            // original argument order, matching CRuby's rb_enc_compatible.
             boolean tmp2 = isstr1;
             isstr1 = isstr2;
             isstr2 = tmp2;
