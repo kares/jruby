@@ -1971,6 +1971,20 @@ public class RubyThread extends RubyObject implements ExecutionContext {
         }
     }
 
+    public <Data> int executeReadWrite(
+            ThreadContext context,
+            Data data, ByteBuffer bytes, long start, int length,
+            ReadWrite<Data> task) throws InterruptedException {
+        Status oldStatus = STATUS.get(this);
+        try {
+            preReadWrite(context, data, task);
+
+            return task.run(context, data, bytes, start, length);
+        } finally {
+            postReadWrite(context, oldStatus);
+        }
+    }
+
     private void postReadWrite(ThreadContext context, Status oldStatus) {
         STATUS.set(this, oldStatus);
         this.unblockFunc = null;
@@ -1997,6 +2011,13 @@ public class RubyThread extends RubyObject implements ExecutionContext {
             return run(context, data, ByteBuffer.wrap(bytes), start, length);
         }
         public int run(ThreadContext context, Data data, ByteBuffer bytes, int start, int length) throws InterruptedException;
+        /**
+         * Overload accepting a long start position, for operations like pread/pwrite
+         * where the offset is a file position that may exceed 2GB.
+         */
+        public default int run(ThreadContext context, Data data, ByteBuffer bytes, long start, int length) throws InterruptedException {
+            return run(context, data, bytes, (int) start, length);
+        }
         public void wakeup(RubyThread thread, Data data);
     }
 
