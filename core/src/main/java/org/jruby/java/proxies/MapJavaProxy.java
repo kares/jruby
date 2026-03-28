@@ -270,7 +270,7 @@ public final class MapJavaProxy extends ConcreteJavaProxy {
 
         @Override
         public boolean hasKey(IRubyObject key) {
-            return mapDelegate().containsKey(key);
+            return mapDelegate().containsKey(key.toJava(Object.class));
         }
 
         @Override
