@@ -5472,7 +5472,10 @@ public class RubyIO extends RubyObject implements IOEncodable, Closeable, Flusha
                 // increment count and try again after a 1ms sleep
                 i += 1;
                 synchronized (waitLock) {
-                    try {waitLock.wait(1);} catch (InterruptedException ie) {}
+                    try {waitLock.wait(1);} catch (InterruptedException ie) {
+                        Thread.currentThread().interrupt();
+                        break;
+                    }
                 }
                 continue;
             }
