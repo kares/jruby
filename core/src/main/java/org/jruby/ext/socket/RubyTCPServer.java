@@ -102,10 +102,14 @@ public class RubyTCPServer extends RubyTCPSocket {
 
         int port = SocketUtils.getPortFrom(context, _port);
 
+        // try to ensure the channel closes if bind or init doesn't succeed
+        ServerSocketChannel ssc = null;
+        boolean success = false;
+
         try {
             InetAddress addr = InetAddress.getByName(host);
 
-            ServerSocketChannel ssc = ServerSocketChannel.open();
+            ssc = ServerSocketChannel.open();
             ssc.socket().setReuseAddress(true);
 
             InetSocketAddress socket_address = new InetSocketAddress(addr, port);
@@ -113,6 +117,8 @@ public class RubyTCPServer extends RubyTCPSocket {
             ssc.socket().bind(socket_address);
 
             initSocket(newChannelFD(runtime, ssc));
+
+            success = true;
         } catch(UnknownHostException e) {
             throw SocketUtils.sockerr(runtime, "initialize: name or service not known");
         } catch(BindException e) {
@@ -127,6 +133,10 @@ public class RubyTCPServer extends RubyTCPSocket {
             throw runtime.newIOErrorFromException(e);
         } catch (IllegalArgumentException iae) {
             throw SocketUtils.sockerr(runtime, iae.getMessage());
+        } finally {
+            if (!success && ssc != null) {
+                try { ssc.close(); } catch (IOException ioe) {}
+            }
         }
 
         return this;
