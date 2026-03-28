@@ -2766,7 +2766,7 @@ public class OpenFile implements Finalizable {
                 }
             });
         } catch (InterruptedException ie) {
-            // ignore?
+            Thread.currentThread().interrupt();
         }
 
 //        #ifdef __CYGWIN__
@@ -2921,6 +2921,7 @@ public class OpenFile implements Finalizable {
             try {
                 context.getThread().sleep(1);
             } catch (InterruptedException ie) {
+                Thread.currentThread().interrupt();
                 break;
             }
         }

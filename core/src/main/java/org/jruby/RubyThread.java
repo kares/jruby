@@ -1294,8 +1294,8 @@ public class RubyThread extends RubyObject implements ExecutionContext {
                 if (System.currentTimeMillis() - start > timeoutMillis) break;
             }
         } catch (InterruptedException ie) {
-            ie.printStackTrace();
-            assert false : ie;
+            // interrupt is used internally to deliver Ruby thread events;
+            // blockingThreadPoll (above) handles them on retry
         } catch (ExecutionException ie) {
             ie.printStackTrace();
             assert false : ie;
