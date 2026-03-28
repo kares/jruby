@@ -626,7 +626,10 @@ public class PopenExecutor {
                 switch (e = errno) {
                     case EAGAIN:
                     case EWOULDBLOCK:
-                        try {Thread.sleep(1000);} catch (InterruptedException ie) {}
+                        try {Thread.sleep(1000);} catch (InterruptedException ie) {
+                            Thread.currentThread().interrupt();
+                            break;
+                        }
                         continue;
                 }
                 break;

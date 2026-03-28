@@ -346,7 +346,9 @@ public class SelectExecutor {
             if (timeout == null) { // sleep forever
                 try {
                     context.getThread().sleep(0);
-                } catch (InterruptedException ie) {}
+                } catch (InterruptedException ie) {
+                    // interrupt used internally for Ruby thread event delivery
+                }
                 return 0;
             }
 
@@ -355,7 +357,9 @@ public class SelectExecutor {
 
             try {
                 context.getThread().sleep(timeout);
-            } catch (InterruptedException ie) {}
+            } catch (InterruptedException ie) {
+                // interrupt used internally for Ruby thread event delivery
+            }
             return 0;
         }
 
@@ -469,6 +473,7 @@ public class SelectExecutor {
                                 Future f = futures.get(i);
                                 f.get();
                             } catch (InterruptedException iex) {
+                                Thread.currentThread().interrupt();
                             } catch (ExecutionException eex) {
                                 if (eex.getCause() instanceof IOException) {
                                     throw (IOException) eex.getCause();

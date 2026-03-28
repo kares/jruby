@@ -1547,8 +1547,9 @@ public class ShellLauncher {
         t2.start();
         t3.start();
 
-        try { t1.join(); } catch (InterruptedException ie) {}
-        try { t2.join(); } catch (InterruptedException ie) {}
+        boolean interrupted = false;
+        try { t1.join(); } catch (InterruptedException ie) { interrupted = true; }
+        try { t2.join(); } catch (InterruptedException ie) { interrupted = true; }
         t3.quit();
 
         try { err.flush(); } catch (IOException io) {}
@@ -1572,9 +1573,11 @@ public class ShellLauncher {
             t3.interrupt();
         } catch (SecurityException se) {}
 
-        try { t1.join(); } catch (InterruptedException ie) {}
-        try { t2.join(); } catch (InterruptedException ie) {}
-        try { t3.join(); } catch (InterruptedException ie) {}
+        try { t1.join(); } catch (InterruptedException ie) { interrupted = true; }
+        try { t2.join(); } catch (InterruptedException ie) { interrupted = true; }
+        try { t3.join(); } catch (InterruptedException ie) { interrupted = true; }
+
+        if (interrupted) Thread.currentThread().interrupt();
     }
 
     private static void handleStreamsNonblocking(Ruby runtime, Process p, OutputStream out, OutputStream err) throws IOException {

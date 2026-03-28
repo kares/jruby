@@ -207,7 +207,10 @@ public class Timeout {
                 timeoutFuture.get();
             }
             catch (ExecutionException ex) {}
-            catch (InterruptedException ex) {}
+            catch (InterruptedException ex) {
+                // interrupt used internally for Ruby thread event delivery;
+                // pollThreadEvents (below) will handle the event
+            }
             // poll to propagate exception from child thread
             context.pollThreadEvents();
         }

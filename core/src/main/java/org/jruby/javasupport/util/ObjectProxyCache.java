@@ -111,7 +111,10 @@ public abstract class ObjectProxyCache<T,A> {
                         for ( ;; ) {
                             try {
                                 sleep(VULTURE_RUN_FREQ_SECONDS * 1000);
-                            } catch (InterruptedException e) {}
+                            } catch (InterruptedException e) {
+                                Thread.currentThread().interrupt();
+                                return;
+                            }
                             boolean dump = size() > 200;
                             if (dump) {
                                 LOG.debug("***Vulture {} waking, stats:", id);
