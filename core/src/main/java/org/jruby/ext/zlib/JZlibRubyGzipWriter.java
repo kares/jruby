@@ -111,7 +111,7 @@ public class JZlibRubyGzipWriter extends RubyGzipFile {
         
         int argc = args.length;
         if (argc > 1) {
-            opt = TypeConverter.checkHashType(context.runtime, opt);
+            opt = TypeConverter.checkHashType(context.runtime, args[argc - 1]);
             if (!opt.isNil()) argc--;
         }
         
