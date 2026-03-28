@@ -35,7 +35,7 @@ package org.jruby;
 
 import java.io.IOException;
 import java.io.Writer;
-import java.lang.management.ManagementFactory;
+
 import java.lang.ref.WeakReference;
 import java.nio.ByteBuffer;
 import java.nio.channels.Channel;
@@ -1503,21 +1503,10 @@ public class RubyThread extends RubyObject implements ExecutionContext {
     public IRubyObject native_thread_id(ThreadContext context) {
         if (!isAlive()) return context.nil;
 
-        String encodedString = ManagementFactory.getRuntimeMXBean().getName();
-        int atIndex = encodedString.indexOf('@');
+        Thread nativeThread = getNativeThread();
+        if (nativeThread == null) return context.nil;
 
-        // Undocumented format: 1761769@localhost.localdomain
-        if (atIndex != -1) {
-            try {
-                int id = Integer.parseInt(encodedString.substring(0, atIndex));
-
-                return asFixnum(context, id);
-            } catch (NumberFormatException e) {
-                // if we fail to parse this we will just act like we don't support it
-            }
-        }
-
-        return context.nil;  // Not supported or failed to extract id
+        return asFixnum(context, nativeThread.threadId());
     }
 
     private IRubyObject genericRaise(ThreadContext context, RubyThread currentThread, IRubyObject... args) {
