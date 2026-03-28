@@ -5152,7 +5152,7 @@ public class RubyIO extends RubyObject implements IOEncodable, Closeable, Flusha
     @JRubyMethod(name = "pread")
     public IRubyObject pread(ThreadContext context, IRubyObject _length, IRubyObject _from, IRubyObject str) {
         int length = toInt(context, _length);
-        int from = toInt(context, _from);
+        long from = toLong(context, _from);
 
         RubyString string = EncodingUtils.setStrBuf(context.runtime, str, length);
         if (length == 0) return string;
@@ -5175,7 +5175,7 @@ public class RubyIO extends RubyObject implements IOEncodable, Closeable, Flusha
     @JRubyMethod(name = "pwrite")
     public IRubyObject pwrite(ThreadContext context, IRubyObject str, IRubyObject offset) {
         RubyString string = str instanceof RubyString str2 ? str2 : str.convertToString();
-        int off = toInt(context, offset);
+        long off = toLong(context, offset);
         OpenFile fptr = GetWriteIO().getOpenFile();
 
         fptr.checkWritable(context);

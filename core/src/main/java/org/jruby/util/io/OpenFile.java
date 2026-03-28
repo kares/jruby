@@ -1436,6 +1436,11 @@ public class OpenFile implements Finalizable {
     public static final RubyThread.ReadWrite<ChannelFD> PREAD_TASK = new RubyThread.ReadWrite<ChannelFD>() {
         @Override
         public int run(ThreadContext context, ChannelFD fd, ByteBuffer bytes, int from, int length) throws InterruptedException {
+            return run(context, fd, bytes, (long) from, length);
+        }
+
+        @Override
+        public int run(ThreadContext context, ChannelFD fd, ByteBuffer bytes, long from, int length) throws InterruptedException {
             Ruby runtime = context.runtime;
 
             int read = 0;
@@ -1477,6 +1482,11 @@ public class OpenFile implements Finalizable {
     public static final RubyThread.ReadWrite<ChannelFD> PWRITE_TASK = new RubyThread.ReadWrite<ChannelFD>() {
         @Override
         public int run(ThreadContext context, ChannelFD fd, ByteBuffer bytes, int from, int length) throws InterruptedException {
+            return run(context, fd, bytes, (long) from, length);
+        }
+
+        @Override
+        public int run(ThreadContext context, ChannelFD fd, ByteBuffer bytes, long from, int length) throws InterruptedException {
             Ruby runtime = context.runtime;
             int written = 0;
 
@@ -1546,7 +1556,7 @@ public class OpenFile implements Finalizable {
         }
     }
 
-    public static int preadInternal(ThreadContext context, OpenFile fptr, ChannelFD fd, ByteBuffer buffer, int from, int length) {
+    public static int preadInternal(ThreadContext context, OpenFile fptr, ChannelFD fd, ByteBuffer buffer, long from, int length) {
         // try scheduler first
         if (fptr.fiberScheduler) {
             IRubyObject scheduler = context.getFiberCurrentThread().getSchedulerCurrent();
@@ -1567,7 +1577,7 @@ public class OpenFile implements Finalizable {
         }
     }
 
-    public static int pwriteInternal(ThreadContext context, OpenFile fptr, ChannelFD fd, ByteBuffer buffer, int from, int length) {
+    public static int pwriteInternal(ThreadContext context, OpenFile fptr, ChannelFD fd, ByteBuffer buffer, long from, int length) {
         // try scheduler first
         if (fptr.fiberScheduler) {
             IRubyObject scheduler = context.getFiberCurrentThread().getSchedulerCurrent();
@@ -1580,14 +1590,12 @@ public class OpenFile implements Finalizable {
             }
         }
 
-        // proceed to builtin pread logic
-        int written;
+        // proceed to builtin pwrite logic
         try {
-            written = context.getThread().executeReadWrite(context, fd, buffer, from, length, PWRITE_TASK);
+            return context.getThread().executeReadWrite(context, fd, buffer, from, length, PWRITE_TASK);
         } catch (InterruptedException ie) {
             throw context.runtime.newConcurrencyError("IO operation interrupted");
         }
-        return written;
     }
 
     private static void selectForRead(ThreadContext context, OpenFile fptr, ChannelFD fd) {

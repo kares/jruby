@@ -74,7 +74,7 @@ public class FiberScheduler {
     }
 
     // MRI: rb_fiber_scheduler_io_pread
-    public static IRubyObject ioPRead(ThreadContext context, IRubyObject scheduler, IRubyObject io, IRubyObject buffer, int from, int length, int offset) {
+    public static IRubyObject ioPRead(ThreadContext context, IRubyObject scheduler, IRubyObject io, IRubyObject buffer, long from, int length, int offset) {
         return Helpers.invokeChecked(context, scheduler, "io_pread", io, buffer, asFixnum(context, from), asFixnum(context, length), asFixnum(context, offset));
     }
 
@@ -92,7 +92,7 @@ public class FiberScheduler {
     }
 
     // MRI: rb_fiber_scheduler_io_pwrite
-    public static IRubyObject ioPWrite(ThreadContext context, IRubyObject scheduler, IRubyObject io, IRubyObject buffer, int from, int length, int offset) {
+    public static IRubyObject ioPWrite(ThreadContext context, IRubyObject scheduler, IRubyObject io, IRubyObject buffer, long from, int length, int offset) {
         return Helpers.invokeChecked(context, scheduler, "io_pwrite", io, buffer, asFixnum(context, from), asFixnum(context, length), asFixnum(context, offset));
     }
 
@@ -113,7 +113,7 @@ public class FiberScheduler {
     }
 
     // MRI: rb_fiber_scheduler_io_pread_memory
-    public static IRubyObject ioPReadMemory(ThreadContext context, IRubyObject scheduler, IRubyObject io, ByteBuffer base, int from, int size, int length) {
+    public static IRubyObject ioPReadMemory(ThreadContext context, IRubyObject scheduler, IRubyObject io, ByteBuffer base, long from, int size, int length) {
         RubyIOBuffer buffer = RubyIOBuffer.newBuffer(context, base, size, RubyIOBuffer.LOCKED);
 
         IRubyObject result = ioPRead(context, scheduler, io, buffer, from, length, 0);
@@ -137,7 +137,7 @@ public class FiberScheduler {
     }
 
     // MRI: p
-    public static IRubyObject ioPWriteMemory(ThreadContext context, IRubyObject scheduler, IRubyObject io, ByteBuffer base, int from, int size, int length) {
+    public static IRubyObject ioPWriteMemory(ThreadContext context, IRubyObject scheduler, IRubyObject io, ByteBuffer base, long from, int size, int length) {
         RubyIOBuffer buffer = RubyIOBuffer.newBuffer(context, base, size, RubyIOBuffer.LOCKED | RubyIOBuffer.READONLY);
 
         IRubyObject result = ioPWrite(context, scheduler, io, buffer, from, length, 0);
