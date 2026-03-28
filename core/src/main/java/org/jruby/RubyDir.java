@@ -1108,12 +1108,10 @@ public class RubyDir extends RubyObject implements Closeable {
             if (user.equals(posix.getlogin())) return getHomeDirectoryPath(context);
         } else {
             String passwd;
-            try {
-                FileInputStream stream = new FileInputStream("/etc/passwd");
+            try (FileInputStream stream = new FileInputStream("/etc/passwd")) {
                 int readBytes = stream.available();
                 byte[] bytes = new byte[readBytes];
                 readBytes = stream.read(bytes);
-                stream.close();
                 passwd = new String(bytes, 0, readBytes);
             } catch (IOException ioe) {
                 return context.nil;

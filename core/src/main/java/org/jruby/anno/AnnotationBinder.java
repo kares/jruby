@@ -268,9 +268,9 @@ public class AnnotationBinder extends AbstractProcessor {
             out = null;
 
             new File(SRC_GEN_DIR).mkdirs();
-            FileOutputStream fos = new FileOutputStream(SRC_GEN_DIR + qualifiedName + POPULATOR_SUFFIX + ".java");
-            fos.write(bytes.toByteArray());
-            fos.close();
+            try (FileOutputStream fos = new FileOutputStream(SRC_GEN_DIR + qualifiedName + POPULATOR_SUFFIX + ".java")) {
+                fos.write(bytes.toByteArray());
+            }
         }
         catch (IOException ex) {
             ex.printStackTrace(System.err);
