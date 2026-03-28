@@ -572,6 +572,7 @@ public class RubyException extends RubyObject {
         RubyException exception = (RubyException)clone;
         exception.backtrace.copy(backtrace);
         exception.message = message;
+        exception.cause = cause;
     }
 
     /**
