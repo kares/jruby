@@ -128,20 +128,29 @@ public class TimeArgs {
                 if (secondObj instanceof RubyRational subSecond) {
                     if (subSecond.isNegativeNumber(context)) throw argumentError(context, "argument out of range");
 
-                    var numerator = subSecond.getNumerator().asLong(context);
-                    var denominator = subSecond.getDenominator().asLong(context);
-                    if (numerator >= denominator) {
-                        secondsInRational = (int) (numerator / denominator);
-                        numerator = numerator % denominator;
+                    RubyInteger num = subSecond.getNumerator();
+                    RubyInteger den = subSecond.getDenominator();
+                    if (num.equals(den)) {
+                        secondsInRational = 1;
+                    } else {
+                        var numerator = num.asBigInteger(context);
+                        var denominator = den.asBigInteger(context);
+                        long subSeconds;
+                        int cmp = numerator.compareTo(denominator);
+
+                        if (cmp > 0) {
+                            secondsInRational = numerator.divide(denominator).intValue();
+                            numerator = numerator.mod(denominator);
+                        }
+
+                        subSeconds = numerator
+                                .multiply(RubyTime.TIME_SCALE_BI)
+                                .divide(denominator)
+                                .longValue();
+
+                        millis = subSeconds / 1_000_000;
+                        nanos = subSeconds % 1_000_000;
                     }
-
-                    long subSeconds = BigInteger.valueOf(numerator)
-                            .multiply(RubyTime.TIME_SCALE_BI)
-                            .divide(BigInteger.valueOf(denominator))
-                            .longValue();
-
-                    millis = subSeconds / 1_000_000;
-                    nanos = subSeconds % 1_000_000;
                 } else {
                     double secs = toDouble(context, secondObj);
 
