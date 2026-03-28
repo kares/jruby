@@ -284,9 +284,9 @@ public class IndyBinder extends AbstractProcessor {
             cw.visitEnd();
 
             new File(SRC_GEN_DIR).mkdirs();
-            FileOutputStream fos = new FileOutputStream(SRC_GEN_DIR + qualifiedName + POPULATOR_SUFFIX + ".class");
-            fos.write(cw.toByteArray());
-            fos.close();
+            try (FileOutputStream fos = new FileOutputStream(SRC_GEN_DIR + qualifiedName + POPULATOR_SUFFIX + ".class")) {
+                fos.write(cw.toByteArray());
+            }
         }
         catch (IOException ex) {
             ex.printStackTrace(System.err);

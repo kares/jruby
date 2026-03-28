@@ -91,10 +91,10 @@ public class LoadServiceResource {
         }
         byte[] bytes = new byte[(int)path.length()];
         ByteBuffer buffer = ByteBuffer.wrap(bytes);
-        FileInputStream fis = new FileInputStream(path);
-        FileChannel fc = fis.getChannel();
-        fc.read(buffer);
-        fis.close();
+        try (FileInputStream fis = new FileInputStream(path)) {
+            FileChannel fc = fis.getChannel();
+            fc.read(buffer);
+        }
         return new LoadServiceResourceInputStream(bytes);
     }
 
