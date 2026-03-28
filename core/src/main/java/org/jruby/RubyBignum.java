@@ -1017,6 +1017,20 @@ public class RubyBignum extends RubyInteger {
         return RubyFixnum.minus_one(runtime);
     }
 
+    // mri : rb_integer_float_eq
+    private boolean float_eq(ThreadContext context, RubyFloat y) {
+        double yd = y.value;
+
+        if (Double.isNaN(yd) || Double.isInfinite(yd)) return false;
+
+        // if yd has a fractional part, it can't equal an integer
+        if (Math.floor(yd) != yd) return false;
+
+        // compare as integers to avoid precision loss
+        IRubyObject rel = op_cmp(context, newBignorm(context.runtime, yd));
+        return rel instanceof RubyFixnum fix && fix.getLongValue() == 0;
+    }
+
     @Override
     public final int compareTo(IRubyObject other) {
         if (other instanceof RubyBignum bignum) return value.compareTo(bignum.value);
@@ -1045,9 +1059,7 @@ public class RubyBignum extends RubyInteger {
         } else if (other instanceof RubyBignum big) {
             otherValue = big.value;
         } else if (other instanceof RubyFloat flt) {
-            return flt.isInfinite() ?
-                    asFixnum(context, flt.value > 0.0 ? -1 : 1) :
-                    dbl_cmp(context.runtime, big2dbl(this), flt.value);
+            return float_cmp(context, flt);
         } else {
             return coerceCmp(context, sites(context).op_cmp, other);
         }
@@ -1067,9 +1079,7 @@ public class RubyBignum extends RubyInteger {
         } else if (other instanceof RubyBignum bignum) {
             otherValue = bignum.value;
         } else if (other instanceof RubyFloat flote) {
-            double a = flote.value;
-            if (Double.isNaN(a) || Double.isInfinite(a)) return context.fals;
-            return asBoolean(context, a == big2dbl(this));
+            return asBoolean(context, float_eq(context, flote));
         } else {
             return other.op_eqq(context, this);
         }
