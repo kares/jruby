@@ -414,10 +414,13 @@ public class Main {
     private boolean checkFileSyntax(Ruby runtime, String filename) {
         File file = new File(filename);
         if (file.exists()) {
-            try {
-                return checkStreamSyntax(runtime, new FileInputStream(file), filename);
+            try (FileInputStream fis = new FileInputStream(file)) {
+                return checkStreamSyntax(runtime, fis, filename);
             } catch (FileNotFoundException fnfe) {
                 config.getError().println("File not found: " + filename);
+                return false;
+            } catch (IOException ioe) {
+                config.getError().println("Error reading: " + filename);
                 return false;
             }
         } else {
