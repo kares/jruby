@@ -250,7 +250,7 @@ public class ByteList implements Comparable, CharSequence, Serializable {
      * @param len number of bytes to delete
      */
     public void delete(int start, int len) {
-        assert start >= begin && start < realSize : "'start' is at invalid index";
+        assert start >= begin && start < begin + realSize : "'start' is at invalid index";
         assert len >= 0 : "'len' must be positive";
         assert start + len <= begin + realSize : "too many bytes requested";
 
