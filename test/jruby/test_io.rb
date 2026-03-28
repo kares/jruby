@@ -153,6 +153,22 @@ class TestIO < Test::Unit::TestCase
     assert_nothing_raised { file.reopen(@file) }
   end
 
+  def test_reopen_copies_encoding
+    ensure_files @file, @file2
+    f1 = File.open(@file)
+    @to_close << f1
+    f1.set_encoding("EUC-JP:UTF-8")
+
+    f2 = File.open(@file2)
+    @to_close << f2
+    f2.set_encoding("ISO-8859-1:US-ASCII")
+
+    f1.reopen(f2)
+
+    assert_equal Encoding::ISO_8859_1, f1.external_encoding
+    assert_equal Encoding::US_ASCII, f1.internal_encoding
+  end
+
   def test_file_read
     ensure_files @file
     # test that read returns correct values
