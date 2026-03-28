@@ -1102,13 +1102,7 @@ public class RubyBignum extends RubyInteger implements SimpleHash {
         return asBoolean(context, value.compareTo(otherValue) == 0);
     }
 
-    /** rb_big_eql
-     *
-     */
-    @Override
-    public IRubyObject eql_p(ThreadContext context, IRubyObject other) {
-        return op_equal(context, other);  // '==' and '===' are the same, but they differ from 'eql?'.
-    }
+    // eql_p inherited from RubyNumeric: type-strict check (getClass) + equalInternal
 
     // MRI: rb_big_hash
     public RubyFixnum hash(ThreadContext context) {
