@@ -1129,7 +1129,7 @@ public class RubyHash extends RubyObject implements Map {
                     RubyHashEntry tmpNext = entry.nextAdded;
                     RubyHashEntry tmpPrev = entry.prevAdded;
                     tmpPrev.nextAdded = tmpNext;
-                    tmpPrev.prevAdded = tmpPrev;
+                    tmpNext.prevAdded = tmpPrev;
                     size--;
                 } else {
                     // replace entry if hash changed
@@ -1159,7 +1159,7 @@ public class RubyHash extends RubyObject implements Map {
                             RubyHashEntry tmpNext = entry.nextAdded;
                             RubyHashEntry tmpPrev = entry.prevAdded;
                             tmpPrev.nextAdded = tmpNext;
-                            tmpPrev.prevAdded = tmpPrev;
+                            tmpNext.prevAdded = tmpPrev;
                             size--;
                         }
                         nextEntry = nextEntry.next;
