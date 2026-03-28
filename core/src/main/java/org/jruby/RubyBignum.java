@@ -945,7 +945,7 @@ public class RubyBignum extends RubyInteger implements SimpleHash {
         } else if (other instanceof RubyFloat) {
             rel = float_cmp(context, (RubyFloat)other);
         } else {
-            CallSite site;
+            CallSite site = sites(context).op_gt;
             switch (op) {
                 case BIGNUM_OP_GT:
                     site = sites(context).op_gt;
@@ -960,7 +960,7 @@ public class RubyBignum extends RubyInteger implements SimpleHash {
                     site = sites(context).op_le;
                     break;
             }
-            return coerceRelOp(context, sites(context).op_gt, other);
+            return coerceRelOp(context, site, other);
         }
 
         if (rel.isNil()) return context.fals;
