@@ -5376,8 +5376,8 @@ public class RubyModule extends RubyObject {
                     mod.getConstantWithAutoload(context, name, null, true) :
                     mod.fetchConstant(context, name, true);
 
-            // if it's UNDEF and we're not loading and there's no autoload set up, consider it undefined
-            if (value == UNDEF && !loadConstant && mod.getAutoloadMap().get(name) == null) return null;
+            // if it's UNDEF and we're not loading, consider it undefined (autoload in progress or stale marker)
+            if (value == UNDEF && !loadConstant) return null;
             if (value != null) return value;
 
             if (!inherit) break;
