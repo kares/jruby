@@ -1126,7 +1126,6 @@ public class JavaUtil {
 
         if (rubyObject instanceof JavaObject jo) {
             Object value = jo.getValue();
-            if (value == null) return null;
             return convertArgument(context.runtime, value, value.getClass());
         }
 
