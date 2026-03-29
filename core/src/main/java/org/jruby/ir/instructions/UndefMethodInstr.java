@@ -18,6 +18,10 @@ import org.jruby.runtime.builtin.IRubyObject;
 
 import java.util.EnumSet;
 
+import static org.jruby.api.Error.typeError;
+import static org.jruby.util.RubyStringBuilder.str;
+import static org.jruby.api.Convert.asSymbol;
+
 public class UndefMethodInstr extends OneOperandResultBaseInstr implements FixedArityInstr {
     // SSS FIXME: Implicit self arg -- make explicit to not get screwed by inlining!
     public UndefMethodInstr(Variable result, Operand methodName) {
@@ -48,6 +52,11 @@ public class UndefMethodInstr extends OneOperandResultBaseInstr implements Fixed
         RubyModule module = IRRuntimeHelpers.findInstanceMethodContainer(context, currDynScope, self);
         Object nameArg = getMethodName().retrieve(context, self, currScope, currDynScope, temp);
         String name = (nameArg instanceof String) ? (String) nameArg : nameArg.toString();
+
+        if (module == null) {
+            throw typeError(context, str(context.runtime, "No class to undef method '", asSymbol(context, name), "'."));
+        }
+
         module.undef(context, name);
         return context.nil;
     }

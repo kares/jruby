@@ -1080,7 +1080,13 @@ public class IRRuntimeHelpers {
             throw typeError(context, "no class to make alias");
         }
 
-        findInstanceMethodContainer(context, currDynScope, self).aliasMethod(context, newName, oldName);
+        RubyModule module = findInstanceMethodContainer(context, currDynScope, self);
+
+        if (module == null) {
+            throw typeError(context, "no class to make alias");
+        }
+
+        module.aliasMethod(context, newName, oldName);
     }
 
     /**
@@ -1862,6 +1868,10 @@ public class IRRuntimeHelpers {
         RubySymbol methodName = method.getName();
         RubyModule rubyClass = findInstanceMethodContainer(context, currDynScope, self);
 
+        if (rubyClass == null) {
+            throw typeError(context, "no class/module to define method");
+        }
+
         Visibility currVisibility = context.getCurrentVisibility();
         Visibility newVisibility = Helpers.performNormalMethodChecksAndDetermineVisibility(context, rubyClass, methodName, currVisibility);
 
@@ -1881,6 +1891,10 @@ public class IRRuntimeHelpers {
         context.setLine(line);
         RubySymbol methodName = asSymbol(context, id);
         RubyModule clazz = findInstanceMethodContainer(context, currDynScope, self);
+
+        if (clazz == null) {
+            throw typeError(context, "no class/module to define method");
+        }
 
         Visibility currVisibility = context.getCurrentVisibility();
         Visibility newVisibility = Helpers.performNormalMethodChecksAndDetermineVisibility(context, clazz, methodName, currVisibility);
@@ -1903,6 +1917,10 @@ public class IRRuntimeHelpers {
         context.setLine(line);
         RubySymbol methodName = asSymbol(context, id);
         RubyModule clazz = findInstanceMethodContainer(context, currDynScope, self);
+
+        if (clazz == null) {
+            throw typeError(context, "no class/module to define method");
+        }
 
         Visibility currVisibility = context.getCurrentVisibility();
         Visibility newVisibility = Helpers.performNormalMethodChecksAndDetermineVisibility(context, clazz, methodName, currVisibility);
