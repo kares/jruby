@@ -533,6 +533,7 @@ public class RubyIO extends RubyObject implements IOEncodable, Closeable, Flusha
         boolean locked2 = orig.lock(); // TODO: This WILL deadlock if two threads try to reopen the same IOs in opposite directions. Fix?
         try {
             fptr.setMode(orig.getMode() | (fptr.getMode() & (OpenFile.PREP | OpenFile.SYNC)));
+            fptr.encs = orig.encs;
             fptr.setProcess(orig.getProcess());
             fptr.setLineNumber(orig.getLineNumber());
             if (orig.getPath() != null) fptr.setPath(orig.getPath());

@@ -950,7 +950,7 @@ public class RubyMatchData extends RubyObject {
 
                 for (int b : entry.getBackRefs()) {
                     IRubyObject value = RubyRegexp.nth_match(context, b, this);
-                    if (value.isTrue()) hash.op_aset(context, key, value);
+                    hash.op_aset(context, key, value);
                 }
             });
         } else if (what instanceof RubyArray arr) {
@@ -966,8 +966,6 @@ public class RubyMatchData extends RubyObject {
                 if (index == -1) break;
 
                 IRubyObject value = RubyRegexp.nth_match(context, index, this);
-                if (!value.isTrue()) break;
-
                 hash.op_aset(context, requestedKey, value);
             }
         } else {
