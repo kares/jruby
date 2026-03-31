@@ -1401,6 +1401,14 @@ public abstract class RubyParserBase {
         if (node == null || orig == null) return;
 
         node.setLine(orig.getLine());
+
+        // Detect IfNode and propagate newline to the bodies.
+        // This is a bit of a form-fitted fix, but the full reduce_nodes logic from CRuby
+        // defied an initial porting attempt. See jruby/jruby#9293.
+        if (node.isNewline() && node instanceof IfNode ifNode) {
+            if (ifNode.getThenBody() instanceof Node thenNode) thenNode.setNewline();
+            if (ifNode.getElseBody() instanceof Node elseNode) elseNode.setNewline();
+        }
     }
 
     public Node new_fcall(ByteList operation) {
