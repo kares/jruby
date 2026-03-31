@@ -4709,13 +4709,15 @@ public class RubyIO extends RubyObject implements IOEncodable, Closeable, Flusha
 
         int firstArg = 0;
 
-        if (argc > 0 && !TypeConverter.checkHashType(runtime, args[0]).isNil()) {
-            firstArg++;
+        // process trailing keyword arguments hash
+        if (argc > 0 && !(tmp = TypeConverter.checkHashType(runtime, args[argc - 1])).isNil()) {
+            options = (RubyHash)tmp;
             argc--;
         }
 
-        if (argc > 0 && !(tmp = TypeConverter.checkHashType(runtime, args[argc - 1])).isNil()) {
-            options = (RubyHash)tmp;
+        // process leading env hash
+        if (argc > 0 && !TypeConverter.checkHashType(runtime, args[0]).isNil()) {
+            firstArg++;
             argc--;
         }
 
