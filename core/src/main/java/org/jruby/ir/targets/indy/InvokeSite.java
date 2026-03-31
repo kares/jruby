@@ -1334,22 +1334,22 @@ public abstract class InvokeSite extends MutableCallSite {
         if (method instanceof PartialDelegatingMethod delegate) {
             DynamicMethod innerMethod = delegate.getRealMethod();
             mh = getHandle(context, self, new CacheEntry(innerMethod, entry.sourceModule, entry.token));
-        } else if (method instanceof AliasMethod alias) {
-            DynamicMethod innerMethod = alias.getRealMethod();
-            String name = alias.getName();
-
-            // Use a second site to mimic invocation from AliasMethod
-            MethodType type = type();
-            if (!functional) type = type.dropParameterTypes(1, 2);
-            InvokeSite innerSite = (InvokeSite) SelfInvokeSite.bootstrap(LOOKUP, "callFunctional:" + name, type, literalClosure ? 1 : 0, flags, file, line);
-            mh = innerSite.getHandle(context, self, new CacheEntry(innerMethod, entry.sourceModule, entry.token));
-            if (!functional) mh = MethodHandles.dropArguments(mh, 1, IRubyObject.class);
-
-            alias.setHandle(mh);
-
-            if (Options.INVOKEDYNAMIC_LOG_BINDING.load()) {
-                LOG.info(name() + "\tbound directly through alias to " + Bootstrap.logMethod(method));
-            }
+//        } else if (method instanceof AliasMethod alias) {
+//            DynamicMethod innerMethod = alias.getRealMethod();
+//            String name = alias.getName();
+//
+//            // Use a second site to mimic invocation from AliasMethod
+//            MethodType type = type();
+//            if (!functional) type = type.dropParameterTypes(1, 2);
+//            InvokeSite innerSite = (InvokeSite) SelfInvokeSite.bootstrap(LOOKUP, "callFunctional:" + name, type, literalClosure ? 1 : 0, flags, file, line);
+//            mh = innerSite.getHandle(context, self, new CacheEntry(innerMethod, entry.sourceModule, entry.token));
+//            if (!functional) mh = MethodHandles.dropArguments(mh, 1, IRubyObject.class);
+//
+//            alias.setHandle(mh);
+//
+//            if (Options.INVOKEDYNAMIC_LOG_BINDING.load()) {
+//                LOG.info(name() + "\tbound directly through alias to " + Bootstrap.logMethod(method));
+//            }
         }
 
         return mh;
