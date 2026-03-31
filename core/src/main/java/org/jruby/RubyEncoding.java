@@ -151,13 +151,11 @@ public class RubyEncoding extends RubyObject implements Constantizable {
         if (!(obj1 instanceof RubyString) && enc1 instanceof USASCIIEncoding) return enc2;
 
         if (!(obj1 instanceof RubyString)) {
-            IRubyObject objTmp = obj1; // swap1 obj1 & obj2
+            IRubyObject objTmp = obj1; // swap obj1 & obj2
             obj1 = obj2;
             obj2 = objTmp;
-
-            Encoding encTmp = enc1;  // swap their encodings
-            enc1 = enc2;
-            enc2 = encTmp;
+            // Note: enc1/enc2 are NOT swapped — they retain the
+            // original argument order, matching CRuby's rb_enc_compatible.
         }
 
         if (obj1 instanceof RubyString) {
