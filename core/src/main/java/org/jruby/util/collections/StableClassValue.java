@@ -1,5 +1,6 @@
 package org.jruby.util.collections;
 
+import java.util.concurrent.locks.ReentrantLock;
 import java.util.function.Function;
 
 /**
@@ -7,6 +8,7 @@ import java.util.function.Function;
  * occurs at most once.
  */
 final class StableClassValue<T> extends ClassValue<T> {
+    private final ReentrantLock lock = new ReentrantLock();
 
     public StableClassValue(ClassValueCalculator<T> calculator) {
         super(calculator);
@@ -27,10 +29,12 @@ final class StableClassValue<T> extends ClassValue<T> {
      * @param <Input> input of the computation
      * @param <Result> result of the computation
      */
-    private class StableValue<Input, Result> {
+    private static class StableValue<Input, Result> {
+        private final ReentrantLock lock;
         private final Function<Input, Result> calculator;
         private volatile Result result;
-        StableValue(Function<Input, Result> calculator) {
+        StableValue(ReentrantLock lock, Function<Input, Result> calculator) {
+            this.lock = lock;
             this.calculator = calculator;
         }
         Result get(Input input) {
@@ -38,14 +42,17 @@ final class StableClassValue<T> extends ClassValue<T> {
 
             if (result != null) return result;
 
-            // lock on the StableClassValue so there are not multiple locks potentially in different orders
-            synchronized (StableClassValue.this) {
+            // Use shared lock to ensure only one StableValue can initialize at a time
+            lock.lock();
+            try {
                 result = this.result;
 
                 if (result != null) return result;
 
                 result = this.calculator.apply(input);
                 this.result = result;
+            } finally {
+                lock.unlock();
             }
 
             return result;
@@ -55,7 +62,7 @@ final class StableClassValue<T> extends ClassValue<T> {
     private final java.lang.ClassValue<StableValue<Class<?>, T>> proxy = new java.lang.ClassValue<StableValue<Class<?>, T>>() {
         @Override
         protected StableValue<Class<?>, T> computeValue(Class<?> type) {
-            return new StableValue<>(calculator);
+            return new StableValue<>(lock, calculator);
         }
     };
 }
