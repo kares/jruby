@@ -3369,15 +3369,15 @@ public final class Ruby implements Constantizable {
             }
         }
 
+        // Tear down LoadService before terminating ThreadService, since LoadedFeatures.clear requires context.
+        loadService.tearDown();
+
         // Shut down and replace thread service after all other hooks and finalizers have run
         threadService.teardown();
         threadService = new ThreadService(this);
 
-        // Release classloader resources
+        // Release classloader resources once all other runtime state has been torn down.
         releaseClassLoader();
-
-        // Tear down LoadService
-        loadService.tearDown();
 
         // Clear runtime tables to aid GC
         boundMethods.clear();
