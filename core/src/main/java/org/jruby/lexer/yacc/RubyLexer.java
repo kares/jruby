@@ -947,7 +947,10 @@ public class RubyLexer extends LexingCommon {
         }
     }
 
-    // DEBUGGING HELP 
+    // DEBUGGING HELP
+    // These are manually tweaked for deep debugging issues where yylex2 is changed to yylex and yylex is changed
+    // to yylex2.  We do not want to progmatically add printToken into our code as this is already a lot of code
+    // for the JVM to reason with.
     private int yylex2() throws IOException {
         int currentToken = yylex2();
         
