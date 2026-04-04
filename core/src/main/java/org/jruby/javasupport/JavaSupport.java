@@ -51,6 +51,7 @@ import org.jruby.util.Loader;
 import org.jruby.util.collections.ClassValue;
 import org.jruby.util.collections.ClassValueCalculator;
 
+import java.lang.ref.WeakReference;
 import java.lang.reflect.Member;
 import java.util.Map;
 import java.util.Set;
@@ -63,7 +64,7 @@ import static org.jruby.javasupport.Java.initCause;
 
 public abstract class JavaSupport {
 
-    protected final Ruby runtime;
+    protected Ruby runtime;
 
     @Deprecated(since = "9.4.3.0")
     private final ClassValue<JavaClass> javaClassCache;
@@ -117,12 +118,30 @@ public abstract class JavaSupport {
     public JavaSupport(final Ruby runtime) {
         this.runtime = runtime;
 
-        this.javaClassCache = ClassValue.newInstance(klass -> new JavaClass(runtime, getJavaClassClass(), klass));
+        WeakReference<Ruby> runtimeRef = new WeakReference<>(runtime);
+        WeakReference<JavaSupport> javaSupportRef = new WeakReference<>(this);
 
-        this.proxyClassCache = ClassValue.newInstance(klass -> computeProxyClass(runtime, lock, klass));
+        this.javaClassCache = ClassValue.newInstance(javaClassCalculator(runtimeRef, javaSupportRef));
+
+        this.proxyClassCache = ClassValue.newInstance(proxyCalculator(runtimeRef, lock));
 
         // Proxy creation is synchronized (see above) so a HashMap is fine for recursion detection.
         this.unfinishedProxies = new ConcurrentHashMap<>(8, 0.75f, 1);
+    }
+
+    private static ClassValueCalculator<JavaClass> javaClassCalculator(WeakReference<Ruby> runtimeRef, WeakReference<JavaSupport> javaSupportRef) {
+        return klass -> new JavaClass(runtimeRef.get(), javaSupportRef.get().getJavaClassClass(), klass);
+    }
+
+    private static ClassValueCalculator<RubyModule> proxyCalculator(WeakReference<Ruby> runtimeRef, ReentrantLock lock) {
+        return klass -> computeProxyClass(runtimeRef.get(), lock, klass);
+    }
+
+    public void tearDown() {
+        javaClassCache.clear();
+        proxyClassCache.clear();
+        unfinishedProxies.clear();
+        runtime = null;
     }
 
     /**

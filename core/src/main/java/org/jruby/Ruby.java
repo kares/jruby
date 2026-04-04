@@ -3384,6 +3384,8 @@ public final class Ruby implements Constantizable {
         allModules.clear();
         constantNameInvalidators.clear();
         symbolTable.clear();
+
+        javaSupport.tearDown();
         javaSupport = loadJavaSupport();
     }
 

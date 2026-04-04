@@ -1,5 +1,6 @@
 package org.jruby.util.collections;
 
+import java.util.WeakHashMap;
 import java.util.concurrent.locks.ReentrantLock;
 import java.util.function.Function;
 
@@ -9,6 +10,7 @@ import java.util.function.Function;
  */
 final class StableClassValue<T> extends ClassValue<T> {
     private final ReentrantLock lock = new ReentrantLock();
+    private final WeakHashMap<StableValue<Class<?>, T>, Object> stableValues = new WeakHashMap<>();
 
     public StableClassValue(ClassValueCalculator<T> calculator) {
         super(calculator);
@@ -18,6 +20,15 @@ final class StableClassValue<T> extends ClassValue<T> {
         // We don't check for null on the WeakReference since the
         // value is strongly referenced by proxy's list
         return proxy.get(cls).get(cls);
+    }
+
+    public void clear() {
+        synchronized (stableValues) {
+            for (StableValue<Class<?>, T> value : stableValues.keySet()) {
+                value.clear();
+            }
+            stableValues.clear();
+        }
     }
 
     /**
@@ -31,7 +42,7 @@ final class StableClassValue<T> extends ClassValue<T> {
      */
     private static class StableValue<Input, Result> {
         private final ReentrantLock lock;
-        private final Function<Input, Result> calculator;
+        private volatile Function<Input, Result> calculator;
         private volatile Result result;
         StableValue(ReentrantLock lock, Function<Input, Result> calculator) {
             this.lock = lock;
@@ -57,12 +68,25 @@ final class StableClassValue<T> extends ClassValue<T> {
 
             return result;
         }
+
+        void clear() {
+            this.calculator = null;
+            this.result = null;
+        }
     }
 
-    private final java.lang.ClassValue<StableValue<Class<?>, T>> proxy = new java.lang.ClassValue<StableValue<Class<?>, T>>() {
-        @Override
-        protected StableValue<Class<?>, T> computeValue(Class<?> type) {
-            return new StableValue<>(lock, calculator);
-        }
-    };
+    private final java.lang.ClassValue<StableValue<Class<?>, T>> proxy = createStableValueProxy(lock, calculator, stableValues);
+
+    private static <U> java.lang.ClassValue<StableValue<Class<?>, U>> createStableValueProxy(ReentrantLock lock, Function<Class<?>, U> calculator, WeakHashMap<StableValue<Class<?>, U>, Object> stableValues){
+        return new java.lang.ClassValue<>() {
+            @Override
+            protected StableValue<Class<?>, U> computeValue(Class<?> type) {
+                StableValue<Class<?>, U> stableValue = new StableValue<>(lock, calculator);
+                synchronized (stableValues) {
+                    stableValues.put(stableValue, null);
+                }
+                return stableValue;
+            }
+        };
+    }
 }
