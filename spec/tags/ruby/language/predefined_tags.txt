@@ -15,3 +15,4 @@ windows:Global variable $0 is the path given as the main script and the same as 
 fails:Predefined global $/ warns if assigned non-nil
 fails:Predefined global $-0 warns if assigned non-nil
 fails:Predefined global $\ warns if assigned non-nil
+fails:The DATA constant is included in an otherwise empty file
