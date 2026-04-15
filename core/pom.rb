@@ -80,7 +80,7 @@ project 'JRuby Base' do
 
   jar 'org.crac:crac:1.5.0'
 
-  jar 'org.jruby:jruby-prism:2.0.0-SNAPSHOT'
+  jar 'org.jruby:jruby-prism:2.0.0'
 
   plugin_management do
     plugin('org.eclipse.m2e:lifecycle-mapping:1.0.0',
