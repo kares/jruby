@@ -309,7 +309,9 @@ public abstract class RubyFixnum extends RubyInteger implements Constantizable, 
     public static RubyFixnum newFixnum(Ruby runtime, int value) {
         if (value > Short.MAX_VALUE || value < Short.MIN_VALUE) {
             // integer is never in cache range
-            return new IntFixnum(runtime.getInteger(), value);
+            // disabled to avoid polymorphism and because it doesn't save size (https://github.com/jruby/jruby/pull/9379)
+            // return new IntFixnum(runtime.getInteger(), value);
+            return new LongFixnum(runtime.getInteger(), value);
         }
         return newFixnum(runtime, (short) value);
     }
@@ -328,7 +330,9 @@ public abstract class RubyFixnum extends RubyInteger implements Constantizable, 
 
     private static RubyFixnum newFixnumForCache(RubyClass fixnum, int value) {
         if (value > Short.MAX_VALUE || value < Short.MIN_VALUE) {
-            return new IntFixnum(fixnum, value);
+            // disabled to avoid polymorphism and because it doesn't save size (https://github.com/jruby/jruby/pull/9379)
+            //return new IntFixnum(fixnum, value);
+            return new LongFixnum(fixnum, value);
         } else if (value > Byte.MAX_VALUE || value < Byte.MIN_VALUE) {
             return new ShortFixnum(fixnum, (short) value);
         }
