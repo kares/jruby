@@ -498,8 +498,6 @@ public final class Ruby implements Constantizable {
             producerClass = null;
         }
 
-        continuationClass = initContinuation(context);
-
         TracePoint.createTracePointClass(context, objectClass);
 
         warningCategories = config.getWarningCategories();
@@ -1359,19 +1357,6 @@ public final class Ruby implements Constantizable {
     }
 
     /**
-     * Retrieve the class with the given name from the Object namespace. The
-     * module name must be an interned string, but this method will be faster
-     * than the non-interned version.
-     *
-     * @param internedName the name of the class; <em>must</em> be an interned String!
-     * @return
-     */
-    @Deprecated(since = "1.7.0")
-    public RubyClass fastGetClass(String internedName) {
-        return Access.getClass(getCurrentContext(), internedName);
-    }
-
-    /**
      * A variation of defineClass that allows passing in an array of supplementary
      * call sites for improving dynamic invocation performance.
      *
@@ -1587,7 +1572,7 @@ public final class Ruby implements Constantizable {
     }
 
     private void loadBundler() {
-        loadService.loadFromClassLoader(getClassLoader(), "jruby/bundler/startup.rb", false);
+        loadService.loadFromClassLoader("jruby/bundler/startup.rb", false);
     }
 
     @SuppressWarnings("ReturnValueIgnored")
@@ -1611,17 +1596,6 @@ public final class Ruby implements Constantizable {
         for (RubyThread.Status status : RubyThread.Status.values()) {
             threadStatuses.put(status, freezeAndDedupString(Create.newString(context, status.bytes)));
         }
-    }
-
-    @SuppressWarnings("deprecation")
-    private RubyClass initContinuation(ThreadContext context) {
-        // Bare-bones class for backward compatibility
-        if (profile.allowClass("Continuation")) {
-            // Some third-party code (racc's cparse ext, at least) uses RubyContinuation directly, so we need this.
-            // Most functionality lives in continuation.rb now.
-            return RubyContinuation.createContinuation(context, objectClass);
-        }
-        return null;
     }
 
     public static final int NIL_PREFILLED_ARRAY_SIZE = RubyArrayNative.ARRAY_DEFAULT_SIZE * 8;
@@ -1781,7 +1755,7 @@ public final class Ruby implements Constantizable {
 
     private void initRubyKernel() {
         // load Ruby parts of core
-        loadService.loadFromClassLoader(getClassLoader(), "jruby/kernel.rb", false);
+        loadService.loadFromClassLoader("jruby/kernel.rb", false);
     }
 
     private void initRubyPreludes() {
@@ -1789,7 +1763,7 @@ public final class Ruby implements Constantizable {
         if (RubyInstanceConfig.DEBUG_PARSER) return;
 
         // load Ruby parts of core
-        loadService.loadFromClassLoader(getClassLoader(), "jruby/preludes.rb", false);
+        loadService.loadFromClassLoader("jruby/preludes.rb", false);
     }
 
     public IRManager getIRManager() {
@@ -2191,10 +2165,6 @@ public final class Ruby implements Constantizable {
     }
     void setDefaultThreadGroup(RubyThreadGroup defaultThreadGroup) {
         this.defaultThreadGroup = defaultThreadGroup;
-    }
-
-    public RubyClass getContinuation() {
-        return continuationClass;
     }
 
     public RubyClass getStructClass() {
@@ -2630,7 +2600,7 @@ public final class Ruby implements Constantizable {
     }
 
     public static ClassLoader getClassLoader() {
-        // we try to getService the classloader that loaded JRuby, falling back on System
+        // we try to get the classloader that loaded JRuby, falling back on System
         ClassLoader loader = Ruby.class.getClassLoader();
         if (loader == null) {
             loader = ClassLoader.getSystemClassLoader();
@@ -3371,21 +3341,23 @@ public final class Ruby implements Constantizable {
             }
         }
 
+        // Tear down LoadService before terminating ThreadService, since LoadedFeatures.clear requires context.
+        loadService.tearDown();
+
         // Shut down and replace thread service after all other hooks and finalizers have run
         threadService.teardown();
         threadService = new ThreadService(this);
 
-        // Release classloader resources
+        // Release classloader resources once all other runtime state has been torn down.
         releaseClassLoader();
-
-        // Tear down LoadService
-        loadService.tearDown();
 
         // Clear runtime tables to aid GC
         boundMethods.clear();
         allModules.clear();
         constantNameInvalidators.clear();
         symbolTable.clear();
+
+        javaSupport.tearDown();
         javaSupport = loadJavaSupport();
     }
 
@@ -4554,21 +4526,6 @@ public final class Ruby implements Constantizable {
         this.abortOnException = abortOnException;
     }
 
-    @Deprecated(since = "9.3.1.0")
-    public boolean isGlobalAbortOnExceptionEnabled() {
-        return abortOnException;
-    }
-
-    @Deprecated(since = "9.3.1.0")
-    public void setGlobalAbortOnExceptionEnabled(boolean enable) {
-        abortOnException = enable;
-    }
-
-    @Deprecated(since = "9.3.1.0")
-    public IRubyObject getReportOnException() {
-        return reportOnException ? getTrue() : getFalse();
-    }
-
     public boolean isReportOnException() {
         return reportOnException;
     }
@@ -5314,7 +5271,6 @@ public final class Ruby implements Constantizable {
     private final RubyClass ioBufferClass;
     private final RubyClass threadClass;
     private final RubyClass threadGroupClass;
-    private final RubyClass continuationClass;
     private final RubyClass structClass;
     private final RubyClass exceptionClass;
     private final RubyClass dummyClass;
@@ -5767,11 +5723,6 @@ public final class Ruby implements Constantizable {
     transient RubyString tzVar;
 
     ParserManager parserManager;
-
-    @Deprecated(since = "9.3.0.0")
-    public RaiseException newErrnoEADDRFromBindException(BindException be) {
-        return newErrnoEADDRFromBindException(be, null);
-    }
 
     @Deprecated(since = "9.4.0.0")
     public RaiseException newFrozenError(String objectType) {

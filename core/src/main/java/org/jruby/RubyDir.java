@@ -234,9 +234,6 @@ public class RubyDir extends RubyObject implements Closeable {
     private static void globOptions(ThreadContext context, IRubyObject[] args, String[] keys, GlobOptions options) {
         Ruby runtime = context.runtime;
 
-        // just clear callInfo for now; future PR will handle it appropriately
-        ThreadContext.resetCallInfo(context);
-
         if (args.length > 1) {
             IRubyObject tmp = TypeConverter.checkHashType(runtime, args[args.length - 1]);
             boolean processFlags = keys == BASE_FLAGS_KEYWORDS;
@@ -277,6 +274,7 @@ public class RubyDir extends RubyObject implements Closeable {
 
     @JRubyMethod(name = "[]", rest = true, meta = true, keywords = true)
     public static IRubyObject aref(ThreadContext context, IRubyObject recv, IRubyObject[] args) {
+        ThreadContext.resetCallInfo(context);
         Ruby runtime = context.runtime;
         GlobOptions options = new GlobOptions();
         globOptions(context, args, BASE_KEYWORDS, options);
@@ -324,8 +322,9 @@ public class RubyDir extends RubyObject implements Closeable {
      * with each filename is passed to the block in turn. In this case, Nil is
      * returned.
      */
-    @JRubyMethod(required = 1, optional = 2, checkArity = false, meta = true)
+    @JRubyMethod(required = 1, optional = 2, checkArity = false, meta = true, keywords = true)
     public static IRubyObject glob(ThreadContext context, IRubyObject recv, IRubyObject[] args, Block block) {
+        ThreadContext.resetCallInfo(context);
         Arity.checkArgumentCount(context, args, 1, 3);
 
         Ruby runtime = context.runtime;
@@ -692,11 +691,6 @@ public class RubyDir extends RubyObject implements Closeable {
     public static IRubyObject mkdir(ThreadContext context, IRubyObject recv, IRubyObject... args) {
         Arity.checkArgumentCount(context, args, 1, 2);
         return mkdirCommon(context, RubyFile.get_path(context, args[0]).asJavaString(), args);
-    }
-
-    @Deprecated(since = "9.2.1.0")
-    public static IRubyObject mkdir(IRubyObject recv, IRubyObject[] args) {
-        return mkdir(((RubyBasicObject) recv).getCurrentContext(), recv, args);
     }
 
     private static IRubyObject mkdirCommon(ThreadContext context, String path, IRubyObject[] args) {
@@ -1186,23 +1180,6 @@ public class RubyDir extends RubyObject implements Closeable {
             return path == null ? null : (T) FileSystems.getDefault().getPath(path);
         }
         return super.toJava(target);
-    }
-
-    @Deprecated(since = "9.3.0.0")
-    public static IRubyObject home(ThreadContext context, IRubyObject recv, IRubyObject[] args) {
-        if (args.length > 0 && args[0] != context.nil) return getHomeDirectoryPath(context, args[0].toString());
-
-        return getHomeDirectoryPath(context);
-    }
-
-    @Deprecated(since = "9.2.15.0")
-    public static RubyArray entries(IRubyObject recv, IRubyObject path) {
-        return entries(((RubyBasicObject) recv).getCurrentContext(), recv, path);
-    }
-
-    @Deprecated(since = "9.2.15.0")
-    public static RubyArray entries(IRubyObject recv, IRubyObject path, IRubyObject arg, IRubyObject opts) {
-        return entries(((RubyBasicObject) recv).getCurrentContext(), recv, path, opts);
     }
 
     @Deprecated(since = "10.0.0.0")

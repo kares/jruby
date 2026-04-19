@@ -63,6 +63,7 @@ import static org.jruby.api.Access.hashClass;
 import static org.jruby.api.Convert.asBoolean;
 import static org.jruby.api.Define.defineClass;
 import static org.jruby.api.Error.*;
+import static org.jruby.runtime.ThreadContext.hasKeywords;
 import static org.jruby.runtime.Visibility.PRIVATE;
 
 // Design overview:
@@ -119,7 +120,7 @@ public class RubyHash extends RubyObject implements Map {
 
     protected static final RubyHashEntry NULL_ENTRY = new RubyHashEntry();
 
-    @Deprecated
+    @Deprecated(since = "10.0.3.0")
     public static final RubyHashEntry NO_ENTRY = NULL_ENTRY;
 
     public static RubyClass createHashClass(ThreadContext context, RubyClass Object, RubyModule Enumerable) {
@@ -228,7 +229,7 @@ public class RubyHash extends RubyObject implements Map {
     }
 
     // Delegated constructor, to be hidden and returned to normal super constructor once no longer in use
-    @Deprecated
+    @Deprecated(since = "10.0.3.0")
     public RubyHash(Ruby runtime, RubyClass klass) {
         super(runtime, klass);
         // ensure no subclasses call this constructor
@@ -237,7 +238,7 @@ public class RubyHash extends RubyObject implements Map {
     }
 
     // Delegated constructor, to be hidden and returned to normal super constructor once no longer in use
-    @Deprecated
+    @Deprecated(since = "10.0.3.0")
     public RubyHash(Ruby runtime, RubyClass klass, boolean objectSpace) {
         super(runtime, klass, objectSpace);
         // ensure no subclasses call this constructor
@@ -246,7 +247,7 @@ public class RubyHash extends RubyObject implements Map {
     }
 
     // Delegated constructor, to be hidden and returned to normal super constructor once no longer in use
-    @Deprecated
+    @Deprecated(since = "10.0.3.0")
     public RubyHash(Ruby runtime) {
         super(runtime, runtime.getHash());
         // ensure no subclasses call this constructor
@@ -255,7 +256,7 @@ public class RubyHash extends RubyObject implements Map {
     }
 
     // Delegated constructor, to be hidden and returned to normal super constructor once no longer in use
-    @Deprecated
+    @Deprecated(since = "10.0.3.0")
     public RubyHash(Ruby runtime, IRubyObject defaultValue) {
         super(runtime, runtime.getHash());
         // ensure no subclasses call this constructor
@@ -269,7 +270,7 @@ public class RubyHash extends RubyObject implements Map {
      * ============================
      */
 
-    @Deprecated
+    @Deprecated(since = "10.0.3.0")
     public static final int MRI_PRIMES[] = {
         8 + 3, 16 + 3, 32 + 5, 64 + 3, 128 + 3, 256 + 27, 512 + 9, 1024 + 9, 2048 + 5, 4096 + 3,
         8192 + 27, 16384 + 43, 32768 + 3, 65536 + 45, 131072 + 29, 262144 + 3, 524288 + 21, 1048576 + 7,
@@ -403,7 +404,7 @@ public class RubyHash extends RubyObject implements Map {
         return getDelegate().internalGet(key);
     }
 
-    @Deprecated
+    @Deprecated(since = "10.0.3.0")
     RubyHashEntry getEntry(IRubyObject key) {
         return getDelegate().getEntry(key);
     }
@@ -455,7 +456,7 @@ public class RubyHash extends RubyObject implements Map {
         return getDelegate().initialize(context, block);
     }
 
-    @JRubyMethod(visibility = PRIVATE)
+    @JRubyMethod(visibility = PRIVATE, keywords = true)
     public IRubyObject initialize(ThreadContext context, IRubyObject _default, final Block block) {
         return getDelegate().initialize(context, _default, block);
     }

@@ -682,11 +682,6 @@ public class RubyGlobal {
             return newSharedString(context, ENV);
         }
 
-        @Deprecated(since = "9.3.0.0")
-        public RubyHash to_h() {
-            return to_h(getCurrentContext(), Block.NULL_BLOCK);
-        }
-
         @JRubyMethod
         public RubyHash to_h(ThreadContext context, Block block){
             RubyHash h = to_hash(context);

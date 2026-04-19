@@ -252,19 +252,6 @@ public class RubyFloat extends RubyNumeric implements Appendable, SimpleHash {
      *  ================
      */
 
-    /** rb_flo_induced_from
-     *
-     */
-    @Deprecated(since = "9.0.0.0")
-    public static IRubyObject induced_from(ThreadContext context, IRubyObject recv, IRubyObject number) {
-        if (number instanceof RubyFixnum || number instanceof RubyBignum || number instanceof RubyRational) {
-            return number.callMethod(context, "to_f");
-        }
-
-        if (!(number instanceof RubyFloat)) throw typeError(context, "failed to convert ", number, " into Float");
-        return number;
-    }
-
     /** flo_to_s
      *
      */
@@ -293,11 +280,6 @@ public class RubyFloat extends RubyNumeric implements Appendable, SimpleHash {
     @Override
     public IRubyObject op_uminus(ThreadContext context) {
         return asFloat(context, -value);
-    }
-
-    @Deprecated(since = "9.2.0.0")
-    public IRubyObject op_uminus() {
-        return op_uminus(getCurrentContext());
     }
 
     /** flo_plus
@@ -1330,30 +1312,6 @@ public class RubyFloat extends RubyNumeric implements Appendable, SimpleHash {
     @Override
     public boolean isImmediate() {
         return true;
-    }
-
-    @Deprecated(since = "9.2.0.0")
-    public IRubyObject zero_p() {
-        return zero_p(getCurrentContext());
-    }
-
-    @Deprecated(since = "9.2.0.0")
-    public IRubyObject floor(ThreadContext context, IRubyObject[] args) {
-        return switch (args.length) {
-            case 0 -> floor(context);
-            case 1 -> floor(context, args[0]);
-            default -> throw argumentError(context, args.length, 1);
-        };
-    }
-
-    @Deprecated(since = "9.2.0.0")
-    public IRubyObject round(ThreadContext context, IRubyObject[] args) {
-        return switch (args.length) {
-            case 0 -> round(context);
-            case 1 -> round(context, args[0]);
-            case 2 -> round(context, args[0], args[1]);
-            default -> throw argumentError(context, args.length, 2);
-        };
     }
 
     private static FloatSites sites(ThreadContext context) {

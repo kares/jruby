@@ -1401,6 +1401,14 @@ public abstract class RubyParserBase {
         if (node == null || orig == null) return;
 
         node.setLine(orig.getLine());
+
+        // Detect IfNode and propagate newline to the bodies.
+        // This is a bit of a form-fitted fix, but the full reduce_nodes logic from CRuby
+        // defied an initial porting attempt. See jruby/jruby#9293.
+        if (node.isNewline() && node instanceof IfNode ifNode) {
+            if (ifNode.getThenBody() instanceof Node thenNode) thenNode.setNewline();
+            if (ifNode.getElseBody() instanceof Node elseNode) elseNode.setNewline();
+        }
     }
 
     public Node new_fcall(ByteList operation) {
@@ -1716,11 +1724,6 @@ public abstract class RubyParserBase {
         return RubyLexer.isIdentifierChar(name.charAt(0));
     }
 
-    @Deprecated(since = "9.2.0.0")
-    public boolean is_local_id(String name) {
-        return RubyLexer.isIdentifierChar(name.charAt(0));
-    }
-
     // 1.9
     public ListNode list_append(Node list, Node item) {
         if (list == null) return new ArrayNode(item.getLine(), item);
@@ -2000,11 +2003,6 @@ public abstract class RubyParserBase {
     }
 
     public static final ByteList INTERNAL_ID = new ByteList(new byte[] {}, USASCIIEncoding.INSTANCE);
-
-    @Deprecated(since = "9.2.0.0")
-    public String internalId() {
-        return INTERNAL_ID.toString();
-    }
 
     protected void begin_definition(String name) {
         LexContext ctxt = getLexContext();

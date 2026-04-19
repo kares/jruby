@@ -35,7 +35,7 @@ package org.jruby;
 
 import java.io.IOException;
 import java.io.Writer;
-import java.lang.management.ManagementFactory;
+
 import java.lang.ref.WeakReference;
 import java.nio.ByteBuffer;
 import java.nio.channels.Channel;
@@ -187,6 +187,9 @@ public class RubyThread extends RubyObject implements ExecutionContext {
     /** Thread-local tuple used for sleeping (semaphore, millis, nanos) */
     private final SleepTask2 sleepTask = new SleepTask2();
 
+    /** Thread-local tuple used for waiting (object, millis, nanos) */
+    private final WaitTask waitTask = new WaitTask();
+
     /** Whether this is an "adopted" thread not created by Ruby code */
     private final boolean adopted;
 
@@ -235,6 +238,8 @@ public class RubyThread extends RubyObject implements ExecutionContext {
     /** Short circuit to avoid-re-scanning for interrupts */
     private volatile boolean pendingInterruptQueueChecked = false;
 
+    /* Still used by jruby-openssl for its blocking logic */
+    @Deprecated
     private volatile BlockingTask currentBlockingTask;
 
     private volatile Selector currentSelector;
@@ -1508,21 +1513,10 @@ public class RubyThread extends RubyObject implements ExecutionContext {
     public IRubyObject native_thread_id(ThreadContext context) {
         if (!isAlive()) return context.nil;
 
-        String encodedString = ManagementFactory.getRuntimeMXBean().getName();
-        int atIndex = encodedString.indexOf('@');
+        Thread nativeThread = getNativeThread();
+        if (nativeThread == null) return context.nil;
 
-        // Undocumented format: 1761769@localhost.localdomain
-        if (atIndex != -1) {
-            try {
-                int id = Integer.parseInt(encodedString.substring(0, atIndex));
-
-                return asFixnum(context, id);
-            } catch (NumberFormatException e) {
-                // if we fail to parse this we will just act like we don't support it
-            }
-        }
-
-        return context.nil;  // Not supported or failed to extract id
+        return asFixnum(context, nativeThread.threadId());
     }
 
     private IRubyObject genericRaise(ThreadContext context, RubyThread currentThread, IRubyObject... args) {
@@ -1672,6 +1666,67 @@ public class RubyThread extends RubyObject implements ExecutionContext {
         }
     }
 
+    /**
+     * Wait for the object's monitor the specified number of seconds, or forever if seconds is zero.
+     *
+     * @param o the object to wait for
+     * @param seconds the number of seconds to wait, as a double
+     * @return whether the wait took at least the specified amount of time, or true if the time specified was zero
+     * @throws InterruptedException
+     */
+    public boolean waitForObject(Object o, double seconds) throws InterruptedException {
+        if (seconds > 0.0) {
+            long delay_ns = (long)(seconds * 1000000000.0);
+            int delay_ns_remainder = (int)( delay_ns % 1000000 );
+            long delay_ms = delay_ns / 1000000;
+            return waitForObject(o, delay_ms, delay_ns_remainder);
+        } else {
+            waitForObject(o);
+            return true;
+        }
+    }
+
+    /**
+     * Wait for the object's monitor until woken up or notified.
+     *
+     * Equivalent to calling {@link RubyThread#waitForObject(Object, long, int)} with 0 for millis and nanos.
+     *
+     * @param o the object to wait for
+     * @throws InterruptedException
+     */
+    public void waitForObject(Object o) throws InterruptedException {
+        waitTask.millis = 0;
+        waitTask.nanos = 0;
+        executeTaskBlocking(getContext(), o, waitTask);
+    }
+
+    /**
+     * Wait for the object's monitor the specified number of milliseconds and nanoseconds, or forever if they are zero.
+     *
+     * @param o the object to wait for
+     * @param millis the number of milliseconds to wait
+     * @param nanos the number of nanoseconds to wait
+     * @return whether the wait took at least the specified amount of time, or true if the time specified was zero
+     * @throws InterruptedException
+     */
+    public boolean waitForObject(Object o, long millis, int nanos) throws InterruptedException {
+        long totalNanos = millis * 1000000 + nanos;
+        if (totalNanos == 0) {
+            waitForObject(o);
+            return true;
+        }
+
+        long start_ns = System.nanoTime();
+        if (totalNanos > 0) {
+            waitTask.millis = millis;
+            waitTask.nanos = nanos;
+            executeTaskBlocking(getContext(), o, waitTask);
+        }
+        long end_ns = System.nanoTime();
+
+        return (end_ns - start_ns) <= totalNanos;
+    }
+
     public IRubyObject status() { // not used
         return status(getRuntime().getCurrentContext());
     }
@@ -1723,6 +1778,7 @@ public class RubyThread extends RubyObject implements ExecutionContext {
         return exitingException;
     }
 
+    /* Still used by jruby-openssl for its blocking logic */
     @Deprecated(since = "9.0.0.0")
     public interface BlockingTask {
         public void run() throws InterruptedException;
@@ -1738,24 +1794,23 @@ public class RubyThread extends RubyObject implements ExecutionContext {
         public void wakeup(RubyThread thread, Data data);
     }
 
+    // Deprecated but still used by wait_timeout below
+    @Deprecated(since = "10.1.0.0")
     public static final class SleepTask implements BlockingTask {
         private final Object object;
         private final long millis;
         private final int nanos;
-
         public SleepTask(Object object, long millis, int nanos) {
             this.object = object;
             this.millis = millis;
             this.nanos = nanos;
         }
-
         @Override
         public void run() throws InterruptedException {
             synchronized (object) {
                 object.wait(millis, nanos);
             }
         }
-
         @Override
         public void wakeup() {
             synchronized (object) {
@@ -1796,6 +1851,32 @@ public class RubyThread extends RubyObject implements ExecutionContext {
         @Override
         public void wakeup(RubyThread thread, Object data) {
             semaphore.release();
+        }
+    }
+
+    /**
+     * A Task for waiting on an object's monitor.
+     */
+    private static class WaitTask implements Task<Object, Long> {
+        long millis;
+        int nanos;
+
+        @Override
+        public Long run(ThreadContext context, Object data) throws InterruptedException {
+            long start = System.nanoTime();
+
+            synchronized (data) {
+                data.wait(millis, nanos);
+            }
+
+            return System.nanoTime() - start;
+        }
+
+        @Override
+        public void wakeup(RubyThread thread, Object data) {
+            synchronized (data) {
+                data.notify();
+            }
         }
     }
 
@@ -2452,31 +2533,17 @@ public class RubyThread extends RubyObject implements ExecutionContext {
         enterSleep();
     }
 
-    @Deprecated(since = "9.3.0.0")
-    public void beforeBlockingCall() {
-        beforeBlockingCall(metaClass.runtime.getCurrentContext());
-    }
-
     public void afterBlockingCall() {
         exitSleep();
         pollThreadEvents();
     }
 
+    /**
+     * @deprecated use {@link RubyThread#waitForObject(Object, double)} and siblings
+     */
+    @Deprecated(since = "10.1.0.0")
     public boolean wait_timeout(IRubyObject o, Double timeout) throws InterruptedException {
-        if ( timeout != null ) {
-            long delay_ns = (long)(timeout.doubleValue() * 1000000000.0);
-            long start_ns = System.nanoTime();
-            if (delay_ns > 0) {
-                long delay_ms = delay_ns / 1000000;
-                int delay_ns_remainder = (int)( delay_ns % 1000000 );
-                executeBlockingTask(new SleepTask(o, delay_ms, delay_ns_remainder));
-            }
-            long end_ns = System.nanoTime();
-            return ( end_ns - start_ns ) <= delay_ns;
-        } else {
-            executeBlockingTask(new SleepTask(o, 0, 0));
-            return true;
-        }
+        return waitForObject(o, timeout == null ? 0 : timeout.doubleValue());
     }
 
     public RubyThreadGroup getThreadGroup() {

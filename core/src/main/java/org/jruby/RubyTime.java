@@ -115,6 +115,7 @@ public class RubyTime extends RubyObject {
     private static final BigDecimal ONE_MILLION_BD = BigDecimal.valueOf(1000000);
     private static final BigDecimal ONE_BILLION_BD = BigDecimal.valueOf(1000000000);
     public static final int TIME_SCALE = 1_000_000_000;
+    public static final BigInteger TIME_SCALE_BI = BigInteger.valueOf(TIME_SCALE);
     public static final int TIME_SCALE_DIGITS = 9;
 
     private DateTime dt;
@@ -548,14 +549,6 @@ public class RubyTime extends RubyObject {
         this.zone = zone;
     }
 
-    /**
-     * Use {@link #setDateTime(DateTime)} instead.
-     */
-    @Deprecated(since = "9.2.0.0")
-    public void updateCal(DateTime dt) {
-        this.dt = dt;
-    }
-
     public static RubyTime newTime(Ruby runtime, long milliseconds) {
         return newTime(runtime, new DateTime(milliseconds));
     }
@@ -701,11 +694,6 @@ public class RubyTime extends RubyObject {
         return ((RubyTime) dup()).adjustTimeZone(context, dtz, false);
     }
 
-    @Deprecated(since = "9.2.0.0")
-    public RubyString strftime(IRubyObject format) {
-        return strftime(getRuntime().getCurrentContext(), format);
-    }
-
     @JRubyMethod
     public RubyString strftime(ThreadContext context, IRubyObject format) {
         final RubyDateFormatter rdf = context.getRubyDateFormatter();
@@ -776,7 +764,7 @@ public class RubyTime extends RubyObject {
             pos = fillDigitsAfterChar(buf, pos, ':', offset % 60, 2, 10);
         }
 
-        return newString(context, new ByteList(buf, false));
+        return newString(context, new ByteList(buf, USASCIIEncoding.INSTANCE, false));
     }
 
     private static int fillDigits(byte[] buf, int begin, int number, int size, int divisor) {
@@ -1274,11 +1262,6 @@ public class RubyTime extends RubyObject {
         return asBoolean(context, (dt.getDayOfWeek() % 7) == 6);
     }
 
-    @Deprecated(since = "9.2.0.0")
-    public IRubyObject subsec() {
-        return subsec(getRuntime().getCurrentContext());
-    }
-
     @JRubyMethod
     public RubyNumeric subsec(final ThreadContext context) {
         long nanosec = dt.getMillisOfSecond() * 1_000_000 + this.nsec;
@@ -1416,18 +1399,6 @@ public class RubyTime extends RubyObject {
         return dump(context);
     }
 
-    @Deprecated(since = "9.2.0.0")
-    public RubyString dump(IRubyObject[] args, Block unusedBlock) {
-        RubyString str = (RubyString) mdump();
-        str.syncVariables(this);
-        return str;
-    }
-
-    @Deprecated(since = "9.2.0.0")
-    public RubyObject mdump() {
-        return mdump(getCurrentContext());
-    }
-
     private RubyString mdump(ThreadContext context) {
         DateTime dateTime = dt.toDateTime(DateTimeZone.UTC);
         byte dumpValue[] = new byte[8];
@@ -1545,25 +1516,6 @@ public class RubyTime extends RubyObject {
     }
 
     /* Time class methods */
-
-    /**
-     * @deprecated Use {@link #newInstance(ThreadContext, IRubyObject, IRubyObject[])}
-     */
-    @Deprecated(since = "9.2.0.0")
-    public static IRubyObject s_new(IRubyObject recv, IRubyObject[] args, Block block) {
-        Ruby runtime = recv.getRuntime();
-        RubyTime time = new RubyTime(runtime, (RubyClass) recv, new DateTime(getLocalTimeZone(runtime.getCurrentContext())));
-        time.callInit(args, block);
-        return time;
-    }
-
-    /**
-     * @deprecated Use {@link #newInstance(ThreadContext, IRubyObject, IRubyObject[])}
-     */
-    @Deprecated(since = "1.1.3")
-    public static IRubyObject newInstance(ThreadContext context, IRubyObject recv, IRubyObject[] args, Block block) {
-        return newInstance(context, recv, args);
-    }
 
     @JRubyMethod(name = "now", meta = true, optional = 1, checkArity = false, keywords = true)
     public static RubyTime newInstance(ThreadContext context, IRubyObject recv, IRubyObject args[]) {
@@ -1995,12 +1947,6 @@ public class RubyTime extends RubyObject {
 
     private static RubyTime allocateInstance(ThreadContext context, RubyClass recv) {
         return (RubyTime) recv.allocate(context);
-    }
-
-    @Deprecated(since = "9.2.0.0")
-    public static RubyTime load(IRubyObject recv, IRubyObject from, Block block) {
-        var context = recv.getRuntime().getCurrentContext();
-        return s_mload(context, allocateInstance(context, (RubyClass) recv), from);
     }
 
     @JRubyMethod(name = "_load", meta = true)

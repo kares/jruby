@@ -21,6 +21,7 @@ import org.jruby.internal.runtime.methods.AliasMethod;
 import org.jruby.internal.runtime.methods.AttrReaderMethod;
 import org.jruby.internal.runtime.methods.AttrWriterMethod;
 import org.jruby.internal.runtime.methods.CompiledIRMethod;
+import org.jruby.internal.runtime.methods.DefineMethodMethod;
 import org.jruby.internal.runtime.methods.DynamicMethod;
 import org.jruby.internal.runtime.methods.HandleMethod;
 import org.jruby.internal.runtime.methods.MixedModeIRMethod;
@@ -361,8 +362,8 @@ public abstract class InvokeSite extends MutableCallSite {
         return setValue;
     }
 
-    MethodHandle buildJittedHandle(CacheEntry entry, boolean blockGiven) {
-        MethodHandle mh = null;
+    MethodHandle buildJittedHandle(final CacheEntry entry, final boolean blockGiven) {
+        MethodHandle mh;
         SmartBinder binder;
         CompiledIRMethod compiledIRMethod = null;
         DynamicMethod method = entry.method;
@@ -410,7 +411,12 @@ public abstract class InvokeSite extends MutableCallSite {
                 }
             }
 
-            if (!blockGiven) {
+            if (method instanceof DefineMethodMethod defineMethod) {
+                // DefineMethodMethod captures the block from define_method's enclosing scope;
+                // always use that captured block for yield, regardless of caller's block
+                if (blockGiven) binder = binder.drop("block");
+                binder = binder.append("block", Block.class, defineMethod.getCapturedBlock());
+            } else if (!blockGiven) {
                 binder = binder.append("block", Block.class, Block.NULL_BLOCK);
             }
 
@@ -424,6 +430,8 @@ public abstract class InvokeSite extends MutableCallSite {
             if (Options.INVOKEDYNAMIC_LOG_BINDING.load()) {
                 LOG.info(name() + "\tbound directly to jitted method " + Bootstrap.logMethod(method));
             }
+        } else {
+            mh = null;
         }
 
         return mh;
@@ -1326,22 +1334,22 @@ public abstract class InvokeSite extends MutableCallSite {
         if (method instanceof PartialDelegatingMethod delegate) {
             DynamicMethod innerMethod = delegate.getRealMethod();
             mh = getHandle(context, self, new CacheEntry(innerMethod, entry.sourceModule, entry.token));
-        } else if (method instanceof AliasMethod alias) {
-            DynamicMethod innerMethod = alias.getRealMethod();
-            String name = alias.getName();
-
-            // Use a second site to mimic invocation from AliasMethod
-            MethodType type = type();
-            if (!functional) type = type.dropParameterTypes(1, 2);
-            InvokeSite innerSite = (InvokeSite) SelfInvokeSite.bootstrap(LOOKUP, "callFunctional:" + name, type, literalClosure ? 1 : 0, flags, file, line);
-            mh = innerSite.getHandle(context, self, new CacheEntry(innerMethod, entry.sourceModule, entry.token));
-            if (!functional) mh = MethodHandles.dropArguments(mh, 1, IRubyObject.class);
-
-            alias.setHandle(mh);
-
-            if (Options.INVOKEDYNAMIC_LOG_BINDING.load()) {
-                LOG.info(name() + "\tbound directly through alias to " + Bootstrap.logMethod(method));
-            }
+//        } else if (method instanceof AliasMethod alias) {
+//            DynamicMethod innerMethod = alias.getRealMethod();
+//            String name = alias.getName();
+//
+//            // Use a second site to mimic invocation from AliasMethod
+//            MethodType type = type();
+//            if (!functional) type = type.dropParameterTypes(1, 2);
+//            InvokeSite innerSite = (InvokeSite) SelfInvokeSite.bootstrap(LOOKUP, "callFunctional:" + name, type, literalClosure ? 1 : 0, flags, file, line);
+//            mh = innerSite.getHandle(context, self, new CacheEntry(innerMethod, entry.sourceModule, entry.token));
+//            if (!functional) mh = MethodHandles.dropArguments(mh, 1, IRubyObject.class);
+//
+//            alias.setHandle(mh);
+//
+//            if (Options.INVOKEDYNAMIC_LOG_BINDING.load()) {
+//                LOG.info(name() + "\tbound directly through alias to " + Bootstrap.logMethod(method));
+//            }
         }
 
         return mh;

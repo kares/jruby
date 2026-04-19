@@ -419,14 +419,17 @@ public class RubyString extends RubyObject implements CharSequence, EncodingCapa
         if (!getEncoding().isAsciiCompatible()) throw getRuntime().newEncodingCompatibilityError("ASCII incompatible encoding: " + getEncoding());
     }
 
+    @Deprecated(since = "10.1.0.0", forRemoval = true)
     public RubyString(Ruby runtime, RubyClass rubyClass) {
         this(runtime, rubyClass, ByteList.NULL_ARRAY);
     }
 
+    @Deprecated(since = "10.1.0.0", forRemoval = true)
     public RubyString(Ruby runtime, RubyClass rubyClass, CharSequence value) {
         this(runtime, rubyClass, value, UTF8);
     }
 
+    @Deprecated(since = "10.1.0.0", forRemoval = true)
     public RubyString(Ruby runtime, RubyClass rubyClass, CharSequence value, Encoding enc) {
         super(runtime, rubyClass);
         assert value != null;
@@ -451,24 +454,28 @@ public class RubyString extends RubyObject implements CharSequence, EncodingCapa
         this.value = encodeBytelist(value, enc);
     }
 
+    @Deprecated(since = "10.1.0.0", forRemoval = true)
     public RubyString(Ruby runtime, RubyClass rubyClass, byte[] value) {
         super(runtime, rubyClass);
         assert value != null;
         this.value = new ByteList(value);
     }
 
+    @Deprecated(since = "10.1.0.0", forRemoval = true)
     public RubyString(Ruby runtime, RubyClass rubyClass, ByteList value) {
         super(runtime, rubyClass);
         assert value != null;
         this.value = value;
     }
 
+    @Deprecated(since = "10.1.0.0", forRemoval = true)
     public RubyString(Ruby runtime, RubyClass rubyClass, ByteList value, boolean objectSpace) {
         super(runtime, rubyClass, objectSpace);
         assert value != null;
         this.value = value;
     }
 
+    @Deprecated(since = "10.1.0.0", forRemoval = true)
     public RubyString(Ruby runtime, RubyClass rubyClass, ByteList value, Encoding encoding, boolean objectSpace) {
         this(runtime, rubyClass, value, objectSpace);
         value.setEncoding(encoding);
@@ -496,21 +503,6 @@ public class RubyString extends RubyObject implements CharSequence, EncodingCapa
     }
 
     // Deprecated String construction routines
-
-    @Deprecated(since = "1.1.6")
-    public RubyString newString(CharSequence s) {
-        return new RubyString(getRuntime(), getType(), s);
-    }
-
-    @Deprecated(since = "1.1.6")
-    public RubyString newString(ByteList s) {
-        return new RubyString(getRuntime(), getMetaClass(), s);
-    }
-
-    @Deprecated(since = "1.1.2")
-    public static RubyString newString(Ruby runtime, RubyClass clazz, CharSequence str) {
-        return new RubyString(runtime, clazz, str);
-    }
 
     public static RubyString newStringLight(Ruby runtime, ByteList bytes) {
         return new RubyString(runtime, runtime.getString(), bytes, false);
@@ -652,11 +644,6 @@ public class RubyString extends RubyObject implements CharSequence, EncodingCapa
             return RubyString.newString(runtime, new ByteList(str.getBytes(), javaExtEncoding));
         }
         return RubyString.newString(runtime,  new ByteList(RubyEncoding.encode(str, rubyInt), internal));
-    }
-
-    @Deprecated(since = "9.3.0.0")
-    public static RubyString newExternalStringWithEncoding(Ruby runtime, String string, Encoding encoding) {
-        return EncodingUtils.newExternalStringWithEncoding(runtime, string, encoding);
     }
 
     // String construction routines by NOT byte[] buffer and making the target String shared
@@ -6254,16 +6241,6 @@ public class RubyString extends RubyObject implements CharSequence, EncodingCapa
         return this;
     }
 
-    @Deprecated(since = "9.2.0.0")
-    public IRubyObject tr19(ThreadContext context, IRubyObject src, IRubyObject repl) {
-        return tr(context, src, repl);
-    }
-
-    @Deprecated(since = "9.2.0.0")
-    public IRubyObject tr_bang19(ThreadContext context, IRubyObject src, IRubyObject repl) {
-        return tr_bang(context, src, repl);
-    }
-
     /** rb_str_tr / rb_str_tr_bang
      *
      */
@@ -6340,54 +6317,6 @@ public class RubyString extends RubyObject implements CharSequence, EncodingCapa
     @JRubyMethod(name = "each_line")
     public IRubyObject each_line(ThreadContext context, IRubyObject arg, IRubyObject opts, Block block) {
         return StringSupport.rbStrEnumerateLines(this, context, "each_line", arg, opts, block, false);
-    }
-
-    @Deprecated(since = "9.2.1.0") // no longer used
-    public IRubyObject each_lineCommon(ThreadContext context, IRubyObject sep, Block block) {
-        if (sep == context.nil) {
-            block.yield(context, this);
-            return this;
-        }
-
-        RubyString sepStr = sep.convertToString();
-        ByteList sepValue = sepStr.value;
-        int rslen = sepValue.getRealSize();
-
-        final byte newline;
-        if (rslen == 0) {
-            newline = '\n';
-        } else {
-            newline = sepValue.getUnsafeBytes()[sepValue.getBegin() + rslen - 1];
-        }
-
-        int p = value.getBegin();
-        int end = p + value.getRealSize();
-        int ptr = p, s = p;
-        int len = value.getRealSize();
-        byte[] bytes = value.getUnsafeBytes();
-
-        p += rslen;
-
-        for (; p < end; p++) {
-            if (rslen == 0 && bytes[p] == '\n') {
-                if (++p == end || bytes[p] != '\n') continue;
-                while(p < end && bytes[p] == '\n') p++;
-            }
-            if (ptr < p && bytes[p - 1] == newline &&
-               (rslen <= 1 ||
-                ByteList.memcmp(sepValue.getUnsafeBytes(), sepValue.getBegin(), rslen, bytes, p - rslen, rslen) == 0)) {
-                block.yield(context, makeShared(context.runtime, s - ptr, p - s));
-                modifyCheck(bytes, len);
-                s = p;
-            }
-        }
-
-        if (s != end) {
-            if (p > end) p = end;
-            block.yield(context, makeShared(context.runtime, s - ptr, p - s));
-        }
-
-        return this;
     }
 
     @JRubyMethod(name = "lines")
@@ -7386,6 +7315,7 @@ public class RubyString extends RubyObject implements CharSequence, EncodingCapa
         return context.sites.String;
     }
 
+    /** Deprecated but still used by JIT, see {@link org.jruby.ir.targets.indy.ArrayDerefInvokeSite#STRDUP_FILTER} */
     @Deprecated(since = "9.0.0.0")
     public final RubyString strDup() {
         return strDup(getRuntime(), getMetaClass().getRealClass());

@@ -572,6 +572,7 @@ public class RubyException extends RubyObject {
         RubyException exception = (RubyException)clone;
         exception.backtrace.copy(backtrace);
         exception.message = message;
+        exception.cause = cause;
     }
 
     /**
@@ -659,10 +660,5 @@ public class RubyException extends RubyObject {
         if (backtrace.backtraceData == null) {
             backtrace.backtraceData = instanceConfig(context).getTraceType().getIntegratedBacktrace(context, javaTrace);
         }
-    }
-
-    @Deprecated(since = "9.3.0.0")
-    public static IRubyObject newException(ThreadContext context, RubyClass exceptionClass, IRubyObject message) {
-        return newException(context, exceptionClass, message.convertToString());
     }
 }

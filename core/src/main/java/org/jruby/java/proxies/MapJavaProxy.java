@@ -704,22 +704,12 @@ public final class MapJavaProxy extends ConcreteJavaProxy {
         return getOrCreateRubyHashMap(context.runtime).invert(context);
     }
 
-    @Deprecated(since = "9.3.0.0")
-    public RubyHash merge_bang(final ThreadContext context, final IRubyObject other, final Block block) {
-        return merge_bang(context, new IRubyObject[]{other}, block);
-    }
-
     /** rb_hash_merge_bang
      *
      */
     @JRubyMethod(name = { "merge!", "update" }, rest = true)
     public RubyHash merge_bang(final ThreadContext context, final IRubyObject[] others, final Block block) {
         return getOrCreateRubyHashMap(context.runtime).merge_bang(context, others, block);
-    }
-
-    @Deprecated(since = "9.3.0.0")
-    public RubyHash merge(ThreadContext context, IRubyObject other, Block block) {
-        return merge(context, new IRubyObject[]{other}, block);
     }
 
     /** rb_hash_merge

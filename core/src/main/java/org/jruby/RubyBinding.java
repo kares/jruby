@@ -89,16 +89,6 @@ public class RubyBinding extends RubyObject implements DataType {
         return new RubyBinding(runtime, runtime.getBinding(), binding);
     }
 
-    @Deprecated(since = "1.2")
-    public static RubyBinding newBinding(Ruby runtime) {
-        return newBinding(runtime, runtime.getCurrentContext().currentBinding());
-    }
-
-    @Deprecated(since = "1.2")
-    public static RubyBinding newBinding(Ruby runtime, IRubyObject self) {
-       return newBinding(runtime, runtime.getCurrentContext().currentBinding(self));
-    }
-    
     @JRubyMethod(name = "initialize", visibility = Visibility.PRIVATE)
     @Override
     public IRubyObject initialize(ThreadContext context) {

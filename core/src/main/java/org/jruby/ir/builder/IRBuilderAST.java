@@ -607,6 +607,10 @@ public class IRBuilderAST extends IRBuilder<Node, DefNode, WhenNode, RescueBodyN
 
     protected Operand[] buildCallArgs(Node args, int[] flags) {
         switch (args.getNodeType()) {
+            case DEFNNODE:
+            case DEFSNODE:
+                build(args);
+                return new Operand[] { new Symbol(((MethodDefNode) args).getName()) };
             case ARGSCATNODE:
             case ARGSPUSHNODE:
                 Operand lhs = build(((TwoValueNode) args).getFirstNode());

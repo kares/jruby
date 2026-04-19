@@ -411,6 +411,7 @@ public class IRRuntimeHelpers {
         return Helpers.wrapJavaException(runtime, throwable); // wrap as normal JI object
     }
 
+    @Deprecated(since = "10.0.3.0")
     @SuppressWarnings("deprecation")
     private static IRubyObject wrapWithNativeException(ThreadContext context, Throwable throwable, Ruby runtime) {
         // wrap Throwable in a NativeException object
@@ -703,7 +704,7 @@ public class IRRuntimeHelpers {
     // call on this path and pass in the live value of ruby2_keywords from the scope.
     @JIT
     public static IRubyObject receiveSpecificArityKeywords(ThreadContext context, IRubyObject last, boolean ruby2Keywords) {
-        int callInfo = resetCallInfo(context);
+        int callInfo = ThreadContext.resetCallInfo(context);
         if (last instanceof RubyHash hash) {
             KwargsAction kwargsAction = kwargsActionJIT(last, ruby2Keywords, callInfo);
             return switch (kwargsAction) {
