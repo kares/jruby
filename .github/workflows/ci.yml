@@ -264,6 +264,34 @@ jobs:
       - name: mvn -P test
         run: ./mvnw -ntp package -Ptest
 
+  spec-ruby-prism-wasm:
+    runs-on: windows-latest
+
+    strategy:
+      fail-fast: false
+      matrix:
+        rubyspec-target: ['language', 'core']
+
+    name: ${{ matrix.rubyspec-target }} specs (WASM Prism parser, Java 21)
+
+    steps:
+      - name: checkout
+        uses: actions/checkout@v3
+      - name: set up java 21
+        uses: actions/setup-java@v3
+        with:
+          distribution: 'zulu'
+          java-version: 21
+          cache: 'maven'
+      - name: bootstrap
+        run: mvn -ntp -Pbootstrap clean package
+      - name: bundle install
+        run: bin/jruby --dev -S bundle install
+      - name: ${{ matrix.rubyspec-target }} specs
+        run: bin/jruby spec/mspec/bin/mspec ci :${{ matrix.rubyspec-target }}
+        env:
+          JRUBY_OPTS: -Xparser.prism -Xparser.prism.wasm
+
   spec-ruby-language-windows:
     runs-on: windows-latest
 
