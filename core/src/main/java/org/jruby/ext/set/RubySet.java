@@ -258,7 +258,8 @@ public class RubySet extends RubyObject implements Set {
         } else if (enume instanceof RubySet set) {
             allocHash(context, set.size());
             for ( IRubyObject elem : set.elementsOrdered() ) {
-                invokeAdd(context, block.yield(context, elem));
+                if (block.isGiven()) elem = block.yield(context, elem);
+                invokeAdd(context, elem);
             }
             return set; // done
         } else {
