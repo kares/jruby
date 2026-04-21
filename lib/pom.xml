@@ -228,7 +228,7 @@ DO NOT MODIFY - GENERATED CODE
     <dependency>
       <groupId>rubygems</groupId>
       <artifactId>erb</artifactId>
-      <version>2.2.3</version>
+      <version>4.0.4.1</version>
       <type>gem</type>
       <scope>provided</scope>
       <exclusions>
@@ -1106,7 +1106,7 @@ DO NOT MODIFY - GENERATED CODE
           <include>specifications/digest-3.1.0*</include>
           <include>specifications/drb-2.1.0*</include>
           <include>specifications/english-0.7.1*</include>
-          <include>specifications/erb-2.2.3*</include>
+          <include>specifications/erb-4.0.4.1*</include>
           <include>specifications/error_highlight-0.3.0*</include>
           <include>specifications/ffi-1.16.3*</include>
           <include>specifications/fiddle-1.1.4*</include>
@@ -1186,7 +1186,7 @@ DO NOT MODIFY - GENERATED CODE
           <include>gems/digest-3.1.0*/**/*</include>
           <include>gems/drb-2.1.0*/**/*</include>
           <include>gems/english-0.7.1*/**/*</include>
-          <include>gems/erb-2.2.3*/**/*</include>
+          <include>gems/erb-4.0.4.1*/**/*</include>
           <include>gems/error_highlight-0.3.0*/**/*</include>
           <include>gems/ffi-1.16.3*/**/*</include>
           <include>gems/fiddle-1.1.4*/**/*</include>
@@ -1266,7 +1266,7 @@ DO NOT MODIFY - GENERATED CODE
           <include>cache/digest-3.1.0*</include>
           <include>cache/drb-2.1.0*</include>
           <include>cache/english-0.7.1*</include>
-          <include>cache/erb-2.2.3*</include>
+          <include>cache/erb-4.0.4.1*</include>
           <include>cache/error_highlight-0.3.0*</include>
           <include>cache/ffi-1.16.3*</include>
           <include>cache/fiddle-1.1.4*</include>
