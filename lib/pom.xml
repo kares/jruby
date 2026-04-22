@@ -151,7 +151,7 @@ DO NOT MODIFY - GENERATED CODE
     <dependency>
       <groupId>rubygems</groupId>
       <artifactId>erb</artifactId>
-      <version>4.0.4</version>
+      <version>4.0.4.1</version>
       <type>gem</type>
       <scope>provided</scope>
       <exclusions>
@@ -1153,7 +1153,7 @@ DO NOT MODIFY - GENERATED CODE
           <include>specifications/did_you_mean-2.0.0*</include>
           <include>specifications/digest-3.2.0*</include>
           <include>specifications/english-0.8.0*</include>
-          <include>specifications/erb-4.0.4*</include>
+          <include>specifications/erb-4.0.4.1*</include>
           <include>specifications/error_highlight-0.7.0*</include>
           <include>specifications/ffi-1.17.0*</include>
           <include>specifications/fiddle-1.1.6*</include>
@@ -1237,7 +1237,7 @@ DO NOT MODIFY - GENERATED CODE
           <include>gems/did_you_mean-2.0.0*/**/*</include>
           <include>gems/digest-3.2.0*/**/*</include>
           <include>gems/english-0.8.0*/**/*</include>
-          <include>gems/erb-4.0.4*/**/*</include>
+          <include>gems/erb-4.0.4.1*/**/*</include>
           <include>gems/error_highlight-0.7.0*/**/*</include>
           <include>gems/ffi-1.17.0*/**/*</include>
           <include>gems/fiddle-1.1.6*/**/*</include>
@@ -1321,7 +1321,7 @@ DO NOT MODIFY - GENERATED CODE
           <include>cache/did_you_mean-2.0.0*</include>
           <include>cache/digest-3.2.0*</include>
           <include>cache/english-0.8.0*</include>
-          <include>cache/erb-4.0.4*</include>
+          <include>cache/erb-4.0.4.1*</include>
           <include>cache/error_highlight-0.7.0*</include>
           <include>cache/ffi-1.17.0*</include>
           <include>cache/fiddle-1.1.6*</include>
@@ -1405,7 +1405,7 @@ DO NOT MODIFY - GENERATED CODE
           <include>extensions/universal-java/3.4.0/did_you_mean-2.0.0/*</include>
           <include>extensions/universal-java/3.4.0/digest-3.2.0/*</include>
           <include>extensions/universal-java/3.4.0/english-0.8.0/*</include>
-          <include>extensions/universal-java/3.4.0/erb-4.0.4/*</include>
+          <include>extensions/universal-java/3.4.0/erb-4.0.4.1/*</include>
           <include>extensions/universal-java/3.4.0/error_highlight-0.7.0/*</include>
           <include>extensions/universal-java/3.4.0/ffi-1.17.0/*</include>
           <include>extensions/universal-java/3.4.0/fiddle-1.1.6/*</include>

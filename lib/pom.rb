@@ -33,7 +33,7 @@ default_gems = [
   ['digest', '3.2.0'],
   ['english', '0.8.0'],
   # Ongoing discussion about the -java gem, since it just omits the ext: https://github.com/ruby/erb/issues/52
-  ['erb', '4.0.4'],
+  ['erb', '4.0.4.1'],
   ['error_highlight', '0.7.0'],
   # https://github.com/ruby/etc/issues/19
   # ['etc', '1.4.5'],
