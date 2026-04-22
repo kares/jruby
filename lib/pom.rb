@@ -41,7 +41,7 @@ default_gems = [
   ['digest', '3.1.0'],
   ['drb', '2.1.0'],
   ['english', '0.7.1'],
-  ['erb', '2.2.3'],
+  ['erb', '4.0.4.1'],
   ['error_highlight', '0.3.0'],
   # https://github.com/ruby/etc/issues/19
   # ['etc', '1.3.0'],
