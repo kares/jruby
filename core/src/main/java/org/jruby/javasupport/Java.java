@@ -1742,31 +1742,35 @@ public class Java implements Library {
     }
 
     /**
-     * @param iface
+     * @param interfaceType
      * @return the sole un-implemented method for a functional-style interface or null
-     * <p>Note: This method is internal and might be subject to change, do not assume its part of JRuby's API!</p>
+     * @apiNote This method is internal and might be subject to change, do not assume its part of JRuby's API
      */
-    public static Method getFunctionalInterfaceMethod(final Class<?> iface) {
-        assert iface.isInterface();
+    public static Method getFunctionalInterfaceMethod(final Class<?> interfaceType) {
+        assert interfaceType.isInterface();
+
+        final Method[] objectMethods = Object.class.getMethods();
+
         Method single = null;
-        for ( final Method method : iface.getMethods() ) {
+        for (final Method method : interfaceType.getMethods()) {
             final int mod = method.getModifiers();
-            if ( Modifier.isStatic(mod) ) continue;
-            if ( Modifier.isAbstract(mod) ) {
-                try { // check if it's equals, hashCode etc. :
-                    Object.class.getMethod(method.getName(), method.getParameterTypes());
-                    continue; // abstract but implemented by java.lang.Object
-                }
-                catch (NoSuchMethodException e) { /* fall-through */ }
-                catch (SecurityException e) {
-                    // NOTE: we could try check for FunctionalInterface on Java 8
-                }
-            }
-            else continue; // not-abstract ... default method
-            if ( single == null ) single = method;
+            if (Modifier.isStatic(mod) || !Modifier.isAbstract(mod)) continue; // skip static and default methods
+            if (method.getDeclaringClass() == Object.class ||
+                isRedeclaredObjectMethod(objectMethods, method)) continue; // equals, hashCode etc.
+
+            if (single == null) single = method;
             else return null; // not a functional iface
         }
         return single;
+    }
+
+    private static boolean isRedeclaredObjectMethod(final Method[] objectMethods, final Method method) {
+        for (int i = 0; i < objectMethods.length; i++) {
+            final Method objectMethod = objectMethods[i];
+            if (objectMethod.getName().equals(method.getName()) &&
+                Arrays.equals(objectMethod.getParameterTypes(), method.getParameterTypes())) return true;
+        }
+        return false;
     }
 
     /**
