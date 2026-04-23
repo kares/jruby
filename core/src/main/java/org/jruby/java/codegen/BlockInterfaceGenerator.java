@@ -4,6 +4,7 @@ import java.lang.reflect.Constructor;
 import java.lang.reflect.Method;
 import java.lang.reflect.Modifier;
 import java.util.ArrayList;
+import java.util.concurrent.ConcurrentMap;
 
 import org.jruby.Ruby;
 import org.jruby.RubyProc;
@@ -11,6 +12,9 @@ import org.jruby.compiler.impl.SkinnyMethodAdapter;
 import org.jruby.java.proxies.BlockInterfaceTemplate;
 import org.jruby.javasupport.Java;
 import org.jruby.util.ASM;
+import org.jruby.util.ClassDefiningClassLoader;
+import org.jruby.util.JRubyClassLoader;
+import org.jruby.util.collections.ConcurrentWeakHashMap;
 import org.objectweb.asm.ClassWriter;
 import org.objectweb.asm.Type;
 import org.objectweb.asm.commons.GeneratorAdapter;
@@ -54,36 +58,49 @@ import static org.objectweb.asm.Opcodes.V11;
 public final class BlockInterfaceGenerator {
 
     /**
+     * Cache of generated {@link BlockInterfaceTemplate} subclass constructors, weakly keyed by the interface.
+     *
+     * <p>
+     * The generated class lives in the {@link JRubyClassLoader}, so the value never roots a classloader outside of
+     * JRuby itself; the only strong root held by a cache entry is the constructor (class pair) for the interface.
+     */
+    static final ConcurrentMap<Class<?>, Constructor<? extends BlockInterfaceTemplate>> CACHE = new ConcurrentWeakHashMap<>();
+
+    public static Constructor<? extends BlockInterfaceTemplate> fromCache(final Class<?> interfaceType) {
+        return CACHE.get(interfaceType);
+    }
+
+    /**
      * @return the constructor, which is usable with any Ruby block targeting the same interface
      */
     @SuppressWarnings("unchecked")
     public static Constructor<? extends BlockInterfaceTemplate> getConstructor(final Ruby runtime, final Class<?> interfaceType)
         throws ReflectiveOperationException {
+
+        var constructor = CACHE.get(interfaceType);
+        if (constructor != null) return constructor;
+
         assert interfaceType.isInterface();
 
         final String implClassName = makeImplClassName(interfaceType);
-        final ClassLoader loader = runtime.getJRubyClassLoader();
+        final JRubyClassLoader loader = runtime.getJRubyClassLoader();
 
-        Class<?> implClass;
         synchronized (loader) {
+            constructor = CACHE.get(interfaceType);
+            if (constructor != null) return constructor;
+
+            Class<?> implClass;
             try {
                 implClass = Class.forName(implClassName, true, loader);
             } catch (ClassNotFoundException e) {
+                assert Java.getFunctionalInterfaceMethod(interfaceType) != null : "not a functional-interface: " + interfaceType;
                 implClass = defineImplClass(loader, interfaceType, implClassName);
             }
-        }
 
-        return (Constructor<? extends BlockInterfaceTemplate>) implClass.getConstructor(RubyProc.class);
-    }
-
-    private static ArrayList<Method> getAbstractMethods(final Class<?> interfaceType) {
-        final var result = new ArrayList<Method>();
-        for (Method method : interfaceType.getMethods()) {
-            if (!Modifier.isAbstract(method.getModifiers())) continue;
-            if (method.getDeclaringClass() == Object.class) continue;
-            result.add(method);
+            constructor = (Constructor<? extends BlockInterfaceTemplate>) implClass.getConstructor(RubyProc.class);
+            CACHE.put(interfaceType, constructor);
+            return constructor;
         }
-        return result;
     }
 
     private static String makeImplClassName(final Class<?> interfaceType) {
@@ -99,10 +116,10 @@ public final class BlockInterfaceGenerator {
      *           implements <interfaceType> { ... }
      * }</pre>
      */
-    private static Class<?> defineImplClass(final ClassLoader loader,
+    private static Class<?> defineImplClass(final ClassDefiningClassLoader loader,
                                             final Class<?> interfaceType,
                                             final String implClassName) {
-        final ClassWriter cw = ASM.newClassWriter(loader);
+        final ClassWriter cw = ASM.newClassWriter((ClassLoader) loader);
         final String pathName = implClassName.replace('.', '/');
 
         cw.visit(V11,
@@ -114,14 +131,13 @@ public final class BlockInterfaceGenerator {
         cw.visitSource(pathName + ".gen", null);
 
         defineConstructor(cw, pathName);
-
-        for (Method implMethod : getAbstractMethods(interfaceType)) {
-            defineBridgeMethod(cw, implMethod);
-        }
+        Method implMethod = Java.getFunctionalInterfaceMethod(interfaceType);
+        if (implMethod != null) defineBridgeMethod(cw, implMethod);
 
         cw.visitEnd();
 
-        return loader.defineClass(implClassName, cw.toByteArray());
+        final byte[] bytecode = cw.toByteArray();
+        return loader.defineClass(implClassName, bytecode);
     }
 
     /**
