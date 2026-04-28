@@ -61,6 +61,7 @@ import org.jruby.*;
 import org.jruby.api.Access;
 import org.jruby.exceptions.NameError;
 import org.jruby.exceptions.TypeError;
+import org.jruby.java.proxies.BlockInterfaceTemplate;
 import org.jruby.javasupport.binding.Initializer;
 import org.jruby.javasupport.proxy.JavaProxyClass;
 import org.jruby.javasupport.proxy.JavaProxyConstructor;
@@ -1482,9 +1483,6 @@ public class Java implements Library {
             Constructor<?> proxyConstructor = proxyImplClass.getConstructor(IRubyObject.class);
             return proxyConstructor.newInstance(wrapper);
         }
-        catch (InvocationTargetException e) {
-            throw mapGeneratedProxyException(context.runtime, e);
-        }
         catch (ReflectiveOperationException e) {
             throw mapGeneratedProxyException(context.runtime, e);
         }
@@ -1497,28 +1495,41 @@ public class Java implements Library {
 
     /**
      * Fast path for converting a proc to a Java interface proxy, bypassing the singleton class setup.
-     *
      * <p>
      * The standard {@link JavaUtil#convertProcToInterface} path creates a singleton class for each proc, includes the
-     * interface module, and installs method stubs — each operation acquires the global {@code hierarchyLock}.
+     * interface module, and installs method stubs (operations acquires the global {@code hierarchyLock}).
      * <p>
      *
-     * @apiNote Meant to be used with {@code javaMethod { ... } } block variants implementing a functional interface
-     * (the proc passed is a mere dummy block wrapped not originating from to user .rb code).
-     * @implNote Dispatches directly to {@code proc.call()} without any Ruby method lookup.
-     *
-     * @param proc a bare wrapper for the block, created by Java (method/contructor) integration
-     * @return the raw Java proxy object implementing {@code targetType}
+     * @apiNote Meant to be used with {@code javaMethod { ... } } block variants implementing a functional interface;
+     * the proc passed is a mere dummy block wrapped NOT one originating from (or visible to) user .rb code
+     * @implNote Dispatches directly to {@code block.call()} without any Ruby method lookup.
      */
-    public static <T> T blockToInterface(final Ruby runtime, RubyProc proc, Class<T> targetType) {
+    public static <T> Constructor<? extends BlockInterfaceTemplate> getBlockToInterfaceConstructor(final Ruby runtime,
+                                                                                                   final Class<T> targetType) {
         try {
-            final var constructor = BlockInterfaceGenerator.getConstructor(runtime, targetType);
-            return (T) constructor.newInstance(proc);
-        } catch (InvocationTargetException e) {
-            throw mapGeneratedProxyException(runtime, e);
+            return BlockInterfaceGenerator.getConstructor(runtime, targetType);
         } catch (ReflectiveOperationException e) {
             throw mapGeneratedProxyException(runtime, e);
         }
+    }
+
+    /**
+     * @see #getBlockToInterfaceConstructor(Ruby, Class)
+     */
+    public static <T> T newBlockToInterfaceInstance(final RubyProc proc,
+                                                    final Constructor<? extends BlockInterfaceTemplate> constructor) {
+        try {
+            return (T) constructor.newInstance(proc);
+        } catch (ReflectiveOperationException e) {
+            throw mapGeneratedProxyException(proc.getRuntime(), e);
+        }
+    }
+
+    public static RubyProc newBlockToInterfaceProc(final Ruby runtime, final Block block) {
+        final var blockProc = block.getProcObject();
+        final var proc = new RubyProc(runtime, runtime.getProc(), block, Block.Type.JAVA, false);
+        block.setProcObject(blockProc); // undo RubyProc: block.setProcObject(this);
+        return proc;
     }
 
     private static final class InterfaceProxyHandler implements InvocationHandler {
@@ -1693,22 +1704,15 @@ public class Java implements Library {
         try {
             return proxyConstructor.newInstance(runtime, clazz);
         }
-        catch (InvocationTargetException e) {
-            throw mapGeneratedProxyException(runtime, e);
-        }
         catch (ReflectiveOperationException e) {
             throw mapGeneratedProxyException(runtime, e);
         }
     }
 
-    private static RaiseException mapGeneratedProxyException(final Ruby runtime, final ReflectiveOperationException e) {
-        return withException(typeError(runtime.getCurrentContext(),
-                "Exception instantiating generated interface impl:\n" + e), e);
-    }
-
-    private static RaiseException mapGeneratedProxyException(final Ruby runtime, final InvocationTargetException e) {
-        return withException(typeError(runtime.getCurrentContext(),
-                "Exception instantiating generated interface impl:\n" + e.getTargetException()), e);
+    private static RaiseException mapGeneratedProxyException(final Ruby runtime, ReflectiveOperationException e) {
+        Throwable cause = (e instanceof InvocationTargetException) ? e.getCause() : e;
+        var error = typeError(runtime.getCurrentContext(), "Exception instantiating generated interface impl: " + cause);
+        return withException(error, e);
     }
 
     public static IRubyObject allocateProxy(Object javaObject, RubyClass clazz) {
@@ -1766,6 +1770,10 @@ public class Java implements Library {
             result = 31 * result + (element == null ? 0 : element.hashCode());
 
         return result;
+    }
+
+    public static boolean isFunctionalInterfaceType(final Class<?> type) {
+        return (type.isInterface() && getFunctionalInterfaceMethod(type) != null);
     }
 
     /**

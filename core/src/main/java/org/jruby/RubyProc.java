@@ -40,6 +40,7 @@ import org.jruby.anno.JRubyMethod;
 
 import org.jruby.ast.util.ArgsUtil;
 import org.jruby.ir.runtime.IRRuntimeHelpers;
+import org.jruby.java.codegen.BlockInterfaceGenerator;
 import org.jruby.javasupport.Java;
 import org.jruby.parser.StaticScope;
 import org.jruby.runtime.Binding;
@@ -497,8 +498,19 @@ public class RubyProc extends RubyObject implements DataType {
 
     @Override
     public <T> T toJava(final Class<T> target) {
-        if (target.isInterface() && type == Block.Type.PROC) { // TODO: type gets normalized (to PROC)
-            return Java.blockToInterface(getRuntime(), this, target);
+        if (type == Block.Type.JAVA) {
+            var constructor = BlockInterfaceGenerator.fromCache(target);
+            if (constructor != null) { // fast cached path (we know it's a functional interface)
+                return Java.newBlockToInterfaceInstance(this, constructor);
+            }
+
+            if (Java.isFunctionalInterfaceType(target)) {
+                constructor = Java.getBlockToInterfaceConstructor(getRuntime(), target);
+                return Java.newBlockToInterfaceInstance(this, constructor);
+            }
+
+            // NOTE: this dummy proc could end-up in user-land; thus use a proper clone:
+            return newProc(getRuntime(), block, block.type).defaultToJava(target);
         }
         return defaultToJava(target);
     }
