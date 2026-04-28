@@ -83,6 +83,7 @@ import org.jruby.java.addons.ClassJavaAddons;
 import org.jruby.java.addons.IOJavaAddons;
 import org.jruby.java.addons.KernelJavaAddons;
 import org.jruby.java.addons.StringJavaAddons;
+import org.jruby.java.codegen.BlockInterfaceGenerator;
 import org.jruby.java.codegen.RealClassGenerator;
 import org.jruby.java.dispatch.CallableSelector;
 import org.jruby.java.dispatch.CallableSelector.CallableCache;
@@ -1492,6 +1493,32 @@ public class Java implements Library {
     // NOTE: only used when java.lang.reflect.Proxy is to be used for interface impls (by default its not)
     private static Object newProxyInterfaceImpl(final IRubyObject wrapper, final Class[] interfaces, final ClassLoader loader) {
         return Proxy.newProxyInstance(loader, interfaces, new InterfaceProxyHandler(wrapper, interfaces));
+    }
+
+    /**
+     * Fast path for converting a proc to a Java interface proxy, bypassing the singleton class setup.
+     *
+     * <p>
+     * The standard {@link JavaUtil#convertProcToInterface} path creates a singleton class for each proc, includes the
+     * interface module, and installs method stubs — each operation acquires the global {@code hierarchyLock}.
+     * <p>
+     *
+     * @apiNote Meant to be used with {@code javaMethod { ... } } block variants implementing a functional interface
+     * (the proc passed is a mere dummy block wrapped not originating from to user .rb code).
+     * @implNote Dispatches directly to {@code proc.call()} without any Ruby method lookup.
+     *
+     * @param proc a bare wrapper for the block, created by Java (method/contructor) integration
+     * @return the raw Java proxy object implementing {@code targetType}
+     */
+    public static <T> T blockToInterface(final Ruby runtime, RubyProc proc, Class<T> targetType) {
+        try {
+            final var constructor = BlockInterfaceGenerator.getConstructor(runtime, targetType);
+            return (T) constructor.newInstance(proc);
+        } catch (InvocationTargetException e) {
+            throw mapGeneratedProxyException(runtime, e);
+        } catch (ReflectiveOperationException e) {
+            throw mapGeneratedProxyException(runtime, e);
+        }
     }
 
     private static final class InterfaceProxyHandler implements InvocationHandler {

@@ -40,6 +40,7 @@ import org.jruby.anno.JRubyMethod;
 
 import org.jruby.ast.util.ArgsUtil;
 import org.jruby.ir.runtime.IRRuntimeHelpers;
+import org.jruby.javasupport.Java;
 import org.jruby.parser.StaticScope;
 import org.jruby.runtime.Binding;
 import org.jruby.runtime.Block;
@@ -494,12 +495,12 @@ public class RubyProc extends RubyObject implements DataType {
         return getBlock().getBody() instanceof MethodBlockBody;
     }
 
-    //private boolean isProc() {
-    //    return type.equals(Block.Type.PROC);
-    //}
-
-    private boolean isThread() {
-        return type.equals(Block.Type.THREAD);
+    @Override
+    public <T> T toJava(final Class<T> target) {
+        if (target.isInterface() && type == Block.Type.PROC) { // TODO: type gets normalized (to PROC)
+            return Java.blockToInterface(getRuntime(), this, target);
+        }
+        return defaultToJava(target);
     }
 
     private static JavaSites.ProcSites sites(ThreadContext context) {
