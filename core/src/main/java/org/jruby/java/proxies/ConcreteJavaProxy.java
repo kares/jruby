@@ -639,13 +639,13 @@ public class ConcreteJavaProxy extends JavaProxy {
     public void finishInitialize(SplitCtorData returned) {
         if (returned.nested != null) finishInitialize(returned.nested);
 
-        if (returned.method != null) {
-            ThreadContext context = getRuntime().getCurrentContext();
-            if (returned.state != null) {
-                finishSplitCall(returned.method, returned.state);
-            } else { // no super, direct call
-                returned.method.call(context, this, returned.clazz, returned.name, returned.rbarguments, returned.block);
-            }
+        if (returned.method == null) return; // leaf java terminator - no Ruby continuation
+
+        if (returned.state != null) {
+            finishSplitCall(returned.method, returned.state);
+        } else { // no super in this Ruby initialize, direct call to run the body
+            final ThreadContext context = getRuntime().getCurrentContext();
+            returned.method.call(context, this, returned.clazz, returned.name, returned.rbarguments, returned.block);
         }
     }
 
