@@ -411,8 +411,8 @@ public class ConcreteJavaProxy extends JavaProxy {
 
         // Cached next plan in the recursive split-constructor chain (one of these is populated based on
         // which Ruby super source we recurse into). Avoids repeated method searches up the class chain.
-        private volatile SplitCtorPlan cachedSuperPlan;
-        private volatile SplitCtorPlan cachedPrependedSuperPlan;
+        private SplitCtorPlan cachedSuperPlan;
+        private SplitCtorPlan cachedPrependedSuperPlan;
 
         // Cached SplitCtorData reachable from this plan via a terminal literal-args super call when the chain
         // terminates immediately in a Java constructor (no intermediate Ruby super). Stable across calls because
@@ -444,7 +444,7 @@ public class ConcreteJavaProxy extends JavaProxy {
             this.prependedJavaCtorWrapper = isPrependedJavaCtorWrapper(sourceLocation, base);
         }
 
-        private boolean isValid(RubyClass base) {
+        private boolean isValid(final RubyClass base) {
             return this.base == base && token == base.getGeneration();
         }
 
