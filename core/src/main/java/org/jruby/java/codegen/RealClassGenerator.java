@@ -861,7 +861,7 @@ public abstract class RealClassGenerator {
     }
 
     private static final String CONCRETE_CTOR_SIG = sig(void.class, ConcreteJavaProxy.class, boolean.class,
-            IRubyObject[].class, Block.class, Ruby.class, RubyClass.class);
+            IRubyObject[].class, Block.class, RubyClass.class);
 
     /**
      * Main switch constructor. Required for concrete reification.
@@ -869,7 +869,7 @@ public abstract class RealClassGenerator {
      * Generates roughly:
      * <pre>{@code
      *   protected MyClass(ConcreteJavaProxy cjp, boolean isSuperCall, IRubyObject[] args,
-     *                     Block block, Ruby runtime, RubyClass rubyClass) {
+     *                     Block block, RubyClass rubyClass) {
      *       this.this$rubyObject = cjp;
      *       SplitCtorData d = cjp.splitInitialized(
      *               isSuperCall ? rubyClass : rubyClass, args, block, this$rubyCtorCache);
@@ -887,7 +887,7 @@ public abstract class RealClassGenerator {
      */
     public static void makeConcreteConstructorSwitch(ClassWriter cw, PositionAware initPosition,
             boolean hasParent, ConcreteJavaReifier cjr, JavaConstructor[] constructors) {
-        // (rubyobject, isSuperCall, args, block, ruby, class)
+        // (rubyobject, isSuperCall, args, block, class)
         SkinnyMethodAdapter m = new SkinnyMethodAdapter(cw, ACC_PROTECTED | ACC_SYNTHETIC, "<init>", CONCRETE_CTOR_SIG,
                 null, null);
 
@@ -897,8 +897,7 @@ public abstract class RealClassGenerator {
         final int isSuperCallIndex = 2;
         final int rubyArrayIndex = 3;
         final int blockIndex = 4;
-        final int rubyIndex = 5;
-        final int rubyClassIndex = 6;
+        final int rubyClassIndex = 5;
 
         m.line(initPosition.getLine());
 
@@ -957,7 +956,7 @@ public abstract class RealClassGenerator {
             {
                 // default: throw runtime.newNoMethodError("...", "super.<init>", [])
                 m.label(defaultLabel);
-                m.aload(rubyIndex);
+                m.getstatic(cjr.javaPath, cjr.RUBY_FIELD, ci(Ruby.class));
                 m.swap();
                 m.ldc("No available java superconstructors match that type signature");
                 m.swap();
@@ -1011,7 +1010,6 @@ public abstract class RealClassGenerator {
 
 
             m.getfield(p(SplitCtorData.class), "block", ci(Block.class));
-            m.aload(rubyIndex); // ruby
             m.aload(rubyClassIndex); // rubyclass
             m.invokespecial(p(cjr.reifiedParent), "<init>", CONCRETE_CTOR_SIG);
         }
@@ -1043,9 +1041,8 @@ public abstract class RealClassGenerator {
     public static void makeConcreteConstructorIROProxy(ClassWriter cw, PositionAware initPosition,
             ConcreteJavaReifier cjr) {
 
-        // (rubyobject, isSuperCall, args, block, ruby, class)
-        String sig = sig(void.class, ConcreteJavaProxy.class, IRubyObject[].class, Block.class, Ruby.class,
-                RubyClass.class);
+        // (rubyobject, args, block, class)
+        String sig = sig(void.class, ConcreteJavaProxy.class, IRubyObject[].class, Block.class, RubyClass.class);
         SkinnyMethodAdapter m = new SkinnyMethodAdapter(cw, ACC_PUBLIC | ACC_SYNTHETIC, "<init>", sig, null, null);
 
         m.line(initPosition.getLine());
@@ -1056,7 +1053,6 @@ public abstract class RealClassGenerator {
         m.aload(2);
         m.aload(3);
         m.aload(4);
-        m.aload(5);
         m.invokespecial(cjr.javaPath, "<init>", CONCRETE_CTOR_SIG);
 
         m.voidreturn();
@@ -1114,7 +1110,6 @@ public abstract class RealClassGenerator {
         RealClassGenerator.coerceArgumentsToRuby(m, ctorTypes, rubyIndex);
 
         m.getstatic(p(Block.class), "NULL_BLOCK", ci(Block.class));
-        m.aload(rubyIndex); // ruby
         m.aload(rubyClassIndex); // rubyclass
 
         m.invokespecial(cjr.javaPath, "<init>", CONCRETE_CTOR_SIG);
