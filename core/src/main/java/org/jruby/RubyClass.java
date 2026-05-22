@@ -2180,7 +2180,7 @@ public class RubyClass extends RubyModule {
 
                 signature = sig(methodSignature[0], params);
                 int mod = ACC_PUBLIC;
-                if ( isVarArgsSignature(callid, methodSignature) ) mod |= ACC_VARARGS;
+                if (isVarArgsSignature(methodSignature)) mod |= ACC_VARARGS;
                 m = new SkinnyMethodAdapter(cw, mod, javaMethodName, signature, null, null);
                 m.line(position.getLine());
                 generateMethodAnnotations(methodAnnos, m, parameterAnnos);
@@ -2258,13 +2258,11 @@ public class RubyClass extends RubyModule {
             return types.values();
         }
 
-        protected Collection<Class<?>[]> searchClassMethods(Class<?> clz, Signature arity, String id,
-                HashMap<String, Class<?>[]> options) {
-            if (clz.getSuperclass() != null) searchClassMethods(clz.getSuperclass(), arity, id, options);
-            for (Class<?> intf : clz.getInterfaces())
-                searchClassMethods(intf, arity, id, options);
-            for (Method method : clz.getDeclaredMethods()) {
-                // TODO: java <-> ruby conversion?
+        protected Collection<Class<?>[]> searchClassMethods(Class<?> clazz, Signature arity, String id,
+                                                            Map<String, Class<?>[]> options) {
+            if (clazz.getSuperclass() != null) searchClassMethods(clazz.getSuperclass(), arity, id, options);
+            for (Class<?> intf : clazz.getInterfaces()) searchClassMethods(intf, arity, id, options);
+            for (Method method : clazz.getDeclaredMethods()) {
                 if (!method.getName().equals(id)) continue;
                 final int mod = method.getModifiers();
                 if (!Modifier.isPublic(mod) && !Modifier.isProtected(mod)) continue;
@@ -2283,7 +2281,7 @@ public class RubyClass extends RubyModule {
                 Class<?>[] types = join(new Class[] { method.getReturnType() }, method.getParameterTypes());
                 options.put(sig(types), types);
             }
-            // Note: not stable. May flicker between different arities. TODO: sort?
+
             return options.values();
         }
 
@@ -2420,7 +2418,6 @@ public class RubyClass extends RubyModule {
                 if (!Modifier.isPublic(mod) && !Modifier.isProtected(mod)) continue;
                 if (Modifier.isAbstract(mod) || Modifier.isFinal(mod)) continue;
 
-                // TODO: is args necessary?
                 if (!method.getReturnType().equals(returns)) continue;
                 if (!Arrays.equals(method.getParameterTypes(), params)) continue;
 
@@ -2525,7 +2522,6 @@ public class RubyClass extends RubyModule {
             if (classConfig.IroCtors) {
                 RealClassGenerator.makeConcreteConstructorIROProxy(cw, position, this);
             } else if (generatedCtors.size() == 0) {
-                //TODO: Warn for static classe?
                 throw typeError(context, "class " + getName(context) + " doesn't have any exposed java constructors");
             }
             
@@ -2573,9 +2569,7 @@ public class RubyClass extends RubyModule {
 
     } // class ConcreteJavaReifier
 
-    private boolean isVarArgsSignature(final String method, final Class[] methodSignature) {
-        // TODO we should simply detect "java.lang.Object m1(java.lang.Object... args)"
-        // var-args distinguished from  "java.lang.Object m2(java.lang.Object[]  args)"
+    private static boolean isVarArgsSignature(final Class[] methodSignature) {
         return methodSignature.length > 1 && // methodSignature[0] is return value
                methodSignature[ methodSignature.length - 1 ].isArray() ;
     }
@@ -2628,7 +2622,6 @@ public class RubyClass extends RubyModule {
      */
     @SuppressWarnings("BoxedPrimitiveEquality")
     public Class<? extends ReifiedJavaProxy> getReifiedJavaClass() {
-        // TODO: error type
         if (reifiedClassJava == Boolean.FALSE) throw typeError(runtime.getCurrentContext(), "Attempted to get a Java class for a Ruby class");
 
         return (Class<? extends ReifiedJavaProxy>) reifiedClass;
