@@ -296,7 +296,7 @@ public class BacktraceData implements Serializable {
                 //case "javasupport" : return true;
                 case "parser" : return true;
                 case "platform" : return true;
-                case "runtime" : return true; // e.g.  org.jruby.runtime.callsite.CachingCallSite.cacheAndCall
+                case "runtime" : return true; // e.g.  org.jruby.runtime.callsite.CachingCallSite.call
                 case "util" : return true;
             }
         }

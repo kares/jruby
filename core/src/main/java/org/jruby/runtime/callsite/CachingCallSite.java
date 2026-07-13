@@ -407,62 +407,10 @@ public abstract class CachingCallSite extends CallSite {
         return entry;
     }
 
-    // NOTE: call(...) no longer dispatches a cache miss through these - it populates the cache entry and calls the
-    // method itself, so that no cacheAndCall frame remains on the stack for the duration of the (nested) call.
-    // Overriding them thus does NOT intercept dispatch anymore; override call(...) instead (@see RespondToCallSite).
-    // Kept as-is - still correct when invoked directly.
-
-    protected IRubyObject cacheAndCall(ThreadContext context, IRubyObject caller, IRubyObject self, RubyClass selfType, IRubyObject[] args, Block block) {
-        CacheEntry entry = populateCacheEntry(caller, selfType, context, self);
-        return entry.method.call(context, self, entry.sourceModule, methodName, args, block);
-    }
-
-    protected IRubyObject cacheAndCall(ThreadContext context, IRubyObject caller, IRubyObject self, RubyClass selfType, IRubyObject[] args) {
-        CacheEntry entry = populateCacheEntry(caller, selfType, context, self);
-        return entry.method.call(context, self, entry.sourceModule, methodName, args);
-    }
-
-    protected IRubyObject cacheAndCall(ThreadContext context, IRubyObject caller, IRubyObject self, RubyClass selfType) {
-        CacheEntry entry = populateCacheEntry(caller, selfType, context, self);
-        return entry.method.call(context, self, entry.sourceModule, methodName);
-    }
-
-    protected IRubyObject cacheAndCall(ThreadContext context, IRubyObject caller, IRubyObject self, RubyClass selfType, Block block) {
-        CacheEntry entry = populateCacheEntry(caller, selfType, context, self);
-        return entry.method.call(context, self, entry.sourceModule, methodName, block);
-    }
-
-    protected IRubyObject cacheAndCall(ThreadContext context, IRubyObject caller, IRubyObject self, RubyClass selfType, IRubyObject arg) {
-        CacheEntry entry = populateCacheEntry(caller, selfType, context, self);
-        return entry.method.call(context, self, entry.sourceModule, methodName, arg);
-    }
-
-    protected IRubyObject cacheAndCall(ThreadContext context, IRubyObject caller, IRubyObject self, RubyClass selfType, IRubyObject arg, Block block) {
-        CacheEntry entry = populateCacheEntry(caller, selfType, context, self);
-        return entry.method.call(context, self, entry.sourceModule, methodName, arg, block);
-    }
-
-    protected IRubyObject cacheAndCall(ThreadContext context, IRubyObject caller, IRubyObject self, RubyClass selfType, IRubyObject arg1, IRubyObject arg2) {
-        CacheEntry entry = populateCacheEntry(caller, selfType, context, self);
-        return entry.method.call(context, self, entry.sourceModule, methodName, arg1, arg2);
-    }
-
-    protected IRubyObject cacheAndCall(ThreadContext context, IRubyObject caller, IRubyObject self, RubyClass selfType, IRubyObject arg1, IRubyObject arg2, Block block) {
-        CacheEntry entry = populateCacheEntry(caller, selfType, context, self);
-        return entry.method.call(context, self, entry.sourceModule, methodName, arg1, arg2, block);
-    }
-
-    protected IRubyObject cacheAndCall(ThreadContext context, IRubyObject caller, IRubyObject self, RubyClass selfType, IRubyObject arg1, IRubyObject arg2, IRubyObject arg3) {
-        CacheEntry entry = populateCacheEntry(caller, selfType, context, self);
-        return entry.method.call(context, self, entry.sourceModule, methodName, arg1, arg2, arg3);
-    }
-
-    protected IRubyObject cacheAndCall(ThreadContext context, IRubyObject caller, IRubyObject self, RubyClass selfType, Block block, IRubyObject arg1, IRubyObject arg2, IRubyObject arg3) {
-        CacheEntry entry = populateCacheEntry(caller, selfType, context, self);
-        return entry.method.call(context, self, entry.sourceModule, methodName, arg1, arg2, arg3, block);
-    }
-
-    private CacheEntry populateCacheEntry(IRubyObject caller, RubyClass selfType, ThreadContext context, IRubyObject self) {
+    /**
+     * Populate (and cache) the entry for a cache miss.
+     */
+    protected CacheEntry populateCacheEntry(IRubyObject caller, RubyClass selfType, ThreadContext context, IRubyObject self) {
         CacheEntry entry = selfType.searchWithCache(methodName);
         DynamicMethod method = entry.method;
 

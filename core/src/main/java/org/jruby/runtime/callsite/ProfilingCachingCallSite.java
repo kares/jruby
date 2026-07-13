@@ -103,11 +103,11 @@ public class ProfilingCachingCallSite extends CachingCallSite {
 
         if (cache.typeOk(selfType)) {
             if ((totalMonomorphicCalls.incrementAndGet() % IRManager.IR_INLINER_THRESHOLD) == 0) inlineCheck(context, self, cache);
-            return cache.method.call(context, self, cache.sourceModule, methodName, args);
         } else {
             totalMonomorphicCalls.set(1);
-            return cacheAndCall(context, caller, self, selfType, args);
+            cache = populateCacheEntry(caller, selfType, context, self);
         }
+        return cache.method.call(context, self, cache.sourceModule, methodName, args);
     }
 
     public IRubyObject call(ThreadContext context, IRubyObject caller, IRubyObject self, IRubyObject[] args, Block block) {
@@ -116,11 +116,11 @@ public class ProfilingCachingCallSite extends CachingCallSite {
 
         if (cache.typeOk(selfType)) {
             if ((totalMonomorphicCalls.incrementAndGet() % IRManager.IR_INLINER_THRESHOLD) == 0) inlineCheck(context, self, cache);
-            return cache.method.call(context, self, cache.sourceModule, methodName, args, block);
         } else {
             totalMonomorphicCalls.set(1);
-            return cacheAndCall(context, caller, self, selfType, args, block);
+            cache = populateCacheEntry(caller, selfType, context, self);
         }
+        return cache.method.call(context, self, cache.sourceModule, methodName, args, block);
     }
 
     @Override
@@ -130,11 +130,11 @@ public class ProfilingCachingCallSite extends CachingCallSite {
         CacheEntry cache = this.cache;
         if (cache.typeOk(selfType)) {
             if ((totalMonomorphicCalls.incrementAndGet() % IRManager.IR_INLINER_THRESHOLD) == 0) inlineCheck(context, self, cache);
-            return cache.method.call(context, self, cache.sourceModule, methodName);
         } else {
             totalMonomorphicCalls.set(1);
-            return cacheAndCall(context, caller, self, selfType);
+            cache = populateCacheEntry(caller, selfType, context, self);
         }
+        return cache.method.call(context, self, cache.sourceModule, methodName);
     }
 
     public IRubyObject call(ThreadContext context, IRubyObject caller, IRubyObject self, Block block) {
@@ -143,11 +143,11 @@ public class ProfilingCachingCallSite extends CachingCallSite {
         CacheEntry cache = this.cache;
         if (cache.typeOk(selfType)) {
             if ((totalMonomorphicCalls.incrementAndGet() % IRManager.IR_INLINER_THRESHOLD) == 0) inlineCheck(context, self, cache);
-            return cache.method.call(context, self, cache.sourceModule, methodName, block);
         } else {
             totalMonomorphicCalls.set(1);
-            return cacheAndCall(context, caller, self, selfType, block);
+            cache = populateCacheEntry(caller, selfType, context, self);
         }
+        return cache.method.call(context, self, cache.sourceModule, methodName, block);
     }
 
     @Override
@@ -157,11 +157,11 @@ public class ProfilingCachingCallSite extends CachingCallSite {
         CacheEntry cache = this.cache;
         if (cache.typeOk(selfType)) {
             if ((totalMonomorphicCalls.incrementAndGet() % IRManager.IR_INLINER_THRESHOLD) == 0) inlineCheck(context, self, cache);
-            return cache.method.call(context, self, cache.sourceModule, methodName, arg1);
         } else {
             totalMonomorphicCalls.set(1);
-            return cacheAndCall(context, caller, self, selfType, arg1);
+            cache = populateCacheEntry(caller, selfType, context, self);
         }
+        return cache.method.call(context, self, cache.sourceModule, methodName, arg1);
     }
 
     public IRubyObject call(ThreadContext context, IRubyObject caller, IRubyObject self, IRubyObject arg1, Block block) {
@@ -170,11 +170,11 @@ public class ProfilingCachingCallSite extends CachingCallSite {
         CacheEntry cache = this.cache;
         if (cache.typeOk(selfType)) {
             if ((totalMonomorphicCalls.incrementAndGet() % IRManager.IR_INLINER_THRESHOLD) == 0) inlineCheck(context, self, cache);
-            return cache.method.call(context, self, cache.sourceModule, methodName, arg1, block);
         } else {
             totalMonomorphicCalls.set(1);
-            return cacheAndCall(context, caller, self, selfType, arg1, block);
+            cache = populateCacheEntry(caller, selfType, context, self);
         }
+        return cache.method.call(context, self, cache.sourceModule, methodName, arg1, block);
     }
 
     @Override
@@ -184,11 +184,11 @@ public class ProfilingCachingCallSite extends CachingCallSite {
         CacheEntry cache = this.cache;
         if (cache.typeOk(selfType)) {
             if ((totalMonomorphicCalls.incrementAndGet() % IRManager.IR_INLINER_THRESHOLD) == 0) inlineCheck(context, self, cache);
-            return cache.method.call(context, self, cache.sourceModule, methodName, arg1, arg2);
         } else {
             totalMonomorphicCalls.set(1);
-            return cacheAndCall(context, caller, self, selfType, arg1, arg2);
+            cache = populateCacheEntry(caller, selfType, context, self);
         }
+        return cache.method.call(context, self, cache.sourceModule, methodName, arg1, arg2);
     }
 
     public IRubyObject call(ThreadContext context, IRubyObject caller, IRubyObject self, IRubyObject arg1, IRubyObject arg2, Block block) {
@@ -197,11 +197,11 @@ public class ProfilingCachingCallSite extends CachingCallSite {
         CacheEntry cache = this.cache;
         if (cache.typeOk(selfType)) {
             if ((totalMonomorphicCalls.incrementAndGet() % IRManager.IR_INLINER_THRESHOLD) == 0) inlineCheck(context, self, cache);
-            return cache.method.call(context, self, cache.sourceModule, methodName, arg1, arg2, block);
         } else {
             totalMonomorphicCalls.set(1);
-            return cacheAndCall(context, caller, self, selfType, arg1, arg2, block);
+            cache = populateCacheEntry(caller, selfType, context, self);
         }
+        return cache.method.call(context, self, cache.sourceModule, methodName, arg1, arg2, block);
     }
 
     @Override
@@ -211,11 +211,11 @@ public class ProfilingCachingCallSite extends CachingCallSite {
         CacheEntry cache = this.cache;
         if (cache.typeOk(selfType)) {
             if ((totalMonomorphicCalls.incrementAndGet() % IRManager.IR_INLINER_THRESHOLD) == 0) inlineCheck(context, self, cache);
-            return cache.method.call(context, self, cache.sourceModule, methodName, arg1, arg2, arg3);
         } else {
             totalMonomorphicCalls.set(1);
-            return cacheAndCall(context, caller, self, selfType, arg1, arg2, arg3);
+            cache = populateCacheEntry(caller, selfType, context, self);
         }
+        return cache.method.call(context, self, cache.sourceModule, methodName, arg1, arg2, arg3);
     }
 
     public IRubyObject call(ThreadContext context, IRubyObject caller, IRubyObject self, IRubyObject arg1, IRubyObject arg2, IRubyObject arg3, Block block) {
@@ -224,10 +224,10 @@ public class ProfilingCachingCallSite extends CachingCallSite {
         CacheEntry cache = this.cache;
         if (cache.typeOk(selfType)) {
             if ((totalMonomorphicCalls.incrementAndGet() % IRManager.IR_INLINER_THRESHOLD) == 0) inlineCheck(context, self, cache);
-            return cache.method.call(context, self, cache.sourceModule, methodName, arg1, arg2, arg3, block);
         } else {
             totalMonomorphicCalls.set(1);
-            return cacheAndCall(context, caller, self, selfType, block, arg1, arg2, arg3);
+            cache = populateCacheEntry(caller, selfType, context, self);
         }
+        return cache.method.call(context, self, cache.sourceModule, methodName, arg1, arg2, arg3, block);
     }
 }
