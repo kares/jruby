@@ -48,7 +48,7 @@ import org.jruby.util.log.LoggerFactory;
 
 import static org.jruby.runtime.Helpers.arrayOf;
 
-public class MixedModeIRMethod extends AbstractIRMethod implements Compilable<DynamicMethod> {
+public class MixedModeIRMethod extends AbstractIRMethod implements Compilable<DynamicMethod>, CacheableMethod {
     private static final Logger LOG = LoggerFactory.getLogger(MixedModeIRMethod.class);
 
     private boolean displayedCFG = false; // FIXME: Remove when we find nicer way of logging CFG
@@ -65,6 +65,19 @@ public class MixedModeIRMethod extends AbstractIRMethod implements Compilable<Dy
 
     public DynamicMethod getActualMethod() {
         return actualMethod;
+    }
+
+    /**
+     * Once the JIT has completed, let call sites cache the jitted method directly - otherwise every call keeps
+     * paying this wrapper's dispatch (a volatile read, the tryJit guard and an extra Java frame) forever.
+     * The method table intentionally keeps this wrapper: it stays the authoritative entry for visibility changes,
+     * re-optimization (completeBuild may run again, e.g. after inlining) and identity (completeBuild passes our
+     * serialNumber on to the jitted method). Cache invalidation in completeBuild re-populates the call sites.
+     */
+    @Override
+    public DynamicMethod getMethodForCaching() {
+        DynamicMethod actual = actualMethod;
+        return actual != null ? actual : this;
     }
 
     public void reset() {

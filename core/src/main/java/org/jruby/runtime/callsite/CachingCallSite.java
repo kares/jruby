@@ -1,6 +1,7 @@
 package org.jruby.runtime.callsite;
 
 import org.jruby.RubyClass;
+import org.jruby.internal.runtime.methods.CacheableMethod;
 import org.jruby.internal.runtime.methods.DynamicMethod;
 import org.jruby.runtime.Helpers;
 import org.jruby.runtime.Block;
@@ -416,6 +417,11 @@ public abstract class CachingCallSite extends CallSite {
 
         if (methodMissing(method, caller)) {
             entry = Helpers.createMethodMissingEntry(context, selfType, callType, method.getVisibility(), entry.token, methodName);
+        } else if (method instanceof CacheableMethod cacheable) {
+            // cache e.g. the jitted method a MixedModeIRMethod wraps, avoiding the wrapper's dispatch on every call
+            // (visibility was already checked above against the method table's authoritative entry)
+            DynamicMethod actual = cacheable.getMethodForCaching();
+            if (actual != method) entry = new CacheEntry(actual, entry.sourceModule, entry.token);
         }
 
         entry = setCache(entry, self);

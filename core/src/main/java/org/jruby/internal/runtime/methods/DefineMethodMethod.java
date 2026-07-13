@@ -26,6 +26,13 @@ public class DefineMethodMethod extends MixedModeIRMethod {
         return capturedBlock;
     }
 
+    // this wrapper must stay in the dispatch path even once jitted - the call overrides below substitute the
+    // captured block, which the jitted method alone would lose
+    @Override
+    public DynamicMethod getMethodForCaching() {
+        return this;
+    }
+
     @Override
     public IRubyObject call(ThreadContext context, IRubyObject self, RubyModule clazz, String name, IRubyObject[] args, Block block) {
         return super.call(context, self, clazz, name, args, capturedBlock);
