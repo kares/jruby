@@ -50,4 +50,32 @@ public class DefineMethodMethod extends MixedModeIRMethod {
     public IRubyObject call(ThreadContext context, IRubyObject self, RubyModule clazz, String name, IRubyObject arg0, IRubyObject arg1, IRubyObject arg2, Block block) {
         return super.call(context, self, clazz, name, arg0, arg1, arg2, capturedBlock);
     }
+
+    // the no-block variants must substitute the captured block as well - the super class implements them (rather
+    // than inheriting DynamicMethod's NULL_BLOCK bridging) and would otherwise interpret without a block at all
+
+    @Override
+    public IRubyObject call(ThreadContext context, IRubyObject self, RubyModule clazz, String name, IRubyObject[] args) {
+        return super.call(context, self, clazz, name, args, capturedBlock);
+    }
+
+    @Override
+    public IRubyObject call(ThreadContext context, IRubyObject self, RubyModule clazz, String name) {
+        return super.call(context, self, clazz, name, capturedBlock);
+    }
+
+    @Override
+    public IRubyObject call(ThreadContext context, IRubyObject self, RubyModule clazz, String name, IRubyObject arg0) {
+        return super.call(context, self, clazz, name, arg0, capturedBlock);
+    }
+
+    @Override
+    public IRubyObject call(ThreadContext context, IRubyObject self, RubyModule clazz, String name, IRubyObject arg0, IRubyObject arg1) {
+        return super.call(context, self, clazz, name, arg0, arg1, capturedBlock);
+    }
+
+    @Override
+    public IRubyObject call(ThreadContext context, IRubyObject self, RubyModule clazz, String name, IRubyObject arg0, IRubyObject arg1, IRubyObject arg2) {
+        return super.call(context, self, clazz, name, arg0, arg1, arg2, capturedBlock);
+    }
 }
