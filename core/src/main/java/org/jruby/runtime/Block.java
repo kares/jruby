@@ -192,7 +192,11 @@ public class Block implements FunctionOneOrTwoOrThree<ThreadContext, IRubyObject
     }
 
     public IRubyObject yield(ThreadContext context, IRubyObject value) {
-        return body.yield(context, this, value);
+        // NOTE: dispatching to doYield/yieldDirect here (instead of the equivalent BlockBody.yield) keeps a Java
+        // frame off the stack on every Ruby yield - interpreted traces are dominated by these
+        return body.canCallDirect() ?
+                body.yieldDirect(context, this, new IRubyObject[] { value }, null) :
+                body.doYield(context, this, value);
     }
 
     /**
@@ -241,17 +245,25 @@ public class Block implements FunctionOneOrTwoOrThree<ThreadContext, IRubyObject
     public IRubyObject yieldNonArray(ThreadContext context, IRubyObject value, IRubyObject self) {
         IRubyObject[] args = maybeSpreadArgs(context, new IRubyObject[] { value }, this);
 
-        return body.yield(context, this, args, self);
+        return body.canCallDirect() ?
+                body.yieldDirect(context, this, args, self) :
+                body.doYield(context, this, args, self);
     }
 
     public IRubyObject yieldArray(ThreadContext context, IRubyObject value, IRubyObject self) {
         IRubyObject[] args = maybeSpreadArgs(context, IRRuntimeHelpers.singleBlockArgToArray(value), this);
 
-        return body.yield(context, this, args, self);
+        return body.canCallDirect() ?
+                body.yieldDirect(context, this, args, self) :
+                body.doYield(context, this, args, self);
     }
 
     public IRubyObject yieldValues(ThreadContext context, IRubyObject[] args) {
-        return body.yield(context, this, maybeSpreadArgs(context, args, this), null);
+        IRubyObject[] spreadArgs = maybeSpreadArgs(context, args, this);
+
+        return body.canCallDirect() ?
+                body.yieldDirect(context, this, spreadArgs, null) :
+                body.doYield(context, this, spreadArgs, null);
     }
 
     public Block cloneBlock() {
