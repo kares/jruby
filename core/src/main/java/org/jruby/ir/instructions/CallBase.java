@@ -558,6 +558,8 @@ public abstract class CallBase extends NOperandInstr implements ClosureAccepting
     }
 
     protected IRubyObject[] prepareArgumentsSimple(ThreadContext context, IRubyObject self, StaticScope currScope, DynamicScope currDynScope, Object[] temp) {
+        if (argsCount == 0) return IRubyObject.NULL_ARRAY;
+
         IRubyObject[] newArgs = new IRubyObject[argsCount];
 
         for (int i = 0; i < argsCount; i++) { // receiver is operands[0]
