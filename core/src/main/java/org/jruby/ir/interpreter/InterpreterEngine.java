@@ -39,6 +39,7 @@ import org.jruby.ir.instructions.specialized.OneFloatArgNoBlockCallInstr;
 import org.jruby.ir.instructions.specialized.OneOperandArgBlockCallInstr;
 import org.jruby.ir.instructions.specialized.OneOperandArgNoBlockCallInstr;
 import org.jruby.ir.instructions.specialized.OneOperandArgNoBlockNoResultCallInstr;
+import org.jruby.ir.instructions.specialized.ThreeOperandArgNoBlockCallInstr;
 import org.jruby.ir.instructions.specialized.TwoOperandArgNoBlockCallInstr;
 import org.jruby.ir.instructions.specialized.ZeroOperandArgNoBlockCallInstr;
 import org.jruby.ir.operands.Bignum;
@@ -328,6 +329,17 @@ public class InterpreterEngine {
                 IRubyObject o2 = (IRubyObject)call.getArg2().retrieve(context, self, currScope, currDynScope, temp);
                 IRRuntimeHelpers.setCallInfo(context, call.getFlags());
                 result = call.getCallSite().call(context, self, r, o1, o2);
+                setResult(temp, currDynScope, call.getResult(), result);
+                break;
+            }
+            case CALL_3O: {
+                ThreeOperandArgNoBlockCallInstr call = (ThreeOperandArgNoBlockCallInstr)instr;
+                IRubyObject r = (IRubyObject)retrieveOp(call.getReceiver(), context, self, currDynScope, currScope, temp);
+                IRubyObject o1 = (IRubyObject)call.getArg1().retrieve(context, self, currScope, currDynScope, temp);
+                IRubyObject o2 = (IRubyObject)call.getArg2().retrieve(context, self, currScope, currDynScope, temp);
+                IRubyObject o3 = (IRubyObject)call.getArg3().retrieve(context, self, currScope, currDynScope, temp);
+                IRRuntimeHelpers.setCallInfo(context, call.getFlags());
+                result = call.getCallSite().call(context, self, r, o1, o2, o3);
                 setResult(temp, currDynScope, call.getResult(), result);
                 break;
             }
