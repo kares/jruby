@@ -225,10 +225,14 @@ public class InterpreterContext {
         return isEND;
     }
 
+    // NOTE: the scope-flag getters below read their fields directly after a single initialize() instead of
+    // cascading through each other - each getter call costs an initialize() (a volatile read) and these run
+    // on every method call/return in the interpreter.
+
     public boolean pushNewDynScope() {
         initialize();
 
-        return !dynamicScopeEliminated && !reuseParentDynScope();
+        return !dynamicScopeEliminated && !(reuseParentDynScope || isEND);
     }
 
     public boolean reuseParentDynScope() {
@@ -244,7 +248,8 @@ public class InterpreterContext {
     public boolean popDynScope() {
         initialize();
 
-        return pushNewDynScope() || this.reuseParentDynScope();
+        // equivalent to pushNewDynScope() || reuseParentDynScope()
+        return !dynamicScopeEliminated || reuseParentDynScope || isEND;
     }
 
     public boolean receivesKeywordArguments() {
