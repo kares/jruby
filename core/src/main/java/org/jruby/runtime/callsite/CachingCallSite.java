@@ -69,10 +69,8 @@ public abstract class CachingCallSite extends CallSite {
         RubyClass selfType = getMetaClass(self);
         // This must be retrieved *once* to avoid racing with other threads.
         CacheEntry cache = this.cache;
-        if (cache.typeOk(selfType)) {
-            return cache.method.call(context, self, cache.sourceModule, methodName, args);
-        }
-        return cacheAndCall(context, caller, self, selfType, args);
+        if (!cache.typeOk(selfType)) cache = populateCacheEntry(caller, selfType, context, self);
+        return cache.method.call(context, self, cache.sourceModule, methodName, args);
     }
 
     public IRubyObject fcall(ThreadContext context, IRubyObject self, IRubyObject... args) {
@@ -84,10 +82,8 @@ public abstract class CachingCallSite extends CallSite {
         RubyClass selfType = getMetaClass(self);
         // This must be retrieved *once* to avoid racing with other threads.
         CacheEntry cache = this.cache;
-        if (cache.typeOk(selfType)) {
-            return cache.method.call(context, self, cache.sourceModule, methodName, args, block);
-        }
-        return cacheAndCall(context, caller, self, selfType, args, block);
+        if (!cache.typeOk(selfType)) cache = populateCacheEntry(caller, selfType, context, self);
+        return cache.method.call(context, self, cache.sourceModule, methodName, args, block);
     }
 
     public IRubyObject fcall(ThreadContext context, IRubyObject self, IRubyObject[] args, Block block) {
@@ -187,10 +183,8 @@ public abstract class CachingCallSite extends CallSite {
         RubyClass selfType = getMetaClass(self);
         // This must be retrieved *once* to avoid racing with other threads.
         CacheEntry cache = this.cache;
-        if (cache.typeOk(selfType)) {
-            return cache.method.call(context, self, cache.sourceModule, methodName);
-        }
-        return cacheAndCall(context, caller, self, selfType);
+        if (!cache.typeOk(selfType)) cache = populateCacheEntry(caller, selfType, context, self);
+        return cache.method.call(context, self, cache.sourceModule, methodName);
     }
 
     public IRubyObject fcall(ThreadContext context, IRubyObject self) {
@@ -202,10 +196,8 @@ public abstract class CachingCallSite extends CallSite {
         RubyClass selfType = getMetaClass(self);
         // This must be retrieved *once* to avoid racing with other threads.
         CacheEntry cache = this.cache;
-        if (cache.typeOk(selfType)) {
-            return cache.method.call(context, self, cache.sourceModule, methodName, block);
-        }
-        return cacheAndCall(context, caller, self, selfType, block);
+        if (!cache.typeOk(selfType)) cache = populateCacheEntry(caller, selfType, context, self);
+        return cache.method.call(context, self, cache.sourceModule, methodName, block);
     }
 
     public IRubyObject fcall(ThreadContext context, IRubyObject self, Block block) {
@@ -236,10 +228,8 @@ public abstract class CachingCallSite extends CallSite {
         RubyClass selfType = getMetaClass(self);
         // This must be retrieved *once* to avoid racing with other threads.
         CacheEntry cache = this.cache;
-        if (cache.typeOk(selfType)) {
-            return cache.method.call(context, self, cache.sourceModule, methodName, arg1);
-        }
-        return cacheAndCall(context, caller, self, selfType, arg1);
+        if (!cache.typeOk(selfType)) cache = populateCacheEntry(caller, selfType, context, self);
+        return cache.method.call(context, self, cache.sourceModule, methodName, arg1);
     }
 
     public IRubyObject fcall(ThreadContext context, IRubyObject self, IRubyObject arg1) {
@@ -251,10 +241,8 @@ public abstract class CachingCallSite extends CallSite {
         RubyClass selfType = getMetaClass(self);
         // This must be retrieved *once* to avoid racing with other threads.
         CacheEntry cache = this.cache;
-        if (cache.typeOk(selfType)) {
-            return cache.method.call(context, self, cache.sourceModule, methodName, arg1, block);
-        }
-        return cacheAndCall(context, caller, self, selfType, arg1, block);
+        if (!cache.typeOk(selfType)) cache = populateCacheEntry(caller, selfType, context, self);
+        return cache.method.call(context, self, cache.sourceModule, methodName, arg1, block);
     }
 
     public IRubyObject fcall(ThreadContext context, IRubyObject self, IRubyObject arg1, Block block) {
@@ -285,10 +273,8 @@ public abstract class CachingCallSite extends CallSite {
         RubyClass selfType = getMetaClass(self);
         // This must be retrieved *once* to avoid racing with other threads.
         CacheEntry cache = this.cache;
-        if (cache.typeOk(selfType)) {
-            return cache.method.call(context, self, cache.sourceModule, methodName, arg1, arg2);
-        }
-        return cacheAndCall(context, caller, self, selfType, arg1, arg2);
+        if (!cache.typeOk(selfType)) cache = populateCacheEntry(caller, selfType, context, self);
+        return cache.method.call(context, self, cache.sourceModule, methodName, arg1, arg2);
     }
 
     public IRubyObject fcall(ThreadContext context, IRubyObject self, IRubyObject arg1, IRubyObject arg2) {
@@ -300,10 +286,8 @@ public abstract class CachingCallSite extends CallSite {
         RubyClass selfType = getMetaClass(self);
         // This must be retrieved *once* to avoid racing with other threads.
         CacheEntry cache = this.cache;
-        if (cache.typeOk(selfType)) {
-            return cache.method.call(context, self, cache.sourceModule, methodName, arg1, arg2, block);
-        }
-        return cacheAndCall(context, caller, self, selfType, arg1, arg2, block);
+        if (!cache.typeOk(selfType)) cache = populateCacheEntry(caller, selfType, context, self);
+        return cache.method.call(context, self, cache.sourceModule, methodName, arg1, arg2, block);
     }
 
     public IRubyObject fcall(ThreadContext context, IRubyObject self, IRubyObject arg1, IRubyObject arg2, Block block) {
@@ -334,10 +318,8 @@ public abstract class CachingCallSite extends CallSite {
         RubyClass selfType = getMetaClass(self);
         // This must be retrieved *once* to avoid racing with other threads.
         CacheEntry cache = this.cache;
-        if (cache.typeOk(selfType)) {
-            return cache.method.call(context, self, cache.sourceModule, methodName, arg1, arg2, arg3);
-        }
-        return cacheAndCall(context, caller, self, selfType, arg1, arg2, arg3);
+        if (!cache.typeOk(selfType)) cache = populateCacheEntry(caller, selfType, context, self);
+        return cache.method.call(context, self, cache.sourceModule, methodName, arg1, arg2, arg3);
     }
 
     public IRubyObject fcall(ThreadContext context, IRubyObject self, IRubyObject arg1, IRubyObject arg2, IRubyObject arg3) {
@@ -349,10 +331,8 @@ public abstract class CachingCallSite extends CallSite {
         RubyClass selfType = getMetaClass(self);
         // This must be retrieved *once* to avoid racing with other threads.
         CacheEntry cache = this.cache;
-        if (cache.typeOk(selfType)) {
-            return cache.method.call(context, self, cache.sourceModule, methodName, arg1, arg2, arg3, block);
-        }
-        return cacheAndCall(context, caller, self, selfType, block, arg1, arg2, arg3);
+        if (!cache.typeOk(selfType)) cache = populateCacheEntry(caller, selfType, context, self);
+        return cache.method.call(context, self, cache.sourceModule, methodName, arg1, arg2, arg3, block);
     }
 
     public IRubyObject fcall(ThreadContext context, IRubyObject self, IRubyObject arg1, IRubyObject arg2, IRubyObject arg3, Block block) {
@@ -426,6 +406,11 @@ public abstract class CachingCallSite extends CallSite {
         if (!entry.method.isUndefined()) entry = setCache(entry, self);
         return entry;
     }
+
+    // NOTE: call(...) no longer dispatches a cache miss through these - it populates the cache entry and calls the
+    // method itself, so that no cacheAndCall frame remains on the stack for the duration of the (nested) call.
+    // Overriding them thus does NOT intercept dispatch anymore; override call(...) instead (@see RespondToCallSite).
+    // Kept as-is - still correct when invoked directly.
 
     protected IRubyObject cacheAndCall(ThreadContext context, IRubyObject caller, IRubyObject self, RubyClass selfType, IRubyObject[] args, Block block) {
         CacheEntry entry = populateCacheEntry(caller, selfType, context, self);

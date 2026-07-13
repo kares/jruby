@@ -62,15 +62,14 @@ public class RespondToCallSite extends MonomorphicCallSite {
     }
 
     @Override
-    public IRubyObject call(ThreadContext context, IRubyObject caller, IRubyObject self, IRubyObject name) { 
+    public IRubyObject call(ThreadContext context, IRubyObject caller, IRubyObject self, IRubyObject name) {
         RubyClass klass = getMetaClass(self);
         RespondToTuple tuple = respondToTuple;
         if (tuple.cacheOk(klass)) {
             String id = checkID(context, name).idString();
             if (id.equals(tuple.name) && tuple.checkVisibility) return tuple.respondsTo;
         }
-        // go through normal call logic, which will hit overridden cacheAndCall
-        return super.call(context, caller, self, name);
+        return cachedCall(context, caller, self, klass, name);
     }
 
     @Override
@@ -81,8 +80,7 @@ public class RespondToCallSite extends MonomorphicCallSite {
             String id = checkID(context, name).idString();
             if (id.equals(tuple.name) && !bool.isTrue() == tuple.checkVisibility) return tuple.respondsTo;
         }
-        // go through normal call logic, which will hit overridden cacheAndCall
-        return super.call(context, caller, self, name, bool);
+        return cachedCall(context, caller, self, klass, name, bool);
     }
 
     public boolean respondsTo(ThreadContext context, IRubyObject caller, IRubyObject self) {
@@ -92,8 +90,7 @@ public class RespondToCallSite extends MonomorphicCallSite {
             String strName = respondToName;
             if (strName.equals(tuple.name) && tuple.checkVisibility) return tuple.respondsToBoolean;
         }
-        // go through normal call logic, which will hit overridden cacheAndCall
-        return super.call(context, caller, self, getRespondToNameSym(context)).isTrue();
+        return cachedCall(context, caller, self, klass, getRespondToNameSym(context)).isTrue();
     }
 
     public boolean respondsTo(ThreadContext context, IRubyObject caller, IRubyObject self, boolean includePrivate) {
@@ -103,8 +100,28 @@ public class RespondToCallSite extends MonomorphicCallSite {
             String strName = respondToName;
             if (strName.equals(tuple.name) && !includePrivate == tuple.checkVisibility) return tuple.respondsToBoolean;
         }
-        // go through normal call logic, which will hit overridden cacheAndCall
-        return super.call(context, caller, self, getRespondToNameSym(context), asBoolean(context, includePrivate)).isTrue();
+        return cachedCall(context, caller, self, klass, getRespondToNameSym(context), asBoolean(context, includePrivate)).isTrue();
+    }
+
+    // NOTE: CachingCallSite's dispatch no longer routes a cache miss through cacheAndCall (it inlines the cache
+    // population to keep a Java frame off the stack), so the respond_to? specialization is entered from here.
+
+    private IRubyObject cachedCall(ThreadContext context, IRubyObject caller, IRubyObject self, RubyClass selfType,
+            IRubyObject name) {
+        CacheEntry cache = this.cache;
+        if (cache.typeOk(selfType)) {
+            return cache.method.call(context, self, cache.sourceModule, methodName, name);
+        }
+        return cacheAndCall(context, caller, self, selfType, name);
+    }
+
+    private IRubyObject cachedCall(ThreadContext context, IRubyObject caller, IRubyObject self, RubyClass selfType,
+            IRubyObject name, IRubyObject bool) {
+        CacheEntry cache = this.cache;
+        if (cache.typeOk(selfType)) {
+            return cache.method.call(context, self, cache.sourceModule, methodName, name, bool);
+        }
+        return cacheAndCall(context, caller, self, selfType, name, bool);
     }
 
     private RubySymbol getRespondToNameSym(ThreadContext context) {
