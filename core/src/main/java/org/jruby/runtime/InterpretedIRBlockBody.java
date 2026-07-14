@@ -2,46 +2,27 @@ package org.jruby.runtime;
 
 import java.io.ByteArrayOutputStream;
 
-import org.jruby.Ruby;
-import org.jruby.RubyModule;
-import org.jruby.compiler.Compilable;
 import org.jruby.ir.IRClosure;
-import org.jruby.ir.IRScope;
 import org.jruby.ir.interpreter.Interpreter;
 import org.jruby.ir.interpreter.InterpreterContext;
 import org.jruby.ir.persistence.IRDumper;
 import org.jruby.ir.runtime.IRRuntimeHelpers;
 import org.jruby.runtime.builtin.IRubyObject;
-import org.jruby.util.cli.Options;
 import org.jruby.util.log.Logger;
 import org.jruby.util.log.LoggerFactory;
 
-import static org.jruby.api.Access.instanceConfig;
-
-public class InterpretedIRBlockBody extends IRBlockBody implements Compilable<InterpreterContext> {
+public class InterpretedIRBlockBody extends CompilableIRBlockBody<InterpreterContext> {
     private static final Logger LOG = LoggerFactory.getLogger(InterpretedIRBlockBody.class);
-    protected final boolean pushScope;
-    protected final boolean reuseParentScope;
-    private boolean displayedCFG = false; // FIXME: Remove when we find nicer way of logging CFG
-    private int callCount = 0;
+
     private InterpreterContext interpreterContext;
     private InterpreterContext fullInterpreterContext;
-    private final IRClosure closure;
 
     public InterpretedIRBlockBody(IRClosure closure, Signature signature) {
         super(closure, signature);
-        this.pushScope = true;
-        this.reuseParentScope = false;
-        this.closure = closure;
 
         // -1 jit.threshold is way of having interpreter not promote full builds
         // regardless of compile mode (even when OFF full-builds are promoted)
         if (closure.getManager().getInstanceConfig().getJitThreshold() == -1) setCallCount(-1);
-    }
-
-    @Override
-    public void setCallCount(int callCount) {
-        this.callCount = callCount;
     }
 
     @Override
@@ -50,16 +31,6 @@ public class InterpretedIRBlockBody extends IRBlockBody implements Compilable<In
         // This enables IR & CFG to be dumped in debug mode
         // when this updated code starts executing.
         this.displayedCFG = false;
-    }
-
-    @Override
-    public IRScope getIRScope() {
-        return closure;
-    }
-
-    @Override
-    public ArgumentDescriptor[] getArgumentDescriptors() {
-        return closure.getArgumentDescriptors();
     }
 
     public InterpreterContext ensureInstrsReady() {
@@ -110,20 +81,9 @@ public class InterpretedIRBlockBody extends IRBlockBody implements Compilable<In
         return Interpreter.INTERPRET_BLOCK(context, block, self, fullInterpreterContext, args, block.getBinding().getMethod(), Block.NULL_BLOCK);
     }
 
-    // TODO: Duplicated in InterpretedIRBlockBody
-    private static void tryJIT(InterpretedIRBlockBody body, ThreadContext context) {
-        // don't JIT during runtime boot
-        if (body.callCount >= 0 && (!context.runtime.isBooting() || Options.JIT_KERNEL.load())) {
-            // we don't synchronize callCount++ it does not matter if count isn't accurate
-            if (body.callCount++ >= instanceConfig(context).getJitThreshold()) {
-                body.promoteToFullBuild(context, false);
-            }
-        }
-    }
-
     @Override
     protected IRubyObject commonYieldPath(ThreadContext context, Block block, IRubyObject[] args, IRubyObject self, Block blockArg) {
-        tryJIT(this, context);
+        tryJIT(context);
 
         InterpreterContext ic = ensureInstrsReady();
 
@@ -152,23 +112,10 @@ public class InterpretedIRBlockBody extends IRBlockBody implements Compilable<In
         }
     }
 
-    @Override
-    public boolean forceBuild(ThreadContext context) {
-        promoteToFullBuild(context, true);
-
-        // Force = true should trigger jit to run synchronously, so we'll be optimistic
-        return true;
-    }
-
-    @Override
-    public boolean isBuildComplete() {
-        // Successful build and disabled build both set callCount to -1, indicating no further build is possible.
-        return callCount < 0;
-    }
-
     // Unlike JIT in MixedMode this will always successfully build but if using executor pool it may take a while
     // and replace interpreterContext asynchronously.
-    private void promoteToFullBuild(ThreadContext context, boolean force) {
+    @Override
+    protected void promoteToFullBuild(ThreadContext context, boolean force) {
         synchronized (this) { // disable same jit tasks from entering queue twice
             if (this.callCount >= 0) {
                 this.callCount = Integer.MIN_VALUE; // so that callCount++ stays < 0
@@ -177,14 +124,4 @@ public class InterpretedIRBlockBody extends IRBlockBody implements Compilable<In
             }
         }
     }
-
-    public RubyModule getImplementationClass() {
-        return closure.getStaticScope().getModule();
-    }
-
-    @Override
-    public IRClosure getScope() {
-        return closure;
-    }
-
 }
