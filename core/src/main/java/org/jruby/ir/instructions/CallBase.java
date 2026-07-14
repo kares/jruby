@@ -545,7 +545,11 @@ public abstract class CallBase extends NOperandInstr implements ClosureAccepting
         IRRuntimeHelpers.setCallInfo(context, getFlags());
 
         if (hasLiteralClosure()) {
-            return callSite.callIter(context, self, object, values, preparedBlock);
+            try { // ~ callIter but without the extra frame + worry at call-site
+                return callSite.call(context, self, object, values, preparedBlock);
+            } finally {
+                preparedBlock.escape();
+            }
         }
 
         return callSite.call(context, self, object, values, preparedBlock);

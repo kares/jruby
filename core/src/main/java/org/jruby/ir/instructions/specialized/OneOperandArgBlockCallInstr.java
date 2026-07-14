@@ -42,7 +42,11 @@ public class OneOperandArgBlockCallInstr extends CallInstr {
         IRRuntimeHelpers.setCallInfo(context, getFlags());
 
         if (hasLiteralClosure()) {
-            return getCallSite().callIter(context, self, object, arg1, preparedBlock);
+            try {
+                return getCallSite().call(context, self, object, arg1, preparedBlock);
+            } finally {
+                preparedBlock.escape();
+            }
         }
 
         return getCallSite().call(context, self, object, arg1, preparedBlock);

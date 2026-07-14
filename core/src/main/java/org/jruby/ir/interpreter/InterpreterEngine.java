@@ -344,16 +344,21 @@ public class InterpreterEngine {
                 break;
             }
             case CALL_1OB: {
-                // NOTE: This logic shouod always match OneOperandArgBlockCallInstr
+                // NOTE: This logic should always match OneOperandArgBlockCallInstr
                 OneOperandArgBlockCallInstr call = (OneOperandArgBlockCallInstr)instr;
                 IRubyObject r = (IRubyObject)retrieveOp(call.getReceiver(), context, self, currDynScope, currScope, temp);
                 IRubyObject o = (IRubyObject)call.getArg1().retrieve(context, self, currScope, currDynScope, temp);
                 Block preparedBlock = call.prepareBlock(context, self, currScope, currDynScope, temp);
-                CallSite callSite = call.getCallSite();
                 IRRuntimeHelpers.setCallInfo(context, call.getFlags());
-                result = call.hasLiteralClosure() ?
-                        callSite.callIter(context, self, r, o, preparedBlock) :
-                        callSite.call(context, self, r, o, preparedBlock);
+                if (call.hasLiteralClosure()) {
+                    try {
+                        result = call.getCallSite().call(context, self, r, o, preparedBlock);
+                    } finally {
+                        preparedBlock.escape();
+                    }
+                } else {
+                    result = call.getCallSite().call(context, self, r, o, preparedBlock);
+                }
                 setResult(temp, currDynScope, call.getResult(), result);
                 break;
             }
