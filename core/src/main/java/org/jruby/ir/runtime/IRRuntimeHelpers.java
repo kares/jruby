@@ -2220,7 +2220,7 @@ public class IRRuntimeHelpers {
         return asFixnum(context, i);
     }
 
-    public static IRubyObject[] toAry(ThreadContext context, IRubyObject[] args) {
+    public static IRubyObject[] toAry(ThreadContext context, IRubyObject... args) {
         IRubyObject ary;
         if (args.length == 1 && (ary = Helpers.aryOrToAry(context, args[0])) != context.nil) {
             if (!(ary instanceof RubyArray)) throw typeError(context, "", args[0], "#to_ary should return Array");

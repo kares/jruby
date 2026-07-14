@@ -83,12 +83,10 @@ import org.objectweb.asm.commons.Method;
 import java.io.ByteArrayOutputStream;
 import java.lang.invoke.MethodType;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
-import java.util.stream.Stream;
 
 import static java.util.Arrays.stream;
 import static org.jruby.util.CodegenUtils.c;
@@ -117,6 +115,11 @@ public class JVMVisitor extends IRVisitor {
     public static final Signature CLOSURE_SIGNATURE = Signature
             .returning(IRubyObject.class)
             .appendArgs(new String[]{"context", SELF_BLOCK_NAME, "scope", "self", "args", BLOCK_ARG_NAME}, ThreadContext.class, Block.class, StaticScope.class, IRubyObject.class, IRubyObject[].class, Block.class);
+
+    // specific-arity variant of CLOSURE_SIGNATURE for blocks taking exactly one required argument
+    public static final Signature CLOSURE_SIGNATURE_1_ARG = Signature
+            .returning(IRubyObject.class)
+            .appendArgs(new String[]{"context", SELF_BLOCK_NAME, "scope", "self", "arg0", BLOCK_ARG_NAME}, ThreadContext.class, Block.class, StaticScope.class, IRubyObject.class, IRubyObject.class, Block.class);
 
     JVMVisitor(Ruby runtime, BytecodeMode bytecodeMode) {
         this.bytecodeMode = bytecodeMode;
@@ -535,13 +538,64 @@ public class JVMVisitor extends IRVisitor {
         String name = JavaNameMangler.encodeNumberedScopeForBacktrace(closure, methodIndex++);
         jvm.pushscript(this, clsName, closure.getFile());
 
-        emitScope(closure, name, CLOSURE_SIGNATURE, false, true);
-
         context.setBaseName(name);
-        context.setVariableName(name);
+
+        if (closure.getSignature().isOneArgument() && !closure.getSignature().hasKwargs()
+            && closure.getStaticScope().getSignature() != null && closure.getStaticScope().getSignature().required() == 1) {
+            // same as emitWithSignatures for methods: body compiles once with a scalar argument,
+            // plus a variable-arity wrapper doing block arg adaptation and unpacking args array
+            context.setSpecificName(name);
+            emitScope(closure, name, CLOSURE_SIGNATURE_1_ARG, true, true);
+            context.addNativeSignature(1, CLOSURE_SIGNATURE_1_ARG.type());
+
+            String variableName = name + JavaNameMangler.VARARGS_MARKER;
+            context.setVariableName(variableName);
+            emitVarargsBlockWrapper(closure, variableName, name);
+            context.addNativeSignature(-1, CLOSURE_SIGNATURE.type());
+        } else {
+            context.setVariableName(name);
+            emitScope(closure, name, CLOSURE_SIGNATURE, false, true);
+            context.addNativeSignature(-1, CLOSURE_SIGNATURE.type());
+        }
 
         jvm.cls().visitEnd();
         jvm.popclass();
+    }
+
+    /**
+     * The variable arity (IRubyObject[]) entry for a block compiled with a single argument.
+     */
+    protected void emitVarargsBlockWrapper(IRClosure closure, String variableName, String specificName) {
+        jvm.pushmethod(variableName, closure, specificName + "_StaticScope", CLOSURE_SIGNATURE, false);
+
+        IRBytecodeAdapter m = jvmMethod();
+
+        m.updateLineNumber(closure.getLine());
+
+        // args = IRRuntimeHelpers.prepareSingleBlockArgs(context, selfBlock, args)
+        m.loadContext();
+        m.loadSelfBlock();
+        m.loadArgs();
+        m.invokeIRHelper("prepareSingleBlockArgs", sig(IRubyObject[].class, ThreadContext.class, Block.class, IRubyObject[].class));
+        m.storeArgs();
+
+        // scalarBody(context, selfBlock, scope, self, getPreArgSafe(context, args, 0), block)
+        m.loadContext();
+        m.loadSelfBlock();
+        m.loadStaticScope();
+        m.loadSelf();
+        m.loadContext();
+        m.loadArgs();
+        jvmAdapter().pushInt(0);
+        m.invokeIRHelper("getPreArgSafe", sig(IRubyObject.class, ThreadContext.class, IRubyObject[].class, int.class));
+        m.loadBlock();
+
+        Method specificMethod = new Method(specificName, Type.getType(CLOSURE_SIGNATURE_1_ARG.type().returnType()), IRRuntimeHelpers.typesFromSignature(
+            CLOSURE_SIGNATURE_1_ARG));
+        jvmAdapter().invokestatic(m.getClassData().clsName, specificName, specificMethod.getDescriptor());
+        jvmAdapter().areturn();
+
+        jvm.popmethod();
     }
 
     private void emitWithSignatures(IRMethod method, JVMVisitorMethodContext context, String name) {
@@ -2061,6 +2115,10 @@ public class JVMVisitor extends IRVisitor {
 
     @Override
     public void PrepareSingleBlockArgInstr(PrepareSingleBlockArgInstr instr) {
+        if (jvm.methodData().specificArity >= 0) {
+            // exactly one arg: lambda arity check passes and a one-argument signature never spreads
+            return;
+        }
         jvmMethod().loadContext();
         jvmMethod().loadSelfBlock();
         jvmMethod().loadArgs();
@@ -2242,13 +2300,15 @@ public class JVMVisitor extends IRVisitor {
 
         if (argsLength >= 0) {
             if (argsLength > 0) {
+                // resolve last argument's slot from the signature
+                int lastArgOffset = jvm.methodData().signature.argOffset("arg" + (argsLength - 1));
                 jvmMethod().loadContext();
-                jvmAdapter().aload(3 + argsLength - 1); // 3 - 0-2 are not args // FIXME: This should get abstracted
+                jvmAdapter().aload(lastArgOffset);
                 jvmMethod().loadStaticScope();
                 jvmAdapter().invokevirtual(p(StaticScope.class), "isRuby2Keywords", sig(boolean.class));
                 jvmMethod().invokeIRHelper("receiveSpecificArityKeywords",
                         sig(IRubyObject.class, ThreadContext.class, IRubyObject.class, boolean.class));
-                jvmAdapter().astore(3 + argsLength - 1); // 3 - 0-2 are not args // FIXME: This should get abstracted
+                jvmAdapter().astore(lastArgOffset);
             } else {
                 jvmMethod().loadContext();
                 jvmMethod().adapter.invokestatic(p(ThreadContext.class), "clearCallInfo", sig(void.class, ThreadContext.class));

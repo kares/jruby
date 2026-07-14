@@ -12,15 +12,21 @@ public class CompiledIRBlockBody extends IRBlockBody {
     protected final MethodHandle handle;
     protected final MethodHandle callHandle;
     protected final MethodHandle yieldDirectHandle;
+    // arg0 (instead of IRubyObject[] args) entry for single-argument blocks, null when not eligible
+    protected final MethodHandle oneValueHandle;
+    protected final MethodHandle yieldOneValueDirectHandle;
     protected MethodHandle normalYieldHandle;
     protected MethodHandle normalYieldSpecificHandle;
     protected MethodHandle normalYieldUnwrapHandle;
     private final String encodedArgumentDescriptors;
 
     public CompiledIRBlockBody(MethodHandle handle, StaticScope scope, String file, int line, String encodedArgumentDescriptors, long encodedSignature) {
+        this(handle, null, scope, file, line, encodedArgumentDescriptors, encodedSignature);
+    }
+
+    public CompiledIRBlockBody(MethodHandle handle, MethodHandle oneValueHandle, StaticScope scope, String file, int line, String encodedArgumentDescriptors, long encodedSignature) {
         super(scope, file, line, Signature.decode(encodedSignature));
 
-        // evalType copied (shared) on MixedModeIRBlockBody#completeBuild
         this.handle = handle;
         MethodHandle callHandle = MethodHandles.insertArguments(handle, 2, scope, null);
         // This is gross and should be done in IR rather than in the handles.
@@ -29,6 +35,12 @@ public class CompiledIRBlockBody extends IRBlockBody {
                 MethodHandles.insertArguments(handle, 2, scope),
                 4,
                 Block.NULL_BLOCK);
+        this.oneValueHandle = oneValueHandle;
+        this.yieldOneValueDirectHandle = oneValueHandle == null ? null :
+                MethodHandles.insertArguments(
+                        MethodHandles.insertArguments(oneValueHandle, 2, scope),
+                        4,
+                        Block.NULL_BLOCK);
 
         // Done in the interpreter (WrappedIRClosure) but we do it here
         scope.determineModule();
@@ -84,6 +96,13 @@ public class CompiledIRBlockBody extends IRBlockBody {
     public MethodHandle getNormalYieldHandle() {
         MethodHandle normalYieldHandle = this.normalYieldHandle;
         if (normalYieldHandle != null) return normalYieldHandle;
+
+        if (oneValueHandle != null) { // single arg blocks avoid the WRAP_VALUE boxing
+            return this.normalYieldHandle = Binder.from(IRubyObject.class, ThreadContext.class, Block.class, IRubyObject.class)
+                    .insert(2, new Class[]{StaticScope.class, IRubyObject.class}, getStaticScope(), null)
+                    .append(Block.class, Block.NULL_BLOCK)
+                    .invoke(oneValueHandle);
+        }
 
         return this.normalYieldHandle = Binder.from(IRubyObject.class, ThreadContext.class, Block.class, IRubyObject.class)
                 .filter(2, WRAP_VALUE)
@@ -149,6 +168,19 @@ public class CompiledIRBlockBody extends IRBlockBody {
     protected IRubyObject yieldDirect(ThreadContext context, Block block, IRubyObject[] args, IRubyObject self) {
         try {
             return (IRubyObject) yieldDirectHandle.invokeExact(context, block, self, args);
+        } catch (Throwable t) {
+            Helpers.throwException(t);
+            return null; // not reached
+        }
+    }
+
+    @Override
+    protected IRubyObject yieldDirect(ThreadContext context, Block block, IRubyObject value, IRubyObject self) {
+        MethodHandle yieldOneValue = this.yieldOneValueDirectHandle;
+        if (yieldOneValue == null) return super.yieldDirect(context, block, value, self); // boxes
+
+        try {
+            return (IRubyObject) yieldOneValue.invokeExact(context, block, self, value);
         } catch (Throwable t) {
             Helpers.throwException(t);
             return null; // not reached

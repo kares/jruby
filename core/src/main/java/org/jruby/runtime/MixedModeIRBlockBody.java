@@ -82,6 +82,14 @@ public class MixedModeIRBlockBody extends CompilableIRBlockBody<CompiledIRBlockB
     }
 
     @Override
+    protected IRubyObject yieldDirect(ThreadContext context, Block block, IRubyObject value, IRubyObject self) {
+        // We should never get here if jittedBody is null
+        assert jittedBody != null : "direct yield in MixedModeIRBlockBody without jitted body";
+
+        return jittedBody.yieldDirect(context, block, value, self);
+    }
+
+    @Override
     protected IRubyObject commonYieldPath(ThreadContext context, Block block, IRubyObject[] args, IRubyObject self, Block blockArg) {
         InterpreterContext ic = ensureInstrsReady();
 

@@ -85,6 +85,14 @@ public abstract class BlockBody {
         throw new RuntimeException("yieldDirect not implemented in base class. We should never get here.");
     }
 
+    /**
+     * One-value yieldDirect: overridden where a scalar entry point exists (jitted single-argument
+     * blocks), so the common one-value yield does not need to box into an IRubyObject[].
+     */
+    protected IRubyObject yieldDirect(ThreadContext context, Block block, IRubyObject value, IRubyObject self) {
+        return yieldDirect(context, block, new IRubyObject[] { value }, self);
+    }
+
     public IRubyObject call(ThreadContext context, Block block, IRubyObject[] args) {
         if (canCallDirect()) {
             return callDirect(context, block, args, Block.NULL_BLOCK);
@@ -103,7 +111,7 @@ public abstract class BlockBody {
 
     public final IRubyObject yield(ThreadContext context, Block block, IRubyObject value) {
         if (canCallDirect()) {
-            return yieldDirect(context, block, new IRubyObject[] { value }, null);
+            return yieldDirect(context, block, value, null);
         } else {
             return doYield(context, block, value);
         }
@@ -160,7 +168,7 @@ public abstract class BlockBody {
 
     public IRubyObject yieldSpecific(ThreadContext context, Block block) {
         if (canCallDirect()) {
-            return yieldDirect(context, block, null, null);
+            return yieldDirect(context, block, (IRubyObject[]) null, null);
         } else {
             return this.yield(context, block, null);
         }
@@ -179,7 +187,7 @@ public abstract class BlockBody {
 
     public IRubyObject yieldSpecific(ThreadContext context, Block block, IRubyObject arg0) {
         if (canCallDirect()) {
-            return yieldDirect(context, block, new IRubyObject[] { arg0 }, null);
+            return yieldDirect(context, block, arg0, null);
         } else {
             return this.yield(context, block, arg0);
         }
