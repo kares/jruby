@@ -28,7 +28,9 @@ public class MixedModeIRBlockBody extends CompilableIRBlockBody<CompiledIRBlockB
 
     @Override
     public boolean canCallDirect() {
-        return jittedBody != null || (interpreterContext != null && interpreterContext.hasExplicitCallProtocol());
+        // NOTE: only a jitted body can be called/yielded to directly
+        // this body's interpreterContext is always the startup one (never has an explicit call protocol)
+        return jittedBody != null;
     }
 
     @Override

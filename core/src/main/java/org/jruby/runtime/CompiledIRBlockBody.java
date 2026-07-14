@@ -80,9 +80,6 @@ public class CompiledIRBlockBody extends IRBlockBody {
         return callHandle;
     }
 
-//    protected volatile MethodHandle yieldTwoValuesHandle;
-//    protected volatile MethodHandle yieldThreeValuesHandle;
-//
     public MethodHandle getNormalYieldSpecificHandle() {
         MethodHandle normalYieldSpecificHandle = this.normalYieldSpecificHandle;
         if (normalYieldSpecificHandle != null) return normalYieldSpecificHandle;
@@ -121,38 +118,6 @@ public class CompiledIRBlockBody extends IRBlockBody {
                 .append(Block.class, Block.NULL_BLOCK)
                 .invoke(handle);
     }
-//
-//    public MethodHandle getYieldTwoValuesHandle() {
-//        MethodHandle yieldTwoValuesHandle = this.yieldTwoValuesHandle;
-//        if (yieldTwoValuesHandle != null) return yieldTwoValuesHandle;
-//
-//        return this.yieldTwoValuesHandle = Binder.from(IRubyObject.class, ThreadContext.class, Block.class, IRubyObject.class, IRubyObject.class)
-//                .foldVoid(SET_NORMAL)
-//                .fold(FOLD_METHOD1)
-//                .fold(FOLD_TYPE1)
-//                .collect(5, IRubyObject[].class)
-//                .insert(5, new Class[] {StaticScope.class, IRubyObject.class},
-//                        getStaticScope(), null)
-//                .append(new Class[] {Block.class}, Block.NULL_BLOCK)
-//                .permute(2, 3, 4, 5, 6, 7, 1, 0)
-//                .invoke(handle);
-//    }
-//
-//    public MethodHandle getYieldThreeValuesHandle() {
-//        MethodHandle yieldThreeValuesHandle = this.yieldThreeValuesHandle;
-//        if (yieldThreeValuesHandle != null) return yieldThreeValuesHandle;
-//
-//        return this.yieldThreeValuesHandle = Binder.from(IRubyObject.class, ThreadContext.class, Block.class, IRubyObject.class, IRubyObject.class, IRubyObject.class)
-//                .foldVoid(SET_NORMAL)
-//                .fold(FOLD_METHOD1)
-//                .fold(FOLD_TYPE1)
-//                .collect(5, IRubyObject[].class)
-//                .insert(5, new Class[] {StaticScope.class, IRubyObject.class},
-//                        getStaticScope(), null)
-//                .append(new Class[] {Block.class}, Block.NULL_BLOCK)
-//                .permute(2, 3, 4, 5, 6, 7, 1, 0)
-//                .invoke(handle);
-//    }
 
     @Override
     protected IRubyObject callDirect(ThreadContext context, Block block, IRubyObject[] args, Block blockArg) {
