@@ -26,6 +26,13 @@ public class DefineMethodMethod extends MixedModeIRMethod {
         return capturedBlock;
     }
 
+    // this wrapper must stay in the dispatch path even once jitted - the call overrides below substitute the
+    // captured block, which the jitted method alone would lose
+    @Override
+    public DynamicMethod getMethodForCaching() {
+        return this;
+    }
+
     @Override
     public IRubyObject call(ThreadContext context, IRubyObject self, RubyModule clazz, String name, IRubyObject[] args, Block block) {
         return super.call(context, self, clazz, name, args, capturedBlock);
@@ -48,6 +55,34 @@ public class DefineMethodMethod extends MixedModeIRMethod {
 
     @Override
     public IRubyObject call(ThreadContext context, IRubyObject self, RubyModule clazz, String name, IRubyObject arg0, IRubyObject arg1, IRubyObject arg2, Block block) {
+        return super.call(context, self, clazz, name, arg0, arg1, arg2, capturedBlock);
+    }
+
+    // the no-block variants must substitute the captured block as well - the super class implements them (rather
+    // than inheriting DynamicMethod's NULL_BLOCK bridging) and would otherwise interpret without a block at all
+
+    @Override
+    public IRubyObject call(ThreadContext context, IRubyObject self, RubyModule clazz, String name, IRubyObject[] args) {
+        return super.call(context, self, clazz, name, args, capturedBlock);
+    }
+
+    @Override
+    public IRubyObject call(ThreadContext context, IRubyObject self, RubyModule clazz, String name) {
+        return super.call(context, self, clazz, name, capturedBlock);
+    }
+
+    @Override
+    public IRubyObject call(ThreadContext context, IRubyObject self, RubyModule clazz, String name, IRubyObject arg0) {
+        return super.call(context, self, clazz, name, arg0, capturedBlock);
+    }
+
+    @Override
+    public IRubyObject call(ThreadContext context, IRubyObject self, RubyModule clazz, String name, IRubyObject arg0, IRubyObject arg1) {
+        return super.call(context, self, clazz, name, arg0, arg1, capturedBlock);
+    }
+
+    @Override
+    public IRubyObject call(ThreadContext context, IRubyObject self, RubyModule clazz, String name, IRubyObject arg0, IRubyObject arg1, IRubyObject arg2) {
         return super.call(context, self, clazz, name, arg0, arg1, arg2, capturedBlock);
     }
 }

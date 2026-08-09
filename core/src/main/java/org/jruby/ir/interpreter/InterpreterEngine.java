@@ -39,7 +39,10 @@ import org.jruby.ir.instructions.specialized.OneFloatArgNoBlockCallInstr;
 import org.jruby.ir.instructions.specialized.OneOperandArgBlockCallInstr;
 import org.jruby.ir.instructions.specialized.OneOperandArgNoBlockCallInstr;
 import org.jruby.ir.instructions.specialized.OneOperandArgNoBlockNoResultCallInstr;
+import org.jruby.ir.instructions.specialized.ThreeOperandArgNoBlockCallInstr;
+import org.jruby.ir.instructions.specialized.TwoOperandArgBlockCallInstr;
 import org.jruby.ir.instructions.specialized.TwoOperandArgNoBlockCallInstr;
+import org.jruby.ir.instructions.specialized.ZeroOperandArgBlockCallInstr;
 import org.jruby.ir.instructions.specialized.ZeroOperandArgNoBlockCallInstr;
 import org.jruby.ir.operands.Bignum;
 import org.jruby.ir.operands.Fixnum;
@@ -331,17 +334,33 @@ public class InterpreterEngine {
                 setResult(temp, currDynScope, call.getResult(), result);
                 break;
             }
+            case CALL_3O: {
+                ThreeOperandArgNoBlockCallInstr call = (ThreeOperandArgNoBlockCallInstr)instr;
+                IRubyObject r = (IRubyObject)retrieveOp(call.getReceiver(), context, self, currDynScope, currScope, temp);
+                IRubyObject o1 = (IRubyObject)call.getArg1().retrieve(context, self, currScope, currDynScope, temp);
+                IRubyObject o2 = (IRubyObject)call.getArg2().retrieve(context, self, currScope, currDynScope, temp);
+                IRubyObject o3 = (IRubyObject)call.getArg3().retrieve(context, self, currScope, currDynScope, temp);
+                IRRuntimeHelpers.setCallInfo(context, call.getFlags());
+                result = call.getCallSite().call(context, self, r, o1, o2, o3);
+                setResult(temp, currDynScope, call.getResult(), result);
+                break;
+            }
             case CALL_1OB: {
-                // NOTE: This logic shouod always match OneOperandArgBlockCallInstr
+                // NOTE: This logic should always match OneOperandArgBlockCallInstr
                 OneOperandArgBlockCallInstr call = (OneOperandArgBlockCallInstr)instr;
                 IRubyObject r = (IRubyObject)retrieveOp(call.getReceiver(), context, self, currDynScope, currScope, temp);
                 IRubyObject o = (IRubyObject)call.getArg1().retrieve(context, self, currScope, currDynScope, temp);
                 Block preparedBlock = call.prepareBlock(context, self, currScope, currDynScope, temp);
-                CallSite callSite = call.getCallSite();
                 IRRuntimeHelpers.setCallInfo(context, call.getFlags());
-                result = call.hasLiteralClosure() ?
-                        callSite.callIter(context, self, r, o, preparedBlock) :
-                        callSite.call(context, self, r, o, preparedBlock);
+                if (call.hasLiteralClosure()) {
+                    try {
+                        result = call.getCallSite().call(context, self, r, o, preparedBlock);
+                    } finally {
+                        preparedBlock.escape();
+                    }
+                } else {
+                    result = call.getCallSite().call(context, self, r, o, preparedBlock);
+                }
                 setResult(temp, currDynScope, call.getResult(), result);
                 break;
             }
@@ -350,6 +369,46 @@ public class InterpreterEngine {
                 IRubyObject r = (IRubyObject)retrieveOp(call.getReceiver(), context, self, currDynScope, currScope, temp);
                 IRRuntimeHelpers.setCallInfo(context, call.getFlags());
                 result = call.getCallSite().call(context, self, r);
+                setResult(temp, currDynScope, call.getResult(), result);
+                break;
+            }
+            case CALL_0OB: {
+                // NOTE: This logic should always match ZeroOperandArgBlockCallInstr
+                ZeroOperandArgBlockCallInstr call = (ZeroOperandArgBlockCallInstr)instr;
+                IRubyObject r = (IRubyObject)retrieveOp(call.getReceiver(), context, self, currDynScope, currScope, temp);
+                Block preparedBlock = call.prepareBlock(context, self, currScope, currDynScope, temp);
+                CallSite callSite = call.getCallSite();
+                IRRuntimeHelpers.setCallInfo(context, call.getFlags());
+                if (call.hasLiteralClosure()) {
+                    try {
+                        result = callSite.call(context, self, r, preparedBlock);
+                    } finally {
+                        preparedBlock.escape();
+                    }
+                } else {
+                    result = callSite.call(context, self, r, preparedBlock);
+                }
+                setResult(temp, currDynScope, call.getResult(), result);
+                break;
+            }
+            case CALL_2OB: {
+                // NOTE: This logic should always match TwoOperandArgBlockCallInstr
+                TwoOperandArgBlockCallInstr call = (TwoOperandArgBlockCallInstr)instr;
+                IRubyObject r = (IRubyObject)retrieveOp(call.getReceiver(), context, self, currDynScope, currScope, temp);
+                IRubyObject o1 = (IRubyObject)call.getArg1().retrieve(context, self, currScope, currDynScope, temp);
+                IRubyObject o2 = (IRubyObject)call.getArg2().retrieve(context, self, currScope, currDynScope, temp);
+                Block preparedBlock = call.prepareBlock(context, self, currScope, currDynScope, temp);
+                CallSite callSite = call.getCallSite();
+                IRRuntimeHelpers.setCallInfo(context, call.getFlags());
+                if (call.hasLiteralClosure()) {
+                    try {
+                        result = callSite.call(context, self, r, o1, o2, preparedBlock);
+                    } finally {
+                        preparedBlock.escape();
+                    }
+                } else {
+                    result = callSite.call(context, self, r, o1, o2, preparedBlock);
+                }
                 setResult(temp, currDynScope, call.getResult(), result);
                 break;
             }

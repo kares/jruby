@@ -71,7 +71,7 @@ public abstract class IRBlockBody extends ContextAwareBlockBody {
     @Override
     public IRubyObject yieldSpecific(ThreadContext context, Block block) {
         if (canCallDirect()) {
-            return yieldDirect(context, block, null, null);
+            return yieldDirect(context, block, (IRubyObject[]) null, null);
         } else {
             IRubyObject[] args = IRubyObject.NULL_ARRAY;
             if (block.type == Block.Type.LAMBDA) signature.checkArity(context, args);
@@ -85,10 +85,9 @@ public abstract class IRBlockBody extends ContextAwareBlockBody {
         if (canCallDirect()) {
             if (arg0 instanceof RubyArray<?> ary) { // Unwrap the array arg
                 args = IRRuntimeHelpers.convertValueIntoArgArray(context, ary, signature);
-            } else {
-                args = new IRubyObject[] { arg0 };
+                return yieldDirect(context, block, args, null);
             }
-            return yieldDirect(context, block, args, null);
+            return yieldDirect(context, block, arg0, null);
         } else {
             if (arg0 instanceof RubyArray<?> ary) { // Unwrap the array arg
                 args = IRRuntimeHelpers.convertValueIntoArgArray(context, ary, signature);

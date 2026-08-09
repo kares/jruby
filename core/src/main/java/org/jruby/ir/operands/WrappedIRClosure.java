@@ -73,6 +73,13 @@ public class WrappedIRClosure extends Operand {
     @Override
     public Object retrieve(ThreadContext context, IRubyObject self, StaticScope currScope, DynamicScope currDynScope, Object[] temp) {
         BlockBody body = closure.getBlockBody();
+        // once the block body jitted, hand out the compiled body directly: yields skip the mixed-mode wrapper
+        // and jitted callees' (indy) yield sites can bind it directly - the wrapper body never binds directly
+        // (fully jitted callers get the compiled body straight from ConstructBlockBootstrap already)
+        if (body instanceof MixedModeIRBlockBody mixed) {
+            BlockBody jittedBody = mixed.getJittedBody();
+            if (jittedBody != null) body = jittedBody;
+        }
         closure.getStaticScope().determineModule();
 
         // In non-inlining scenarios, this.self will always be %self.

@@ -2,11 +2,7 @@ package org.jruby.runtime;
 
 import java.io.ByteArrayOutputStream;
 
-import org.jruby.Ruby;
-import org.jruby.RubyModule;
-import org.jruby.compiler.Compilable;
 import org.jruby.ir.IRClosure;
-import org.jruby.ir.IRScope;
 import org.jruby.ir.interpreter.FullInterpreterContext;
 import org.jruby.ir.interpreter.Interpreter;
 import org.jruby.ir.interpreter.InterpreterContext;
@@ -17,40 +13,24 @@ import org.jruby.util.cli.Options;
 import org.jruby.util.log.Logger;
 import org.jruby.util.log.LoggerFactory;
 
-import static org.jruby.api.Access.instanceConfig;
-
-public class MixedModeIRBlockBody extends IRBlockBody implements Compilable<CompiledIRBlockBody> {
+public class MixedModeIRBlockBody extends CompilableIRBlockBody<CompiledIRBlockBody> {
     private static final Logger LOG = LoggerFactory.getLogger(MixedModeIRBlockBody.class);
 
-    protected final boolean pushScope;
-    protected final boolean reuseParentScope;
-    private boolean displayedCFG = false; // FIXME: Remove when we find nicer way of logging CFG
     private InterpreterContext interpreterContext;
-    private int callCount = 0;
     private volatile CompiledIRBlockBody jittedBody;
-    private final IRClosure closure;
 
     public MixedModeIRBlockBody(IRClosure closure, Signature signature) {
         super(closure, signature);
-        this.pushScope = true;
-        this.reuseParentScope = false;
-        this.closure = closure;
 
-        // JIT currently JITs blocks along with their method and no on-demand by themselves.
-        // We only promote to full build here if we are -X-C.
+        // block bodies JIT on demand (by yield count); don't count yields when the JIT is disabled
         if (!closure.getManager().getInstanceConfig().isJitEnabled()) setCallCount(-1);
     }
 
     @Override
     public boolean canCallDirect() {
-        return jittedBody != null || (interpreterContext != null && interpreterContext.hasExplicitCallProtocol());
-    }
-
-    @Override
-    public void setCallCount(int callCount) {
-        synchronized (this) {
-            this.callCount = callCount;
-        }
+        // NOTE: only a jitted body can be called/yielded to directly
+        // this body's interpreterContext is always the startup one (never has an explicit call protocol)
+        return jittedBody != null;
     }
 
     @Override
@@ -59,18 +39,8 @@ public class MixedModeIRBlockBody extends IRBlockBody implements Compilable<Comp
         this.jittedBody = blockBody;
     }
 
-    @Override
-    public IRScope getIRScope() {
-        return closure;
-    }
-
     public BlockBody getJittedBody() {
         return jittedBody;
-    }
-
-    @Override
-    public ArgumentDescriptor[] getArgumentDescriptors() {
-        return closure.getArgumentDescriptors();
     }
 
     public InterpreterContext ensureInstrsReady() {
@@ -114,6 +84,14 @@ public class MixedModeIRBlockBody extends IRBlockBody implements Compilable<Comp
     }
 
     @Override
+    protected IRubyObject yieldDirect(ThreadContext context, Block block, IRubyObject value, IRubyObject self) {
+        // We should never get here if jittedBody is null
+        assert jittedBody != null : "direct yield in MixedModeIRBlockBody without jitted body";
+
+        return jittedBody.yieldDirect(context, block, value, self);
+    }
+
+    @Override
     protected IRubyObject commonYieldPath(ThreadContext context, Block block, IRubyObject[] args, IRubyObject self, Block blockArg) {
         InterpreterContext ic = ensureInstrsReady();
 
@@ -141,36 +119,12 @@ public class MixedModeIRBlockBody extends IRBlockBody implements Compilable<Comp
             postYield(context, ic, binding, oldVis, prevFrame);
 
             // trigger JIT on the trailing edge, so we make a best effort to not interpret again after jitting
-            tryJIT(this, context);
-        }
-    }
-
-    // TODO: Duplicated in InterpretedIRBlockBody
-    private static void tryJIT(MixedModeIRBlockBody body, ThreadContext context) {
-        // don't JIT during runtime boot
-        if (body.callCount >= 0 && (!context.runtime.isBooting() || Options.JIT_KERNEL.load())) {
-            // we don't synchronize callCount++ it does not matter if count isn't accurate
-            if (body.callCount++ >= instanceConfig(context).getJitThreshold()) {
-                body.promoteToFullBuild(context, false);
-            }
+            tryJIT(context);
         }
     }
 
     @Override
-    public boolean forceBuild(ThreadContext context) {
-        promoteToFullBuild(context, true);
-
-        // Force = true should trigger jit to run synchronously, so we'll be optimistic
-        return true;
-    }
-
-    @Override
-    public boolean isBuildComplete() {
-        // Successful build and disabled build both set callCount to -1, indicating no further build is possible.
-        return callCount < 0;
-    }
-
-    private void promoteToFullBuild(ThreadContext context, boolean force) {
+    protected void promoteToFullBuild(ThreadContext context, boolean force) {
         synchronized (this) { // disable same jit tasks from entering queue twice
             if (this.callCount >= 0) {
                 this.callCount = Integer.MIN_VALUE; // so that callCount++ stays < 0
@@ -192,14 +146,4 @@ public class MixedModeIRBlockBody extends IRBlockBody implements Compilable<Comp
             }
         }
     }
-
-    public RubyModule getImplementationClass() {
-        return closure.getStaticScope().getModule();
-    }
-
-    @Override
-    public IRClosure getScope() {
-        return closure;
-    }
-
 }

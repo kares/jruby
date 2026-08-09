@@ -1,13 +1,11 @@
 package org.jruby.runtime.callsite;
 
-import org.jruby.RubyBoolean;
 import org.jruby.RubySymbol;
 import org.jruby.runtime.Helpers;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.RubyClass;
 import org.jruby.internal.runtime.methods.DynamicMethod;
-import org.jruby.util.TypeConverter;
 
 import static org.jruby.RubyBasicObject.getMetaClass;
 import static org.jruby.api.Check.checkID;
@@ -62,15 +60,14 @@ public class RespondToCallSite extends MonomorphicCallSite {
     }
 
     @Override
-    public IRubyObject call(ThreadContext context, IRubyObject caller, IRubyObject self, IRubyObject name) { 
+    public IRubyObject call(ThreadContext context, IRubyObject caller, IRubyObject self, IRubyObject name) {
         RubyClass klass = getMetaClass(self);
         RespondToTuple tuple = respondToTuple;
         if (tuple.cacheOk(klass)) {
             String id = checkID(context, name).idString();
             if (id.equals(tuple.name) && tuple.checkVisibility) return tuple.respondsTo;
         }
-        // go through normal call logic, which will hit overridden cacheAndCall
-        return super.call(context, caller, self, name);
+        return callRespondTo(context, caller, self, klass, name);
     }
 
     @Override
@@ -81,8 +78,7 @@ public class RespondToCallSite extends MonomorphicCallSite {
             String id = checkID(context, name).idString();
             if (id.equals(tuple.name) && !bool.isTrue() == tuple.checkVisibility) return tuple.respondsTo;
         }
-        // go through normal call logic, which will hit overridden cacheAndCall
-        return super.call(context, caller, self, name, bool);
+        return callRespondTo(context, caller, self, klass, name, bool);
     }
 
     public boolean respondsTo(ThreadContext context, IRubyObject caller, IRubyObject self) {
@@ -92,8 +88,7 @@ public class RespondToCallSite extends MonomorphicCallSite {
             String strName = respondToName;
             if (strName.equals(tuple.name) && tuple.checkVisibility) return tuple.respondsToBoolean;
         }
-        // go through normal call logic, which will hit overridden cacheAndCall
-        return super.call(context, caller, self, getRespondToNameSym(context)).isTrue();
+        return callRespondTo(context, caller, self, klass, getRespondToNameSym(context)).isTrue();
     }
 
     public boolean respondsTo(ThreadContext context, IRubyObject caller, IRubyObject self, boolean includePrivate) {
@@ -103,25 +98,18 @@ public class RespondToCallSite extends MonomorphicCallSite {
             String strName = respondToName;
             if (strName.equals(tuple.name) && !includePrivate == tuple.checkVisibility) return tuple.respondsToBoolean;
         }
-        // go through normal call logic, which will hit overridden cacheAndCall
-        return super.call(context, caller, self, getRespondToNameSym(context), asBoolean(context, includePrivate)).isTrue();
+        return callRespondTo(context, caller, self, klass, getRespondToNameSym(context), asBoolean(context, includePrivate)).isTrue();
     }
 
-    private RubySymbol getRespondToNameSym(ThreadContext context) {
-        RubySymbol sym = respondToNameSym;
-        if (sym == null) respondToNameSym = sym = asSymbol(context, respondToName);
-        return sym;
-    }
-
-    @Override
-    protected IRubyObject cacheAndCall(ThreadContext context, IRubyObject caller, IRubyObject self, RubyClass selfType, IRubyObject arg) {
-        CacheEntry entry = selfType.searchWithCache(methodName);
-        DynamicMethod method = entry.method;
-
-        if (methodMissing(method, caller)) {
-            entry = Helpers.createMethodMissingEntry(context, selfType, callType, method.getVisibility(), entry.token, methodName);
-            method = entry.method;
+    private IRubyObject callRespondTo(ThreadContext context, IRubyObject caller, IRubyObject self, RubyClass selfType,
+            IRubyObject arg) {
+        CacheEntry cache = this.cache;
+        if (cache.typeOk(selfType)) {
+            return cache.method.call(context, self, cache.sourceModule, methodName, arg);
         }
+
+        CacheEntry entry = respondToEntry(context, caller, selfType);
+        DynamicMethod method = entry.method;
 
         // alternate logic to cache the result of respond_to if it's the standard one
         if (method.isBuiltin()) {
@@ -134,15 +122,15 @@ public class RespondToCallSite extends MonomorphicCallSite {
         return method.call(context, self, entry.sourceModule, methodName, arg);
     }
 
-    @Override
-    protected IRubyObject cacheAndCall(ThreadContext context, IRubyObject caller, IRubyObject self, RubyClass selfType, IRubyObject arg0, IRubyObject arg1) {
-        CacheEntry entry = selfType.searchWithCache(methodName);
-        DynamicMethod method = entry.method;
-
-        if (methodMissing(method, caller)) {
-            entry = Helpers.createMethodMissingEntry(context, selfType, callType, method.getVisibility(), entry.token, methodName);
-            method = entry.method;
+    private IRubyObject callRespondTo(ThreadContext context, IRubyObject caller, IRubyObject self, RubyClass selfType,
+            IRubyObject arg0, IRubyObject arg1) {
+        CacheEntry cache = this.cache;
+        if (cache.typeOk(selfType)) {
+            return cache.method.call(context, self, cache.sourceModule, methodName, arg0, arg1);
         }
+
+        CacheEntry entry = respondToEntry(context, caller, selfType);
+        DynamicMethod method = entry.method;
 
         // alternate logic to cache the result of respond_to if it's the standard one
         if (method.equals(context.runtime.getRespondToMethod())) {
@@ -153,6 +141,22 @@ public class RespondToCallSite extends MonomorphicCallSite {
         // normal logic if it's not the builtin respond_to? method
         entry = setCache(entry, self); // cache = entry;
         return method.call(context, self, entry.sourceModule, methodName, arg0, arg1);
+    }
+
+    private CacheEntry respondToEntry(ThreadContext context, IRubyObject caller, RubyClass selfType) {
+        CacheEntry entry = selfType.searchWithCache(methodName);
+        DynamicMethod method = entry.method;
+
+        if (methodMissing(method, caller)) {
+            entry = Helpers.createMethodMissingEntry(context, selfType, callType, method.getVisibility(), entry.token, methodName);
+        }
+        return entry;
+    }
+
+    private RubySymbol getRespondToNameSym(ThreadContext context) {
+        RubySymbol sym = respondToNameSym;
+        if (sym == null) respondToNameSym = sym = asSymbol(context, respondToName);
+        return sym;
     }
 
     private IRubyObject fastRespondTo(ThreadContext context, IRubyObject arg, CacheEntry entry, RubyClass selfType, boolean checkVisibility) {

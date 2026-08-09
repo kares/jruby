@@ -39,6 +39,8 @@ import org.jruby.runtime.CompiledIRBlockBody;
 import org.jruby.runtime.MixedModeIRBlockBody;
 import org.jruby.runtime.ThreadContext;
 
+import java.lang.invoke.MethodHandle;
+
 import static org.jruby.compiler.MethodJITTask.*;
 
 class BlockJITTask extends JITCompiler.Task {
@@ -84,11 +86,17 @@ class BlockJITTask extends JITCompiler.Task {
 
         // successfully got back a jitted body
         String jittedName = methodContext.getVariableName();
+        MethodHandle variable = JITCompiler.PUBLIC_LOOKUP.findStatic(sourceClass, jittedName, JVMVisitor.CLOSURE_SIGNATURE.type());
 
-        // blocks only have variable-arity
+        // single-arg blocks also get a scalar entry point - avoiding args array boxing per yield
+        String specificName = methodContext.getSpecificName();
+        MethodHandle oneValue = specificName == null ? null :
+                JITCompiler.PUBLIC_LOOKUP.findStatic(sourceClass, specificName, JVMVisitor.CLOSURE_SIGNATURE_1_ARG.type());
+
         body.completeBuild(context,
                 new CompiledIRBlockBody(
-                        JITCompiler.PUBLIC_LOOKUP.findStatic(sourceClass, jittedName, JVMVisitor.CLOSURE_SIGNATURE.type()),
+                        variable,
+                        oneValue,
                         scope,
                         closure.getFile(),
                         closure.getLine(),

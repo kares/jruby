@@ -275,8 +275,11 @@ public class IRReaderStream implements IRReaderDecoder, IRPersistenceValues {
             case CALL_1D:
             case CALL_1O:
             case CALL_2O:
+            case CALL_3O:
             case CALL_1OB:
             case CALL_0O:
+            case CALL_0OB:
+            case CALL_2OB:
             case CALL: return CallInstr.decode(this);
             case CHECK_ARGS_ARRAY_ARITY: return CheckArgsArrayArityInstr.decode(this);
             case CHECK_ARITY: return CheckArityInstr.decode(this);

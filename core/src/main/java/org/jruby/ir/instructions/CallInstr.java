@@ -9,7 +9,10 @@ import org.jruby.ir.instructions.specialized.OneFixnumArgNoBlockCallInstr;
 import org.jruby.ir.instructions.specialized.OneFloatArgNoBlockCallInstr;
 import org.jruby.ir.instructions.specialized.OneOperandArgBlockCallInstr;
 import org.jruby.ir.instructions.specialized.OneOperandArgNoBlockCallInstr;
+import org.jruby.ir.instructions.specialized.ThreeOperandArgNoBlockCallInstr;
+import org.jruby.ir.instructions.specialized.TwoOperandArgBlockCallInstr;
 import org.jruby.ir.instructions.specialized.TwoOperandArgNoBlockCallInstr;
+import org.jruby.ir.instructions.specialized.ZeroOperandArgBlockCallInstr;
 import org.jruby.ir.instructions.specialized.ZeroOperandArgNoBlockCallInstr;
 import org.jruby.ir.operands.NullBlock;
 import org.jruby.ir.operands.Operand;
@@ -32,7 +35,9 @@ public class CallInstr extends CallBase implements ResultInstr {
         if (!containsArgSplat(args)) {
             boolean hasClosure = closure != NullBlock.INSTANCE;
 
-            if (args.length == 0 && !hasClosure) {
+            if (args.length == 0) {
+                if (hasClosure) return new ZeroOperandArgBlockCallInstr(scope, callType, result, name, receiver, args, closure, flags, isPotentiallyRefined);
+
                 return new ZeroOperandArgNoBlockCallInstr(scope, callType, result, name, receiver, args, flags, isPotentiallyRefined);
             } else if (args.length == 1) {
                 if (hasClosure) return new OneOperandArgBlockCallInstr(scope, callType, result, name, receiver, args, closure, flags, isPotentiallyRefined);
@@ -47,8 +52,12 @@ public class CallInstr extends CallBase implements ResultInstr {
                 }
 
                 return new OneOperandArgNoBlockCallInstr(scope, callType, result, name, receiver, args, flags, isPotentiallyRefined);
-            } else if (args.length == 2 && !hasClosure) {
+            } else if (args.length == 2) {
+                if (hasClosure) return new TwoOperandArgBlockCallInstr(scope, callType, result, name, receiver, args, closure, flags, isPotentiallyRefined);
+
                 return new TwoOperandArgNoBlockCallInstr(scope, callType, result, name, receiver, args, flags, isPotentiallyRefined);
+            } else if (args.length == 3 && !hasClosure) {
+                return new ThreeOperandArgNoBlockCallInstr(scope, callType, result, name, receiver, args, flags, isPotentiallyRefined);
             }
         }
 

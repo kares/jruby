@@ -192,7 +192,11 @@ public class Block implements FunctionOneOrTwoOrThree<ThreadContext, IRubyObject
     }
 
     public IRubyObject yield(ThreadContext context, IRubyObject value) {
-        return body.yield(context, this, value);
+        // NOTE: dispatching to doYield/yieldDirect here (instead of the equivalent BlockBody.yield) keeps a Java
+        // frame off the stack on every Ruby yield - interpreted traces are dominated by these
+        return body.canCallDirect() ?
+                body.yieldDirect(context, this, value, null) :
+                body.doYield(context, this, value);
     }
 
     /**
@@ -228,30 +232,44 @@ public class Block implements FunctionOneOrTwoOrThree<ThreadContext, IRubyObject
     }
 
     // PROC/NORMAL/THREAD will spread a single argument array if the block expects more than one required argument.
-    // This should be the only argument massaging in yield.  This handles all argument conversion logic except
-    // for the generic Block#yield(IRubyObject value).
-    private static IRubyObject[] maybeSpreadArgs(ThreadContext context, IRubyObject[] args, Block block) {
+    private static boolean isSpreadArgs(Block block, int argsLength) {
         Signature sig = block.getSignature();
-        return block.type != Type.LAMBDA && args.length == 1 && sig.isSpreadable()
-                && !(sig.opt() + sig.required() == 1 && !sig.hasRest()) ?
-                IRRuntimeHelpers.toAry(context, args) :
-                args;
+        return block.type != Type.LAMBDA && argsLength == 1 && sig.isSpreadable()
+            && !(sig.opt() + sig.required() == 1 && !sig.hasRest());
+    }
+
+    // This should be the only argument massaging in yield.
+    // This handles all argument conversion logic except for the generic Block#yield(IRubyObject value).
+    private static IRubyObject[] maybeSpreadArgs(ThreadContext context, Block block, IRubyObject... args) {
+        return isSpreadArgs(block, args.length) ? IRRuntimeHelpers.toAry(context, args) : args;
     }
 
     public IRubyObject yieldNonArray(ThreadContext context, IRubyObject value, IRubyObject self) {
-        IRubyObject[] args = maybeSpreadArgs(context, new IRubyObject[] { value }, this);
+        final boolean spreads = isSpreadArgs(this, 1);
 
-        return body.yield(context, this, args, self);
+        // a single value that will not be spread can use the no boxing (for jitted 1-arg blocks)
+        if (!spreads && body.canCallDirect()) return body.yieldDirect(context, this, value, self);
+
+        IRubyObject[] args = spreads ? IRRuntimeHelpers.toAry(context, value) : new IRubyObject[] { value };
+        return body.canCallDirect() ?
+            body.yieldDirect(context, this, args, self) :
+            body.doYield(context, this, args, self);
     }
 
     public IRubyObject yieldArray(ThreadContext context, IRubyObject value, IRubyObject self) {
-        IRubyObject[] args = maybeSpreadArgs(context, IRRuntimeHelpers.singleBlockArgToArray(value), this);
+        IRubyObject[] args = maybeSpreadArgs(context, this, IRRuntimeHelpers.singleBlockArgToArray(value));
 
-        return body.yield(context, this, args, self);
+        return body.canCallDirect() ?
+                body.yieldDirect(context, this, args, self) :
+                body.doYield(context, this, args, self);
     }
 
     public IRubyObject yieldValues(ThreadContext context, IRubyObject[] args) {
-        return body.yield(context, this, maybeSpreadArgs(context, args, this), null);
+        IRubyObject[] spreadArgs = maybeSpreadArgs(context, this, args);
+
+        return body.canCallDirect() ?
+                body.yieldDirect(context, this, spreadArgs, null) :
+                body.doYield(context, this, spreadArgs, null);
     }
 
     public Block cloneBlock() {

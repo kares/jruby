@@ -16,39 +16,44 @@ import org.jruby.runtime.DynamicScope;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
 
-public class OneOperandArgBlockCallInstr extends CallInstr {
+public class TwoOperandArgBlockCallInstr extends CallInstr {
     // normal constructor
-    public OneOperandArgBlockCallInstr(IRScope scope, CallType callType, Variable result, RubySymbol name,
+    public TwoOperandArgBlockCallInstr(IRScope scope, CallType callType, Variable result, RubySymbol name,
                                        Operand receiver, Operand[] args, Operand closure, int flags,
                                        boolean isPotentiallyRefined) {
-        super(scope, Operation.CALL_1OB, callType, result, name, receiver, args, closure, flags, isPotentiallyRefined);
+        super(scope, Operation.CALL_2OB, callType, result, name, receiver, args, closure, flags, isPotentiallyRefined);
     }
 
     @Override
     public Instr clone(CloneInfo ii) {
-        return new OneOperandArgBlockCallInstr(ii.getScope(), getCallType(), ii.getRenamedVariable(result), getName(),
+        return new TwoOperandArgBlockCallInstr(ii.getScope(), getCallType(), ii.getRenamedVariable(result), getName(),
                 getReceiver().cloneForInlining(ii), cloneCallArgs(ii),
                 getClosureArg().cloneForInlining(ii), getFlags(), isPotentiallyRefined()
         );
     }
 
+    public Operand getArg2() {
+        return operands[2];
+    }
+
     @Override
     public Object interpret(ThreadContext context, StaticScope currScope, DynamicScope dynamicScope, IRubyObject self, Object[] temp) {
-        // NOTE: This logic shouod always match the CALL_10B logic in InterpreterEngine.processCall
+        // NOTE: This logic should always match the CALL_2OB logic in InterpreterEngine.processCall
         IRubyObject object = (IRubyObject) getReceiver().retrieve(context, self, currScope, dynamicScope, temp);
         IRubyObject arg1 = (IRubyObject) getArg1().retrieve(context, self, currScope, dynamicScope, temp);
+        IRubyObject arg2 = (IRubyObject) getArg2().retrieve(context, self, currScope, dynamicScope, temp);
         Block preparedBlock = prepareBlock(context, self, currScope, dynamicScope, temp);
 
         IRRuntimeHelpers.setCallInfo(context, getFlags());
 
         if (hasLiteralClosure()) {
             try {
-                return getCallSite().call(context, self, object, arg1, preparedBlock);
+                return getCallSite().call(context, self, object, arg1, arg2, preparedBlock);
             } finally {
                 preparedBlock.escape();
             }
         }
 
-        return getCallSite().call(context, self, object, arg1, preparedBlock);
+        return getCallSite().call(context, self, object, arg1, arg2, preparedBlock);
     }
 }
