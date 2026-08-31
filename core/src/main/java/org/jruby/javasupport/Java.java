@@ -631,24 +631,6 @@ public class Java implements Library {
             super(cls, PUBLIC, "__jcreate!");
         }
 
-        /**
-         * Disambiguate which ctor index to call from the given cache
-         * @param args argument list for the ctors
-         * @param cache cache of ctors
-         * @param runtime
-         * @return Index of ctor in cache to call, or throws a new exception
-         */
-        public static int forTypes(Ruby runtime, IRubyObject[] args, ConstructorCache cache) {
-            JavaConstructor ctor = matchConstructorIndex(runtime.getCurrentContext(), cache.constructors, cache,
-                    args.length, args);
-            int index = cache.indexOf(ctor);
-            if (index < 0) {
-                // use our error otherwise
-                throw argumentError(runtime.getCurrentContext(), "index error finding superconstructor");
-            }
-            return index;
-        }
-
         private static JavaProxyClass getProxyClass(final ThreadContext context, final IRubyObject self) {
             final RubyClass metaClass = self.getMetaClass();
             IRubyObject proxyClass = metaClass.getInstanceVariable("@java_proxy_class");
@@ -759,9 +741,9 @@ public class Java implements Library {
         }
 
         // generic (slowest) path
-        public static <T extends ParameterTypes> T matchConstructorIndex(final ThreadContext context,
-            final T[] constructors, final CallableCache<ParameterTypes> cache, final int arity, final IRubyObject... args) {
-            ArrayList<T> forArity = findCallablesForArity(arity, constructors);
+        static <T extends ParameterTypes> T matchConstructorInternal(final ThreadContext context,
+            final T[] constructors, final CallableCache<ParameterTypes> cache, final IRubyObject... args) {
+            ArrayList<T> forArity = findCallablesForArity(args.length, constructors);
 
             if (forArity.isEmpty()) throw argumentError(context, "wrong number of arguments for constructor");
 

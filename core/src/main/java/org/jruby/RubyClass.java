@@ -2057,7 +2057,6 @@ public class RubyClass extends RubyModule {
             }
         }
 
-        //TODO: only generate that are overrideable (javaproxyclass)
         protected void defineInstanceMethods(ThreadContext context, Set<String> instanceMethods) {
             Set<String> defined = new HashSet<>();
             for (Map.Entry<String,DynamicMethod> methodEntry : getMethods().entrySet()) { // TODO: explicitly included but not-yet defined methods?
@@ -2079,11 +2078,10 @@ public class RubyClass extends RubyModule {
 
                 Class<?>[] methodSignature = getMethodSignatures().get(callid); // ruby side, use callid
 
-                // for concrete extension, see if the method is one we are overriding,
-                // even if we didn't specify it manually
+                // For concrete extensions, implicit signatures come from overridden Java methods; explicit signatures
+                // are also generated so Ruby methods can expose new Java-visible entry points.
                 if (methodSignature == null) {
-                    // TODO: should inherited search for java mangledName?
-                    for (Class<?>[] sig : searchInheritedSignatures(id, arity)) { // id (vs callid) here as this is searching in java
+                    for (Class<?>[] sig : searchInheritedSignatures(JavaNameMangler.mangleMethodName(id), arity)) {
                         String signature = defineInstanceMethod(context, id, callid, arity, position, sig);
                         if (signature != null) instanceMethods.add(signature);
                     }
@@ -2294,8 +2292,7 @@ public class RubyClass extends RubyModule {
         }
 
     } // class MethodReificator
-    
-    //public or private?
+
     public class ConcreteJavaReifier extends MethodReificator {
         // names follow pattern of `this$0` from javac nested classes to hopefully be ignored by 
         // sane reflection tools. Also similarly marked as synthetic
@@ -2469,6 +2466,7 @@ public class RubyClass extends RubyModule {
             PositionAware position = getPositionOrDefault(methodEntry);
             cw.visitSource(position.getFile(), null);
             Set<String> generatedCtors = new HashSet<>();
+            final boolean generateRubyConstructors = !classConfig.IroCtors;
 
             if (candidates.isEmpty()) {
                 throw typeError(context, "class " + reifiedParent.getName() + " doesn't have a public or protected constructor");
@@ -2481,9 +2479,8 @@ public class RubyClass extends RubyModule {
             savedSuperCtors = savedCtorsList.toArray(new JavaConstructor[savedCtorsList.size()]);
 
             if (zeroArg.isPresent()) {
-                // standard constructor that accepts Ruby, RubyClass. For use by JRuby (internally)
                 if (!classConfig.allCtors) {
-                    if (!isNestedRuby) {
+                    if (generateRubyConstructors && !isNestedRuby) {
                         generatedCtors.add(RealClassGenerator.makeConcreteConstructorProxy(cw, position, true, this,
                                 new Class[0], isNestedRuby));
                     }
@@ -2495,11 +2492,12 @@ public class RubyClass extends RubyModule {
                 }
             }
 
-            // TODO: remove rubyCtors if IRO is enabled (by default)
             if (classConfig.allCtors && !isNestedRuby) {
                 for (Constructor<?> constructor : candidates) {
-                    if (classConfig.rubyConstructable) generatedCtors.add(RealClassGenerator.makeConcreteConstructorProxy(cw,
-                            position, true, this, constructor.getParameterTypes(), false));
+                    if (generateRubyConstructors && classConfig.rubyConstructable) {
+                        generatedCtors.add(RealClassGenerator.makeConcreteConstructorProxy(cw,
+                                position, true, this, constructor.getParameterTypes(), false));
+                    }
 
                     if (classConfig.javaConstructable) generatedCtors.add(RealClassGenerator.makeConcreteConstructorProxy(cw,
                             position, false, this, constructor.getParameterTypes(), false));
@@ -2511,7 +2509,8 @@ public class RubyClass extends RubyModule {
                 for (Class<?>[] constructor : classConfig.extraCtors) {
                     // TODO: support annotations in ctor params
 
-                    if (classConfig.rubyConstructable && !generatedCtors.contains(sig(void.class, join(constructor, Ruby.class, RubyClass.class)))) {
+                    if (generateRubyConstructors && classConfig.rubyConstructable &&
+                            !generatedCtors.contains(sig(void.class, join(constructor, Ruby.class, RubyClass.class)))) {
                         generatedCtors.add(RealClassGenerator.makeConcreteConstructorProxy(cw, position, true, this,
                                 constructor, isNestedRuby));
                     }
