@@ -7,7 +7,6 @@ import java.net.URISyntaxException;
 import java.net.URL;
 import java.net.URLClassLoader;
 import java.nio.channels.Channel;
-import java.nio.channels.Channels;
 import java.nio.file.attribute.FileTime;
 import java.util.*;
 
@@ -16,6 +15,7 @@ import jnr.posix.FileStat;
 
 import org.jruby.Ruby;
 import org.jruby.RubyInstanceConfig;
+import org.jruby.util.io.SeekableInputStreamChannel;
 
 public class URLResource implements FileResource, DummyResourceStat.FileResourceExt {
 
@@ -164,7 +164,7 @@ public class URLResource implements FileResource, DummyResourceStat.FileResource
 
     @Override
     public Channel openChannel( int flags, int perm ) throws IOException {
-        return Channels.newChannel(openInputStream());
+        return new SeekableInputStreamChannel(this::openInputStream, -1, absolutePath());
     }
 
     @Override
