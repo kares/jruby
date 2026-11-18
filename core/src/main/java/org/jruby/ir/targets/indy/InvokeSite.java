@@ -792,7 +792,8 @@ public abstract class InvokeSite extends MutableCallSite {
                     entry.method instanceof Helpers.MethodMissingWrapper);
             mh = buildGenericHandle(entry);
         } else {
-            mh = getHandle(context, self, entry);
+            mh = tryToBuildKindOfHandle(context, entry, self, args);
+            if (mh == null) mh = getHandle(context, self, entry);
         }
 
         finishBinding(entry, mh, self, selfClass, switchPoint);
@@ -815,7 +816,8 @@ public abstract class InvokeSite extends MutableCallSite {
                     entry.method instanceof Helpers.MethodMissingWrapper);
             mh = buildGenericHandle(entry);
         } else {
-            mh = getHandle(context, self, entry);
+            mh = tryToBuildKindOfHandle(context, entry, self, args);
+            if (mh == null) mh = getHandle(context, self, entry);
         }
 
         finishBinding(entry, mh, self, selfClass, switchPoint);
@@ -1284,6 +1286,49 @@ public abstract class InvokeSite extends MutableCallSite {
         }
 
         return mh;
+    }
+
+    /**
+     * Folds the builtin <code>Kernel#is_a?</code> / <code>kind_of?</code> as a constant answer for the sampled
+     * argument (YJIT's <code>jit_rb_kernel_is_a</code>, extended to module targets).
+     *
+     * @implNote The site already guards on receiver's class and its method SwitchPoint, which also fires when class
+     *           (or an ancestor) gets a module included or prepended, so only the argument needs an identity guard.
+     */
+    MethodHandle tryToBuildKindOfHandle(ThreadContext context, CacheEntry entry, IRubyObject self, IRubyObject[] args) {
+        if (arity != 1 || args.length != 1 || signature.lastArgType() == Block.class) return null;
+
+        final DynamicMethod method = entry.method;
+        if (!method.isBuiltin() || method.getImplementationClass() != kernelModule(context)) return null;
+        final String name = name();
+        if (!name.equals("is_a?") && !name.equals("kind_of?")) return null;
+
+        // Java proxy types answer through Class.isInstance, which the receiver's Ruby class does not decide
+        if (!(args[0] instanceof RubyModule type) || type.kindOf != RubyModule.KindOf.DEFAULT_KIND_OF) return null;
+
+        MethodHandle nativeHandle = buildNativeHandle(entry, false);
+        if (nativeHandle == null) return null;
+
+        final IRubyObject result = type.isInstance(self) ? context.tru : context.fals;
+        MethodHandle answer = dropArguments(constant(IRubyObject.class, result), 0, signature.type().parameterList());
+        MethodHandle test = SmartBinder.from(signature.changeReturn(boolean.class))
+                .permute("arg0")
+                .insert(1, "expected", IRubyObject.class, type)
+                .invoke(IDENTICAL)
+                .handle();
+
+        if (Options.INVOKEDYNAMIC_LOG_BINDING.load()) {
+            LOG.info(name + "\tbound as constant " + result + " for " + type.getName(context) + " (" + file + ":" + line + ")");
+        }
+
+        return MethodHandles.guardWithTest(test, answer, nativeHandle);
+    }
+
+    private static final MethodHandle IDENTICAL = Binder.from(boolean.class, IRubyObject.class, IRubyObject.class)
+            .invokeStaticQuiet(LOOKUP, InvokeSite.class, "identical");
+
+    public static boolean identical(IRubyObject arg, IRubyObject expected) {
+        return arg == expected;
     }
 
     MethodHandle buildNotEqualHandle(ThreadContext context, CacheEntry entry, IRubyObject self) {
