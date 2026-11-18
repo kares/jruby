@@ -1470,6 +1470,85 @@ public class RubyClass extends RubyModule {
         return realClass;
     }
 
+    @Override
+    public boolean hasAncestor(RubyModule type) {
+        if (type instanceof RubyClass klass) {
+            int inherits = inheritsFrom(klass);
+            if (inherits >= 0) return inherits == 1;
+        }
+        return super.hasAncestor(type);
+    }
+
+    @Override
+    public boolean isKindOfModule(RubyModule type) {
+        if (type instanceof RubyClass klass) {
+            int inherits = inheritsFrom(klass);
+            if (inherits >= 0) return inherits == 1;
+        }
+        return super.isKindOfModule(type);
+    }
+
+    /**
+     * Whether the given class is this class or one of its superclasses, checked in O(1) against the chain of
+     * superclasses (CRuby's <code>class_search_class_ancestor</code>)
+     *
+     * @param klass the class to look for
+     * @return 1 if it is, 0 if it is not, -1 when it can not tell (an include wrapper, or a class that is not
+     * initialized yet) and the ancestors need to be walked
+     */
+    @CRuby(value = "class_search_class_ancestor", file = "object.c")
+    final int inheritsFrom(RubyClass klass) {
+        RubyClass[] classes = superClasses();
+        if (classes == null) return -1;
+        RubyClass[] klassClasses = klass.superClasses();
+        if (klassClasses == null) return -1;
+
+        int depth = klassClasses.length - 1;
+        return depth < classes.length && classes[depth] == klass ? 1 : 0;
+    }
+
+    /**
+     * @return BasicObject, ..., superclass, this class - indexed by depth, include/prepend wrappers skipped
+     * (null for a wrapper or a class with an incomplete hierarchy)
+     */
+    private RubyClass[] superClasses() {
+        RubyClass[] classes = this.superClasses;
+        if (classes != null) return classes;
+
+        if (this instanceof DelegatedModule) return null;
+
+        RubyClass superClass = realSuperClass(getSuperClass());
+        if (superClass == null) {
+            // NOTE: the superclass of a class is not set before Class#initialize (or initialize_copy)
+            if (this != runtime.getBasicObject()) return null;
+            classes = new RubyClass[] { this };
+        } else {
+            RubyClass[] superClasses = superClass.superClasses();
+            if (superClasses == null) return null;
+            classes = Arrays.copyOf(superClasses, superClasses.length + 1);
+            classes[superClasses.length] = this;
+        }
+        return this.superClasses = classes;
+    }
+
+    private static RubyClass realSuperClass(RubyClass superClass) {
+        while (superClass instanceof DelegatedModule) superClass = superClass.getSuperClass();
+        return superClass;
+    }
+
+    // include/prepend only insert wrappers, the cached chain is stale when a real superclass is swapped
+    // (at boot ArrayJavaProxy gets rewired from JavaProxy to Object)
+    void superClassUpdated(RubyClass superClass) {
+        RubyClass[] classes = this.superClasses;
+        if (classes == null) return;
+        if (classes.length < 2 || classes[classes.length - 2] != realSuperClass(superClass)) clearSuperClasses();
+    }
+
+    private void clearSuperClasses() {
+        this.superClasses = null;
+        getSubclassesForRead().forEachClass(RubyClass::clearSuperClasses);
+    }
+
     /**
      * Equivalent to {@link #getRealClass()}.
      *
@@ -3346,6 +3425,7 @@ public class RubyClass extends RubyModule {
     protected ObjectMarshal marshal;
     private volatile RubyClassSet subclasses;
     private volatile RubyClassSet visibleSubclasses;
+    private volatile RubyClass[] superClasses; // lazy, see superClasses()
     private static final AtomicReferenceFieldUpdater<RubyClass, RubyClassSet> SUBCLASSES_UPDATER = AtomicReferenceFieldUpdater.newUpdater(RubyClass.class, RubyClassSet.class, "subclasses");
     private static final AtomicReferenceFieldUpdater<RubyClass, RubyClassSet> VISIBLE_SUBCLASSES_UPDATER = AtomicReferenceFieldUpdater.newUpdater(RubyClass.class, RubyClassSet.class, "visibleSubclasses");
     private int concreteSubclassesEstimate = 4;

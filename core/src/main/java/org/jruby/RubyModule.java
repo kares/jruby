@@ -1800,6 +1800,7 @@ public class RubyModule extends RubyObject {
         // update superclass reference
         this.superClass = superClass;
         if (superClass != null && superClass.isSynchronized()) becomeSynchronized();
+        if (this instanceof RubyClass klass) klass.superClassUpdated(superClass);
         return (T) this;
     }
 
@@ -3393,6 +3394,15 @@ public class RubyModule extends RubyObject {
     @JRubyMethod(name = "<=")
     public IRubyObject op_le(ThreadContext context, IRubyObject arg) {
         RubyModule argMod = castAsModule(context, arg, "compared with non class/module");
+
+        if (this instanceof RubyClass klass && argMod instanceof RubyClass argClass) {
+            int inherits = klass.inheritsFrom(argClass);
+            if (inherits == 1) return context.tru;
+            if (inherits == 0) {
+                inherits = argClass.inheritsFrom(klass);
+                if (inherits >= 0) return inherits == 1 ? context.fals : context.nil;
+            }
+        }
 
         if (searchAncestor(argMod.getMethodLocation()) != null) return context.tru;
         /* not mod < arg; check if mod > arg */
