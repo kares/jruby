@@ -3413,12 +3413,14 @@ public class RubyModule extends RubyObject {
 
     @CRuby(value = "class_search_ancestor", file = "object.c")
     protected RubyModule searchAncestor(RubyModule c) {
-        RubyModule cl = this;
-        while (cl != null) {
-            if (cl == c || cl.isSame(c) || cl.getDelegate().getOrigin() == c) {
-                return cl;
-            }
-            cl = cl.getSuperClass();
+        // c is only a delegate when Module#<= passes a prepended method location, only then can isSame match beyond
+        // the origin check (refinement wrappers may wrap a wrapper, so the origin's origin is the delegate's origin)
+        final boolean delegated = c.getDelegate() != c;
+        for (RubyModule cl = this; cl != null; cl = cl.getSuperClass()) {
+            if (cl == c) return cl;
+            // plain class or module only matches itself (only include/prepend wrappers stand for another one)
+            RubyModule origin = cl.getOrigin();
+            if (origin != cl && (origin.getOrigin() == c || (delegated && cl.isSame(c)))) return cl;
         }
         return null;
     }
