@@ -1546,8 +1546,17 @@ public abstract class InvokeSite extends MutableCallSite {
     }
 
     protected SmartHandle testTarget(IRubyObject self, RubyModule testClass) {
+        if (self instanceof RubyFixnum) {
+            // NOTE: RubyFixnum is abstract with width-specialized subclasses, an exact Java class guard fails
+            // (and rebinds the site) every time a value crosses a width, e.g. `i < n` counting past 127
+            return SmartBinder
+                    .from(signature.asFold(boolean.class))
+                    .permute("self")
+                    .cast(boolean.class, Object.class)
+                    .invoke(TEST_FIXNUM);
+        }
+
         if (self instanceof RubySymbol ||
-                self instanceof RubyFixnum ||
                 self instanceof RubyFloat ||
                 self instanceof RubyNil ||
                 self instanceof RubyBoolean.True ||
@@ -1692,9 +1701,17 @@ public abstract class InvokeSite extends MutableCallSite {
         return object.getClass() == clazz;
     }
 
+    public static boolean testFixnum(Object object) {
+        return object instanceof RubyFixnum;
+    }
+
     public String toString() {
         return getClass().getName() + "[name=" + name() + ",arity=" + arity + ",type=" + type() + ",file=" + file + ",line=" + line + ']';
     }
+
+    private static final MethodHandle TEST_FIXNUM = Binder
+            .from(boolean.class, Object.class)
+            .invokeStaticQuiet(LOOKUP, InvokeSite.class, "testFixnum");
 
     private static final MethodHandle TEST_CLASS = Binder
             .from(boolean.class, Object.class, Class.class)
