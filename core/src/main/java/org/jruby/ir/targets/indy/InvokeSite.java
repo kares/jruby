@@ -795,6 +795,7 @@ public abstract class InvokeSite extends MutableCallSite {
         } else {
             mh = tryToBuildKindOfHandle(context, entry, self, args);
             if (mh == null) mh = tryToBuildCaseOpEqqHandle(context, entry, self, args);
+            if (mh == null) mh = tryToBuildRespondToHandle(context, entry, self, args);
             if (mh == null) mh = getHandle(context, self, entry);
         }
 
@@ -820,6 +821,7 @@ public abstract class InvokeSite extends MutableCallSite {
         } else {
             mh = tryToBuildKindOfHandle(context, entry, self, args);
             if (mh == null) mh = tryToBuildCaseOpEqqHandle(context, entry, self, args);
+            if (mh == null) mh = tryToBuildRespondToHandle(context, entry, self, args);
             if (mh == null) mh = getHandle(context, self, entry);
         }
 
@@ -1361,6 +1363,62 @@ public abstract class InvokeSite extends MutableCallSite {
         return MethodHandles.guardWithTest(test, answer, nativeHandle);
     }
 
+    /**
+     * Folds the builtin <code>Kernel#respond_to?</code> as a constant answer for the sampled method name and
+     * <code>include_all</code> (YJIT's <code>jit_obj_respond_to</code>, also covering non-public methods).
+     *
+     * @implNote The answer only depends on the receiver's class method table; call site already guards on that class
+     *           and gets invalidated when the method or <code>respond_to_missing?</code> gets (re)defined,
+     *           undefined or changes visibility in the class or an ancestor.
+     *           Skipped for: refined methods (depends on the caller's scope) and custom <code>respond_to_missing?</code>.
+     */
+    MethodHandle tryToBuildRespondToHandle(ThreadContext context, CacheEntry entry, IRubyObject self, IRubyObject[] args) {
+        if ((arity != 1 && arity != 2) || args.length != arity || signature.lastArgType() == Block.class) return null;
+        if (!name().equals("respond_to?")) return null;
+
+        final DynamicMethod method = entry.method;
+        if (!method.isBuiltin() || method.getImplementationClass() != kernelModule(context)) return null;
+
+        if (!(args[0] instanceof RubySymbol methodName)) return null;
+        final boolean includePrivate;
+        if (arity == 1 || args[1] == context.fals || args[1] == context.nil) {
+            includePrivate = false;
+        } else if (args[1] == context.tru) {
+            includePrivate = true;
+        } else {
+            return null;
+        }
+
+        final RubyClass selfClass = self.getMetaClass();
+        if (selfClass.searchWithCache("respond_to_missing?").method != context.runtime.getRespondToMissingMethod()) return null;
+        final DynamicMethod target = selfClass.searchWithCache(methodName.idString()).method;
+        if (target.isRefined()) return null;
+
+        MethodHandle nativeHandle = buildNativeHandle(entry, false);
+        if (nativeHandle == null) return null;
+
+        // same as RubyBasicObject#respond_to_p with the builtin respond_to_missing? (always false)
+        final IRubyObject result = Helpers.respondsToMethod(target, !includePrivate) ? context.tru : context.fals;
+        MethodHandle answer = dropArguments(constant(IRubyObject.class, result), 0, signature.type().parameterList());
+        SmartBinder test = SmartBinder.from(signature.changeReturn(boolean.class));
+        MethodHandle sameObjectCheck;
+        if (arity == 1) {
+            test = test.permute("arg0").insert(1, "expected", IRubyObject.class, methodName);
+            sameObjectCheck = IDENTICAL;
+        } else {
+            test = test.permute("arg0", "arg1")
+                    .insert(2, "expected0", IRubyObject.class, methodName)
+                    .insert(3, "expected1", IRubyObject.class, args[1]);
+            sameObjectCheck = IDENTICAL2;
+        }
+
+        if (Options.INVOKEDYNAMIC_LOG_BINDING.load()) {
+            LOG.info(name() + "\tbound as constant " + result + " for " + methodName + " (" + file + ":" + line + ")");
+        }
+
+        return MethodHandles.guardWithTest(test.invoke(sameObjectCheck).handle(), answer, nativeHandle);
+    }
+
     private static final MethodHandle SAME_TARGET_AND_CLASS = Binder.from(boolean.class, IRubyObject.class, IRubyObject.class, IRubyObject.class, RubyClass.class)
             .invokeStaticQuiet(LOOKUP, InvokeSite.class, "sameTargetAndClass");
 
@@ -1373,6 +1431,13 @@ public abstract class InvokeSite extends MutableCallSite {
 
     public static boolean identical(IRubyObject arg, IRubyObject expected) {
         return arg == expected;
+    }
+
+    private static final MethodHandle IDENTICAL2 = Binder.from(boolean.class, IRubyObject.class, IRubyObject.class, IRubyObject.class, IRubyObject.class)
+            .invokeStaticQuiet(LOOKUP, InvokeSite.class, "identical2");
+
+    public static boolean identical2(IRubyObject arg0, IRubyObject arg1, IRubyObject expected0, IRubyObject expected1) {
+        return arg0 == expected0 && arg1 == expected1;
     }
 
     MethodHandle buildNotEqualHandle(ThreadContext context, CacheEntry entry, IRubyObject self) {
