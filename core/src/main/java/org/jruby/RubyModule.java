@@ -1800,6 +1800,7 @@ public class RubyModule extends RubyObject {
         // update superclass reference
         this.superClass = superClass;
         if (superClass != null && superClass.isSynchronized()) becomeSynchronized();
+        if (this instanceof RubyClass klass) klass.superClassUpdated(superClass);
         return (T) this;
     }
 
@@ -3394,6 +3395,15 @@ public class RubyModule extends RubyObject {
     public IRubyObject op_le(ThreadContext context, IRubyObject arg) {
         RubyModule argMod = castAsModule(context, arg, "compared with non class/module");
 
+        if (this instanceof RubyClass klass && argMod instanceof RubyClass argClass) {
+            int inherits = klass.inheritsFrom(argClass);
+            if (inherits == 1) return context.tru;
+            if (inherits == 0) {
+                inherits = argClass.inheritsFrom(klass);
+                if (inherits >= 0) return inherits == 1 ? context.fals : context.nil;
+            }
+        }
+
         if (searchAncestor(argMod.getMethodLocation()) != null) return context.tru;
         /* not mod < arg; check if mod > arg */
         if (argMod.searchAncestor(this) != null) return context.fals;
@@ -3403,12 +3413,14 @@ public class RubyModule extends RubyObject {
 
     @CRuby(value = "class_search_ancestor", file = "object.c")
     protected RubyModule searchAncestor(RubyModule c) {
-        RubyModule cl = this;
-        while (cl != null) {
-            if (cl == c || cl.isSame(c) || cl.getDelegate().getOrigin() == c) {
-                return cl;
-            }
-            cl = cl.getSuperClass();
+        // c is only a delegate when Module#<= passes a prepended method location, only then can isSame match beyond
+        // the origin check (refinement wrappers may wrap a wrapper, so the origin's origin is the delegate's origin)
+        final boolean delegated = c.getDelegate() != c;
+        for (RubyModule cl = this; cl != null; cl = cl.getSuperClass()) {
+            if (cl == c) return cl;
+            // plain class or module only matches itself (only include/prepend wrappers stand for another one)
+            RubyModule origin = cl.getOrigin();
+            if (origin != cl && (origin.getOrigin() == c || (delegated && cl.isSame(c)))) return cl;
         }
         return null;
     }
